@@ -17,7 +17,7 @@ program_body        :   const_declarations var_declarations subprogram_declarati
 idlist              :   idlist COMMA ID
                     |   ID
                     ;
-const_declarations  :   CONST const_declaration ; 
+const_declarations  :   CONST const_declaration SEMICOLON
                     |   
                     ;
 const_declaration   :   const_declaration SEMICOLON ID EQUAL const_value
