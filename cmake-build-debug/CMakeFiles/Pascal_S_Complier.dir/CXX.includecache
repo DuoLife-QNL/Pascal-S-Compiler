@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/DataType.h
+stack
+-
+string
+-
+
+/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/SymbolTable.cpp
+SymbolTable.h
+/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/SymbolTable.h
+
+/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/SymbolTable.h
+vector
+-
+DataType.h
+/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/DataType.h
+

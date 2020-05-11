@@ -5,8 +5,15 @@
     int yyerror(const char *s);
     int success = 1;
 %}
+%union 
+{
+    struct non_terminal{
 
-%token PLUS MINUS TIMES DIV LP RP NUM END
+    }
+    
+}
+
+%token K_PROGRAM// 加入
 %start s
 s                   :   programstruct;
 programstruct       :   program_head SEMICOLON program_body DOT;
@@ -15,7 +22,7 @@ program_head        :   PROGRAM_ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS
                     ;
 program_body        :   const_declarations var_declarations subprogram_declarations compound_statement
 idlist              :   idlist COMMA ID
-                    |   ID
+                    |   ID {locate}
                     ;
 const_declarations  :   CONST const_declaration SEMICOLON
                     |   
