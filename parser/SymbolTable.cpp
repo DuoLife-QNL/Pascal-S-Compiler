@@ -12,7 +12,7 @@ void symbol_table::enter(std::string name, int type) {
     error_report("重名");
     exit(-1);
   }
-  symbol_e_t entry{name, type};
+//  symbol_e_t entry{name, type};
 
 }
 

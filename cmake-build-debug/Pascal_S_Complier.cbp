@@ -44,9 +44,6 @@
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/."/>
-					<Add directory="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser"/>
-					<Add directory="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner_only"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.0/include"/>
@@ -68,9 +65,6 @@
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/."/>
-					<Add directory="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser"/>
-					<Add directory="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner_only"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
 					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.0/include"/>
@@ -86,9 +80,6 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/main.cpp">
-			<Option target="Pascal_S_Complier"/>
-		</Unit>
 		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/DataType.h">
 			<Option target="Pascal_S_Complier"/>
 		</Unit>
@@ -98,16 +89,16 @@
 		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/SymbolTable.h">
 			<Option target="Pascal_S_Complier"/>
 		</Unit>
-		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.y">
+		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.cpp">
 			<Option target="Pascal_S_Complier"/>
 		</Unit>
-		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner_only/gcd.pas">
+		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.cpp.rule">
 			<Option target="Pascal_S_Complier"/>
 		</Unit>
-		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner_only/scanner.l">
+		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp">
 			<Option target="Pascal_S_Complier"/>
 		</Unit>
-		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner_only/scanner_out">
+		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp.rule">
 			<Option target="Pascal_S_Complier"/>
 		</Unit>
 		<Unit filename="/Users/Halloween/Documents/GitHub/Pascal-S-Complier/CMakeLists.txt">

@@ -6,5 +6,5 @@ CXX_FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/Ma
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/Halloween/Documents/GitHub/Pascal-S-Complier/. -I/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser -I/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner_only 
+CXX_INCLUDES = 
 

@@ -2,6 +2,9 @@
 #include <iostream>
 #include <parser/SymbolTable.h>
 #include <iostream>
+
+static symbol_table st;
+
 int main(){
     symbol_table s;
     s.enter("book",1);

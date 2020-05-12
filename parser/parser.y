@@ -1,36 +1,38 @@
 %{
     #define ACC 1
     #include <stdio.h>
+    #include "SymbolTable.h"
     extern int yylex();
     int yyerror(const char *s);
     int success = 1;
+    extern symbol_table st;
 %}
-%union 
-{
-    struct non_terminal{
 
-    }
-    
-}
+%start programstruct
+%token SEMICOLON DOT PROGRAM_ID LEFT_PARENTHESIS RIGHT_PARENTHESIS COMMA ID
+%token CONST EQUAL PLUS NUM MINUS QUOTE LETTER VAR COLON LEFT_BRACKET
+%token RIGHT_BRACKET INTEGER REAL BOOLEAN CHAR DIGITS..DIGITS PROCEDURE FUNCTION
+%token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP ADDOP MULOP UMINUS
+%token READ WRITE ARRAY OF
 
-%token K_PROGRAM// 加入
-%start s
-s                   :   programstruct;
+
+%%
+
 programstruct       :   program_head SEMICOLON program_body DOT;
 program_head        :   PROGRAM_ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS
                     |   PROGRAM_ID
                     ;
 program_body        :   const_declarations var_declarations subprogram_declarations compound_statement
 idlist              :   idlist COMMA ID
-                    |   ID {locate}
+                    |   ID
                     ;
 const_declarations  :   CONST const_declaration SEMICOLON
                     |   
                     ;
 const_declaration   :   const_declaration SEMICOLON ID EQUAL const_value
-                    |   ID EQUAL const_value 
+                    |   ID EQUAL const_value
                     ;
-const_value         :   PLUS NUM 
+const_value         :   PLUS NUM
                     |   MINUS NUM
                     |   NUM 
                     |   QUOTE LETTER QUOTE
@@ -42,7 +44,7 @@ var_declaration     :   var_declaration SEMICOLON idlist COLON type
                     |   idlist COLON type 
                     ;
 type                :   basic_type
-                    |   array LEFT_BRACKET period RIGHT_BRACKET OF basic_type 
+                    |   ARRAY LEFT_BRACKET period RIGHT_BRACKET OF basic_type
                     ;
 basic_type          :   INTEGER
                     |   REAL 
@@ -80,8 +82,8 @@ statement           :   variable ASSIGNOP expression
                     |   compound_statement 
                     |   IF expression THEN statement else_part 
                     |   FOR ID ASSIGNOP expression TO expression DO statement 
-                    |   read LEFT_PARENTHESIS variable_list RIGHT_PARENTHESIS 
-                    |   write LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
+                    |   READ LEFT_PARENTHESIS variable_list RIGHT_PARENTHESIS
+                    |   WRITE LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
                     |
                     ;
 variable_list       :   variable_list COMMA variable 
