@@ -46,10 +46,14 @@
 *.mod*
 *.cmd
 .tmp_versions/
+
+# scanner_only part
 scanner_only/lex.yy.c
 scanner_only/result.txt
 scanner_only/result
 scanner_only/scanner_out 
+
+
 modules.order
 Module.symvers
 Mkfile.old
