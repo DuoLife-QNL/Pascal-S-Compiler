@@ -12,7 +12,7 @@
     }
     
 }
-
+%left PLUS MINUS TIMES DIV
 %token K_PROGRAM// 加入
 %start s
 s                   :   programstruct;
