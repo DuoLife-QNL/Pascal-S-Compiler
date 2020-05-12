@@ -9,7 +9,7 @@
 typedef struct parameter_list{
   std::string name;
   int type;
-  bool inVAR;
+  bool isVAR;
 }parameter_list;
 
 typedef struct {
