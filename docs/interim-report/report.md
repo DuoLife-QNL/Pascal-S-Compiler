@@ -16,6 +16,38 @@
 
 ## 需求分析
 ### 词法分析
+
+单独来看，词法分析的作用是将原文件的字符流转换成标记 (token) 流的过程。
+
+在整个 Pascal-S 编译程序中，词法分析作为语法分析的子程序。语法分析程序通过调用 yylex 得到下一个 token 的类型以及相应的属性。
+
+#### 词法分析详细需求分析
+
+-   Pascal-S 识别的单词种类：
+    -   关键字（Keyword） ：program, const, var, integer, boolean, real, char, array, procedure, function, begin, end, of, if, then, else, while, for, to, do. 
+        -   Note: Pascal 关键字不区分大小写
+        -   关键字单词模式：以 `program` 为例,其模式表达为 :`[Pp][Rr][Oo][Gg][Rr][Aa][Mm]      ` 
+    -   注释 （comment）
+        -   单行注释：// + 注释内容
+            -   单词模式：`//` 
+        -   多行注释：{+注释内容}
+            -   单词模式：`\{[\S\s]*?\}`
+            -   由于需要记录token的 row 以及 column 来定位，所以直接采用匹配 `{` 进行相应的处理。
+    -   标识符（identifier）
+        -   单词模式 `[A-Za-z][A-Za-z0-9_]* ` 
+    -   常数（constant）
+        -   单词模式：[0-9]+|[0-9]+\.[0-9]+
+    -   赋值运算符（assign operator）: :=
+    -   关系运算符（relation operator）：>, <, >=, <=, <>, =
+    -   算数运算符（arithmetic operator）: +, -, or, *, /, mod, div, and 
+    -   分隔符（delim）： :, ;, 逗号, 句号
+    -   空白 （space）：" "|"\t"
+    -   其他（other）：[, ], (, ) 
+-   Pascal-S 识别的语法错误：
+    -   非法表示符：wrong_identifier        {digits}+{letter}({digits}|{letter})*
+    -   引号不配对: quotation_not_match (\'|\")
+    -   未识别的符号：匹配方式: `.`  
+
 ### 语法分析
 语法分析是整个软件的核心。从词法分析阶段获得词法分析的识别结果，并通过语法翻译制导技术执行语义动作。
 
