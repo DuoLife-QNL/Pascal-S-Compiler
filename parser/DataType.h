@@ -20,7 +20,6 @@ typedef struct parameter_list_head{
 
 typedef struct {
     std::string name;
-    bool isFunction;
     int type;
     parameter_list_head *plh;
 
