@@ -13,15 +13,8 @@
   <component name="ChangeListManager">
     <list default="true" id="895738b1-6657-42d1-bdc7-f54fb69a5274" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/interim-report/report.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/interim-report/report.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/gcd.pas" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/gcd.pas" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/lex.yy.c" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/lex.yy.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/result.txt" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/result.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/scanner.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scanner.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/scanner.l" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scanner.l" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/scanner_out" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scanner_out" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner 2/start.sh" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/start.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/SymbolTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/parser/SymbolTable.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/SymbolTable.h" beforeDir="false" afterPath="$PROJECT_DIR$/parser/SymbolTable.h" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -46,7 +39,7 @@
         <entry file="file://$PROJECT_DIR$/parser/parser.cpp">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="-1004">
-              <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
+              <caret line="31" selection-start-line="31" selection-end-line="31" />
             </state>
           </provider>
         </entry>
@@ -56,11 +49,11 @@
           <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/parser/SymbolTable.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="25" column="24" lean-forward="true" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="24" />
+            <state relative-caret-position="240">
+              <caret line="16" column="1" selection-start-line="16" selection-start-column="1" selection-end-line="16" selection-end-column="1" />
             </state>
           </provider>
         </entry>
@@ -70,11 +63,11 @@
           <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/parser/SymbolTable.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="7" selection-start-line="7" selection-end-line="7" />
+            <state relative-caret-position="405">
+              <caret line="27" column="18" lean-forward="true" selection-start-line="27" selection-start-column="18" selection-end-line="27" selection-end-column="18" />
               <folding>
                 <element signature="e#137#154#0" expanded="true" />
               </folding>
@@ -89,6 +82,18 @@
               <caret line="5" column="19" selection-start-line="5" selection-start-column="7" selection-end-line="5" selection-end-column="19" />
               <folding>
                 <element signature="e#0#28#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/parser/DataType.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="405">
+              <caret line="27" column="5" lean-forward="true" selection-start-line="27" selection-start-column="5" selection-end-line="27" selection-end-column="5" />
+              <folding>
+                <element signature="e#43#59#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -134,15 +139,15 @@
       <list>
         <option value="$PROJECT_DIR$/parser/struct_def.h" />
         <option value="$PROJECT_DIR$/parser/symbol_stack.cpp" />
-        <option value="$PROJECT_DIR$/parser/SymbolTable.h" />
         <option value="$PROJECT_DIR$/parser/DataType.h" />
         <option value="$PROJECT_DIR$/main.cpp" />
         <option value="$PROJECT_DIR$/docs/interim-report/report.md" />
         <option value="$PROJECT_DIR$/scanner_only/start.sh" />
         <option value="$PROJECT_DIR$/scanner/scanner.l" />
-        <option value="$PROJECT_DIR$/parser/SymbolTable.cpp" />
         <option value="$PROJECT_DIR$/parser/parser.y" />
         <option value="$PROJECT_DIR$/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/parser/SymbolTable.cpp" />
+        <option value="$PROJECT_DIR$/parser/SymbolTable.h" />
       </list>
     </option>
   </component>
@@ -241,12 +246,12 @@
       <option name="presentableId" value="Default" />
       <updated>1589069931614</updated>
       <workItem from="1589069937753" duration="2677000" />
-      <workItem from="1589203084391" duration="15975000" />
+      <workItem from="1589203084391" duration="17168000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="18652000" />
+    <option name="totallyTimeSpent" value="19845000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -334,16 +339,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parser/DataType.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" column="16" lean-forward="true" selection-start-line="8" selection-start-column="16" selection-end-line="8" selection-end-column="16" />
-          <folding>
-            <element signature="e#43#59#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/y.tab.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1772" />
@@ -424,16 +419,6 @@
         <state relative-caret-position="-600" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parser/SymbolTable.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" selection-start-line="7" selection-end-line="7" />
-          <folding>
-            <element signature="e#137#154#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="330">
@@ -468,14 +453,34 @@
     <entry file="file://$PROJECT_DIR$/parser/parser.cpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1004">
-          <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
+          <caret line="31" selection-start-line="31" selection-end-line="31" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/parser/SymbolTable.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="25" column="24" lean-forward="true" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="24" />
+        <state relative-caret-position="240">
+          <caret line="16" column="1" selection-start-line="16" selection-start-column="1" selection-end-line="16" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/DataType.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="405">
+          <caret line="27" column="5" lean-forward="true" selection-start-line="27" selection-start-column="5" selection-end-line="27" selection-end-column="5" />
+          <folding>
+            <element signature="e#43#59#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/SymbolTable.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="405">
+          <caret line="27" column="18" lean-forward="true" selection-start-line="27" selection-start-column="18" selection-end-line="27" selection-end-column="18" />
+          <folding>
+            <element signature="e#137#154#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

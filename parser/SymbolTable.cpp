@@ -5,7 +5,7 @@
 #include "SymbolTable.h"
 symbol_table::symbol_table() {}
 
-void symbol_table::enter(std::string name, int type) {
+void symbol_table::enter_sym(std::string name, int type) {
 //  检查同名变量
   symbol_e_t temp;
   if(find(name, temp)){
@@ -13,6 +13,9 @@ void symbol_table::enter(std::string name, int type) {
     exit(-1);
   }
 //  symbol_e_t entry{name, type};
+
+}
+void symbol_table::enter_pl(std::string name, int type) {
 
 }
 
@@ -38,3 +41,7 @@ void symbol_table::relocate() {
   table_.erase(table_.begin() + index_.top(), table_.end());
   index_.pop();
 }
+void symbol_table::enterproc() {
+
+}
+
