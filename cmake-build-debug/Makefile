@@ -123,33 +123,6 @@ Pascal_S_Complier/fast:
 	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/build
 .PHONY : Pascal_S_Complier/fast
 
-main.o: main.cpp.o
-
-.PHONY : main.o
-
-# target to build an object file
-main.cpp.o:
-	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/main.cpp.o
-.PHONY : main.cpp.o
-
-main.i: main.cpp.i
-
-.PHONY : main.i
-
-# target to preprocess a source file
-main.cpp.i:
-	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/main.cpp.i
-.PHONY : main.cpp.i
-
-main.s: main.cpp.s
-
-.PHONY : main.s
-
-# target to generate assembly for a file
-main.cpp.s:
-	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/main.cpp.s
-.PHONY : main.cpp.s
-
 parser/SymbolTable.o: parser/SymbolTable.cpp.o
 
 .PHONY : parser/SymbolTable.o
@@ -177,6 +150,60 @@ parser/SymbolTable.cpp.s:
 	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.s
 .PHONY : parser/SymbolTable.cpp.s
 
+parser/parser.o: parser/parser.cpp.o
+
+.PHONY : parser/parser.o
+
+# target to build an object file
+parser/parser.cpp.o:
+	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o
+.PHONY : parser/parser.cpp.o
+
+parser/parser.i: parser/parser.cpp.i
+
+.PHONY : parser/parser.i
+
+# target to preprocess a source file
+parser/parser.cpp.i:
+	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.i
+.PHONY : parser/parser.cpp.i
+
+parser/parser.s: parser/parser.cpp.s
+
+.PHONY : parser/parser.s
+
+# target to generate assembly for a file
+parser/parser.cpp.s:
+	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.s
+.PHONY : parser/parser.cpp.s
+
+scanner/scanner.o: scanner/scanner.cpp.o
+
+.PHONY : scanner/scanner.o
+
+# target to build an object file
+scanner/scanner.cpp.o:
+	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o
+.PHONY : scanner/scanner.cpp.o
+
+scanner/scanner.i: scanner/scanner.cpp.i
+
+.PHONY : scanner/scanner.i
+
+# target to preprocess a source file
+scanner/scanner.cpp.i:
+	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.i
+.PHONY : scanner/scanner.cpp.i
+
+scanner/scanner.s: scanner/scanner.cpp.s
+
+.PHONY : scanner/scanner.s
+
+# target to generate assembly for a file
+scanner/scanner.cpp.s:
+	$(MAKE) -f CMakeFiles/Pascal_S_Complier.dir/build.make CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.s
+.PHONY : scanner/scanner.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -186,12 +213,15 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... Pascal_S_Complier"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
 	@echo "... parser/SymbolTable.o"
 	@echo "... parser/SymbolTable.i"
 	@echo "... parser/SymbolTable.s"
+	@echo "... parser/parser.o"
+	@echo "... parser/parser.i"
+	@echo "... parser/parser.s"
+	@echo "... scanner/scanner.o"
+	@echo "... scanner/scanner.i"
+	@echo "... scanner/scanner.s"
 .PHONY : help
 
 

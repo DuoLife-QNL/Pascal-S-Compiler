@@ -184,26 +184,26 @@ void Identifier () {
 int main(int argc, char** argv) {
     yyin = stdin;
 
-    if (argc == 1) 
+    if (argc == 1)
     {
-        if ((yyin = fopen("gcd.pas", "r")) == NULL) 
+        if ((yyin = fopen("gcd.pas", "r")) == NULL)
         {
             printf("\033[0;31mCan not open default source file\033[0m\n");
             exit(0);
         }
-        if ((yyout = fopen("scanner_output.txt", "w")) == NULL) 
+        if ((yyout = fopen("scanner_output.txt", "w")) == NULL)
         {
             printf("\033[0;31mCan not open default output file\033[0m\n");
             exit(0);
         }
     } else if (argc == 3)
     {
-        if ((yyin = fopen(argv[1], "r"))== NULL) 
+        if ((yyin = fopen(argv[1], "r"))== NULL)
         {
             printf("\033[0;31mCan not open source file\033[0m\n");
             exit(0);
         }
-        if((yyout = fopen(argv[2], "w")) == NULL) 
+        if((yyout = fopen(argv[2], "w")) == NULL)
         {
             printf("\033[0;31mCan not open output file\033[0m\n");
             exit(0);

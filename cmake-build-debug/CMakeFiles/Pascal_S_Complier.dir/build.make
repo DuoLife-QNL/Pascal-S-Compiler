@@ -57,9 +57,17 @@ include CMakeFiles/Pascal_S_Complier.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/Pascal_S_Complier.dir/flags.make
 
+../parser/parser.cpp:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating parser.y"
+	/usr/bin/bison /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.y --define=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.tab.h -o /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.cpp
+
+../scanner/scanner.cpp:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating scanner.l"
+	/usr/bin/flex -o /Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp /Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.l
+
 CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o: CMakeFiles/Pascal_S_Complier.dir/flags.make
 CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o: ../parser/SymbolTable.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o -c /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/SymbolTable.cpp
 
 CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.i: cmake_force
@@ -70,32 +78,47 @@ CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/SymbolTable.cpp -o CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.s
 
-CMakeFiles/Pascal_S_Complier.dir/main.cpp.o: CMakeFiles/Pascal_S_Complier.dir/flags.make
-CMakeFiles/Pascal_S_Complier.dir/main.cpp.o: ../main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Pascal_S_Complier.dir/main.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Pascal_S_Complier.dir/main.cpp.o -c /Users/Halloween/Documents/GitHub/Pascal-S-Complier/main.cpp
+CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o: CMakeFiles/Pascal_S_Complier.dir/flags.make
+CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o: ../parser/parser.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o -c /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.cpp
 
-CMakeFiles/Pascal_S_Complier.dir/main.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Pascal_S_Complier.dir/main.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/Halloween/Documents/GitHub/Pascal-S-Complier/main.cpp > CMakeFiles/Pascal_S_Complier.dir/main.cpp.i
+CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.cpp > CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.i
 
-CMakeFiles/Pascal_S_Complier.dir/main.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Pascal_S_Complier.dir/main.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/Halloween/Documents/GitHub/Pascal-S-Complier/main.cpp -o CMakeFiles/Pascal_S_Complier.dir/main.cpp.s
+CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/Halloween/Documents/GitHub/Pascal-S-Complier/parser/parser.cpp -o CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.s
+
+CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o: CMakeFiles/Pascal_S_Complier.dir/flags.make
+CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o: ../scanner/scanner.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o -c /Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp
+
+CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp > CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.i
+
+CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp -o CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.s
 
 # Object files for target Pascal_S_Complier
 Pascal_S_Complier_OBJECTS = \
 "CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o" \
-"CMakeFiles/Pascal_S_Complier.dir/main.cpp.o"
+"CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o" \
+"CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o"
 
 # External object files for target Pascal_S_Complier
 Pascal_S_Complier_EXTERNAL_OBJECTS =
 
 Pascal_S_Complier: CMakeFiles/Pascal_S_Complier.dir/parser/SymbolTable.cpp.o
-Pascal_S_Complier: CMakeFiles/Pascal_S_Complier.dir/main.cpp.o
+Pascal_S_Complier: CMakeFiles/Pascal_S_Complier.dir/parser/parser.cpp.o
+Pascal_S_Complier: CMakeFiles/Pascal_S_Complier.dir/scanner/scanner.cpp.o
 Pascal_S_Complier: CMakeFiles/Pascal_S_Complier.dir/build.make
 Pascal_S_Complier: CMakeFiles/Pascal_S_Complier.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable Pascal_S_Complier"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable Pascal_S_Complier"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Pascal_S_Complier.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -107,7 +130,8 @@ CMakeFiles/Pascal_S_Complier.dir/clean:
 	$(CMAKE_COMMAND) -P CMakeFiles/Pascal_S_Complier.dir/cmake_clean.cmake
 .PHONY : CMakeFiles/Pascal_S_Complier.dir/clean
 
-CMakeFiles/Pascal_S_Complier.dir/depend:
+CMakeFiles/Pascal_S_Complier.dir/depend: ../parser/parser.cpp
+CMakeFiles/Pascal_S_Complier.dir/depend: ../scanner/scanner.cpp
 	cd /Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/Halloween/Documents/GitHub/Pascal-S-Complier /Users/Halloween/Documents/GitHub/Pascal-S-Complier /Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug /Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug /Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles/Pascal_S_Complier.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/Pascal_S_Complier.dir/depend
 
