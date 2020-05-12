@@ -12,18 +12,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="895738b1-6657-42d1-bdc7-f54fb69a5274" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/docs/img/Readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeRuleHashes.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/interim-report/report.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/interim-report/report.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/gcd.pas" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/lex.yy.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/result.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/scanner.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/scanner.l" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/scanner_out" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner/start.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/gcd.pas" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/gcd.pas" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/lex.yy.c" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/lex.yy.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/result.txt" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/result.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/scanner.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scanner.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/scanner.l" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scanner.l" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/scanner_out" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/scanner_out" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scanner 2/start.sh" beforeDir="false" afterPath="$PROJECT_DIR$/scanner/start.sh" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -47,15 +45,22 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/parser/parser.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1276" />
+            <state relative-caret-position="-1004">
+              <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
+            </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scanner/scanner.cpp">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/parser/SymbolTable.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="6" selection-start-line="6" selection-end-line="6" />
+            <state relative-caret-position="375">
+              <caret line="25" column="24" lean-forward="true" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="24" />
             </state>
           </provider>
         </entry>
@@ -98,11 +103,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/docs/interim-report/report.md">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-163">
-              <caret line="77" column="9" selection-start-line="77" selection-start-column="9" selection-end-line="77" selection-end-column="9" />
+            <state relative-caret-position="219">
+              <caret line="99" column="4" selection-start-line="99" selection-start-column="4" selection-end-line="99" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -185,6 +190,11 @@
               <item name="Pascal-S-Complier" type="462c0819:PsiDirectoryNode" />
               <item name="parser" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="Pascal_S_Complier" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Pascal-S-Complier" type="462c0819:PsiDirectoryNode" />
+              <item name="scanner" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -231,12 +241,12 @@
       <option name="presentableId" value="Default" />
       <updated>1589069931614</updated>
       <workItem from="1589069937753" duration="2677000" />
-      <workItem from="1589203084391" duration="15791000" />
+      <workItem from="1589203084391" duration="15975000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="18468000" />
+    <option name="totallyTimeSpent" value="18652000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -249,8 +259,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1680" height="1050" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25274727" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25274727" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Messages" weight="0.32959184" />
@@ -262,7 +273,7 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32959184" />
       <window_info anchor="bottom" id="Database Changes" order="7" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="8" visible="true" weight="0.27653062" />
+      <window_info anchor="bottom" id="Terminal" order="8" visible="true" weight="0.27653062" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="10" />
       <window_info anchor="bottom" id="CMake" order="11" weight="0.32959184" />
@@ -398,13 +409,6 @@
         <state relative-caret-position="-368" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parser/SymbolTable.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" selection-start-line="6" selection-end-line="6" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
@@ -437,17 +441,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parser/parser.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1276" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/scanner/scanner.l">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="629">
           <caret line="210" column="12" lean-forward="true" selection-start-line="210" selection-start-column="12" selection-end-line="210" selection-end-column="12" />
         </state>
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/docs/interim-report/report.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="219">
+          <caret line="99" column="4" selection-start-line="99" selection-start-column="4" selection-end-line="99" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanner/scanner.cpp">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/parser/parser.y">
       <provider selected="true" editor-type-id="text-editor">
@@ -456,10 +465,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/docs/interim-report/report.md">
+    <entry file="file://$PROJECT_DIR$/parser/parser.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-163">
-          <caret line="77" column="9" selection-start-line="77" selection-start-column="9" selection-end-line="77" selection-end-column="9" />
+        <state relative-caret-position="-1004">
+          <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/SymbolTable.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="25" column="24" lean-forward="true" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="24" />
         </state>
       </provider>
     </entry>
