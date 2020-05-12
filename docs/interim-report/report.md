@@ -42,6 +42,27 @@ PPT中文法为非L属性定义，为了便于编写翻译方案，需要对文�
 ### 词法分析
 ### 语法分析
 ### 语义分析
+#### 类型表达式
+1. 基本类型
+    * boolean
+    * char
+    * integer
+    * real
+2. 错误类型
+    * type_error
+3. 回避类型
+    * void
+4. 类型构造器
+    * 数组 `var a:array [1..10] of integer`
+    * 笛卡尔积
+    * record(暂不考虑)
+    * 指针 `var p:↑row`
+    * 函数 `function fun(a, b:char):↑integer`
+    
+#### 类型等价
+* 名字等价
+
+
 #### 符号表
 符号表 std::vector（尽管是栈式，但由于有检索操作，设计成vector）
 符号表记录
