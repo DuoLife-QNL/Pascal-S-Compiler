@@ -2,5 +2,5 @@ program helloworld;
 
 begin
     // this is a basic hello world test.
-    writeln('Hello, World!');
+    write('Hello, World!');
 end.

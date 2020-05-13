@@ -59,22 +59,24 @@
 #define T_INTEGER 44
 #define T_REAL 45
 #define T_ID 46
+#define T_STRING 47
 
-#define B_READ 47
-#define B_WRITE 48
+#define B_READ 48
+#define B_WRITE 49
 
 #define COMMENT 100
 
 #define YYSTYPE char*;
 
-void SolveKeyword(int type);
-void SolveOperation(int type);
-void SolveBracket(int type);
-void SolveDelim(int type);
-void SolveBasicType(char *type);
-void SolveBuiltIn();
+void SolveKeyword (int type);
+void SolveOperation (int type);
+void SolveBracket (int type);
+void SolveDelim (int type);
+void SolveBasicType (char *type);
+void SolveBuiltIn ();
 void Identifier ();
 void SolveComment ();
+void SolveMultiLineComment ();
 
 extern char* yylval;
 extern char* yytext;
@@ -92,7 +94,7 @@ letter                  [a-zA-Z]
 digits                  [0-9]
 delim                   [ \t\n]
 annotation1             \/\/.*?
-annotation2             \{.*?\}
+
 noquote                 [^'^\n]
 wrong_identifier        {digits}+({letter}|_)({digits}|{letter}|_)*
 quotation_not_match     (\'|\")
@@ -144,100 +146,121 @@ ws                      {delim}+
 ":"                   {SolveDelim(D_COLON);     return(D_COLON);}
 "."                   {SolveDelim(D_DOT);       return(D_DOT);}
 ","                   {SolveDelim(D_COMMA);     return(D_COMMA);}
+
 {annotation1}		  {SolveComment(); }
-{annotation2}         {SolveComment(); }
+"{"                   {SolveMultiLineComment(); }
+
 
 [Rr][Ee][Aa][Dd]      {SolveBuiltIn(); return B_READ;}
 [Ww][Rr][Ii][Tt][Ee]  {SolveBuiltIn(); return B_WRITE;}
+
+\"([^\^\n\"])*\"		  {SolveBasicType("String"); return(T_STRING);}
+'({noquote}|'')+'             {SolveBasicType("String"); return(T_STRING);}
 
 [0-9]+                {SolveBasicType("Integer");return(T_INTEGER);}
 [A-Za-z][A-Za-z0-9_]* {Identifier();            return(T_ID);}
 [0-9]+|[0-9]+\.[0-9]+ {SolveBasicType("Float"); return(T_REAL);} 
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
-{quotation_not_match}   {printf ("\033[01;31m Lexical Error: quotation not match %s at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
-{wrong_identifier}      {printf ("\033[01;31m Lexical Error: unexpected Identifier '%s' at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
-.                       {printf ("\033[01;31m Lexical Error: unexpected character '%c' at line: %d colum: %d \033[0m \n", *yytext, lex_row_index, lex_column_index);}
+
+{quotation_not_match}   {fprintf (yyout, "\033[01;31m Lexical Error: quotation not match %s at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
+{wrong_identifier}      {fprintf (yyout, "\033[01;31m Lexical Error: unexpected Identifier '%s' at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
+.                       {fprintf (yyout, "\033[01;31m Lexical Error: unexpected character '%c' at line: %d colum: %d \033[0m \n", *yytext, lex_row_index, lex_column_index);}
+
 
 
 %%
 
 void SolveKeyword (int type) {
-    printf("\033[01;32m line %d \tcolumn %d: \t<KEYWORD, %s> \033[0m\n", 
+    fprintf(yyout, "\033[01;32m line %d \tcolumn %d: \t<KEYWORD, %s> \033[0m\n", 
         lex_row_index, lex_column_index, yytext);
     lex_column_index += yyleng;
 }
 
 void SolveOperation (int type) {
-    printf("\033[01;32m line %d \tcolumn %d: \t<OPERATION, %s, %d> \033[0m\n", 
+    fprintf(yyout, "\033[01;32m line %d \tcolumn %d: \t<OPERATION, %s, %d> \033[0m\n", 
         lex_row_index, lex_column_index, yytext, type);
     lex_column_index += yyleng;
 }
 
 void SolveBracket (int type) {
-    printf("\033[01;32m line %d \tcolumn %d: \t<BRACKETS, %s> \033[0m\n", 
+    fprintf(yyout, "\033[01;32m line %d \tcolumn %d: \t<BRACKETS, %s> \033[0m\n", 
         lex_row_index, lex_column_index, yytext);
     lex_column_index += yyleng;
 }
 
 void SolveDelim (int type) {
-    printf("\033[01;32m line %d \tcolumn %d: \t<DELIM %s> \033[0m\n", 
+    fprintf(yyout, "\033[01;32m line %d \tcolumn %d: \t<DELIM %s> \033[0m\n", 
         lex_row_index, lex_column_index, yytext);
     lex_column_index += yyleng;
 }
 
 void SolveBasicType (char *type) {
-    printf("\033[01;33m line %d \tcolumn %d: \t<BASICTYPE, %s>, value: %s \033[0m\n", 
+    fprintf(yyout, "\033[01;33m line %d \tcolumn %d: \t<BASICTYPE, %s>, value: %s \033[0m\n", 
         lex_row_index, lex_column_index, type, yytext);
     lex_column_index += yyleng;
 }
 
 void Identifier () {
-    printf("\033[01;34m line %d \tcolumn %d: \t<Identifier, %s>\n", lex_row_index, lex_column_index, yytext);
+    fprintf(yyout, "\033[01;34m line %d \tcolumn %d: \t<Identifier, %s>\n", lex_row_index, lex_column_index, yytext);
     lex_column_index += yyleng;
 }
 
 void SolveBuiltIn () {
-    printf("\033[01;32m line %d \tcolumn %d: \t<BuiltIn, %s> \033[0m\n", 
+    fprintf(yyout, "\033[01;32m line %d \tcolumn %d: \t<BuiltIn, %s> \033[0m\n", 
         lex_row_index, lex_column_index, yytext);
     lex_column_index += yyleng;
 }
 
 void SolveComment () {
-    printf(" line %d \tcolumn %d: \t<Comment, %s> \n", 
+    fprintf(yyout, " line %d \tcolumn %d: \t<Comment, %s> \n", 
         lex_row_index, lex_column_index, yytext);
     lex_column_index = 0;
+}
+
+void SolveMultiLineComment () {
+    register int c;
+    fprintf(yyout, " line %d \tcolumn %d: \t<Comment, %s", lex_row_index, lex_column_index, yytext);
+    while ((c = input())) {
+        lex_column_index++;
+        fprintf(yyout, "%c", c);
+        if (c == '}')
+            break;
+        else if (c == '\n') {
+            lex_row_index++;
+            lex_column_index = 0;
+        }
+        else if (c == 0)
+            fprintf (yyout, "Unexpected EOF inside comment at line %d\n", lex_column_index);
+    }
+    fprintf(yyout, ">\n");
 }
 
 int main(int argc, char** argv) {
     yyin = stdin;
 
-    if (argc == 1) 
+    if (argc == 2) 
     {
-        if ((yyin = fopen("test/IntegralTest/gcd.pas", "r")) == NULL) 
+        if ((yyin = fopen(argv[1], "r"))== NULL) 
         {
-            printf("\033[0;31mCan not open default source file\033[0m\n");
+            fprintf(yyout, "\033[0;31mCan not open source file\033[0m\n");
             exit(0);
         }
-        if ((yyout = fopen("scanner_output.txt", "w")) == NULL) 
-        {
-            printf("\033[0;31mCan not open default output file\033[0m\n");
-            exit(0);
-        }
+        yyout = stdout;
     } else if (argc == 3)
     {
         if ((yyin = fopen(argv[1], "r"))== NULL) 
         {
-            printf("\033[0;31mCan not open source file\033[0m\n");
+            fprintf(yyout, "\033[0;31mCan not open source file\033[0m\n");
             exit(0);
         }
         if((yyout = fopen(argv[2], "w")) == NULL) 
         {
-            printf("\033[0;31mCan not open output file\033[0m\n");
+            fprintf(yyout, "\033[0;31mCan not open output file\033[0m\n");
             exit(0);
         }
     } else {
-        printf("incorrect input format");
+        fprintf(yyout, "incorrect input format");
         exit(0);
     }
     while (true) {
