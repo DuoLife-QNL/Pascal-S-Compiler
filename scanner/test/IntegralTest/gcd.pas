@@ -1,6 +1,5 @@
 program example (input,output);
 var x,1y:real;
-"
 student:array[1..10, 1..50] of integer;
 function gcd(a,b:integer):real;
 begin

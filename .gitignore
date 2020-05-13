@@ -47,6 +47,7 @@
 *.cmd
 .tmp_versions/
 
+
 # scanner_only part
 scanner_only/lex.yy.c
 scanner_only/result.txt

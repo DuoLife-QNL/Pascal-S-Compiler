@@ -25,6 +25,7 @@
 #define K_FOR 18
 #define K_TO 19
 #define K_DO 20
+// Todo: K_CASE, K_AND, K_DIV, K_DOWNTO, 
 
 // operations in pascal-s
 #define OP_ASSIGN 21
@@ -59,6 +60,9 @@
 #define T_REAL 45
 #define T_ID 46
 
+#define B_READ 47
+#define B_WRITE 48
+
 #define COMMENT 100
 
 #define YYSTYPE char*;
@@ -68,7 +72,9 @@ void SolveOperation(int type);
 void SolveBracket(int type);
 void SolveDelim(int type);
 void SolveBasicType(char *type);
+void SolveBuiltIn();
 void Identifier ();
+void SolveComment ();
 
 extern char* yylval;
 extern char* yytext;
@@ -85,13 +91,16 @@ unsigned int lex_row_index = 1;
 letter                  [a-zA-Z]
 digits                  [0-9]
 delim                   [ \t\n]
-wrong_identifier        {digits}+{letter}({digits}|{letter})*
+annotation1             \/\/.*?
+annotation2             \{.*?\}
+noquote                 [^'^\n]
+wrong_identifier        {digits}+({letter}|_)({digits}|{letter}|_)*
 quotation_not_match     (\'|\")
 ws                      {delim}+
 
 %%
 
-[Pp][Rr][Oo][Gg][Rr][Aa][Mm]                              {SolveKeyword(K_PROGRAM); return(K_PROGRAM);     }
+[Pp][Rr][Oo][Gg][Rr][Aa][Mm]                              {SolveKeyword(K_PROGRAM); return(K_PROGRAM);       }
 [Cc][Oo][Nn][Ss][Tt]                                      {SolveKeyword(K_CONST);   return(K_CONST);         }
 [Vv][Aa][Rr]                                              {SolveKeyword(K_VAR);     return(K_VAR);           }
 [Ii][Nn][Tt][Ee][Gg][Ee][Rr]                              {SolveKeyword(K_INTEGER); return(K_INTEGER);       }
@@ -111,6 +120,7 @@ ws                      {delim}+
 [Ff][Oo][Rr]                                              {SolveKeyword(K_FOR);     return(K_FOR);           }
 [Tt][Oo]                                                  {SolveKeyword(K_TO);      return(K_TO);            }
 [Dd][Oo]                                                  {SolveKeyword(K_DO);      return(K_DO);            }
+
 ":="                  {SolveOperation(OP_ASSIGN); return(OP_ASSIGN);}
 "("                   {SolveBracket(T_OBRACKET);  return(T_OBRACKET);}
 ")"                   {SolveBracket(T_CBRACKET);  return(T_CBRACKET);}
@@ -120,10 +130,10 @@ ws                      {delim}+
 "-"                   {SolveOperation(OP_SUB);  return(OP_SUB);      }
 "*"                   {SolveOperation(OP_MUL);  return(OP_MUL);      }
 "/"                   {SolveOperation(OP_DIV);  return(OP_DIV);      }
-"mod"                 {SolveOperation(OP_MOD);  return(OP_MOD);      }
-"and"                 {SolveOperation(OP_AND);  return(OP_AND);      }
-"or"                  {SolveOperation(OP_OR);   return(OP_OR);       }
-"not"                 {SolveOperation(OP_NOT);  return(OP_NOT);      }
+[Mm][Oo][Dd]          {SolveOperation(OP_MOD);  return(OP_MOD);      }
+[Aa][Nn][Dd]          {SolveOperation(OP_AND);  return(OP_AND);      }
+[Oo][Rr]              {SolveOperation(OP_OR);   return(OP_OR);       }
+[Nn][Oo][Tt]          {SolveOperation(OP_NOT);  return(OP_NOT);      }
 ">"                   {SolveOperation(OP_CGT);  return(OP_CGT);      }
 "<"                   {SolveOperation(OP_CLT);  return(OP_CLT);      }
 "="                   {SolveOperation(OP_CEQ);  return(OP_CEQ);      }
@@ -134,6 +144,12 @@ ws                      {delim}+
 ":"                   {SolveDelim(D_COLON);     return(D_COLON);}
 "."                   {SolveDelim(D_DOT);       return(D_DOT);}
 ","                   {SolveDelim(D_COMMA);     return(D_COMMA);}
+{annotation1}		  {SolveComment(); }
+{annotation2}         {SolveComment(); }
+
+[Rr][Ee][Aa][Dd]      {SolveBuiltIn(); return B_READ;}
+[Ww][Rr][Ii][Tt][Ee]  {SolveBuiltIn(); return B_WRITE;}
+
 [0-9]+                {SolveBasicType("Integer");return(T_INTEGER);}
 [A-Za-z][A-Za-z0-9_]* {Identifier();            return(T_ID);}
 [0-9]+|[0-9]+\.[0-9]+ {SolveBasicType("Float"); return(T_REAL);} 
@@ -181,29 +197,41 @@ void Identifier () {
     lex_column_index += yyleng;
 }
 
+void SolveBuiltIn () {
+    printf("\033[01;32m line %d \tcolumn %d: \t<BuiltIn, %s> \033[0m\n", 
+        lex_row_index, lex_column_index, yytext);
+    lex_column_index += yyleng;
+}
+
+void SolveComment () {
+    printf(" line %d \tcolumn %d: \t<Comment, %s> \n", 
+        lex_row_index, lex_column_index, yytext);
+    lex_column_index = 0;
+}
+
 int main(int argc, char** argv) {
     yyin = stdin;
 
-    if (argc == 1)
+    if (argc == 1) 
     {
-        if ((yyin = fopen("gcd.pas", "r")) == NULL)
+        if ((yyin = fopen("test/IntegralTest/gcd.pas", "r")) == NULL) 
         {
             printf("\033[0;31mCan not open default source file\033[0m\n");
             exit(0);
         }
-        if ((yyout = fopen("scanner_output.txt", "w")) == NULL)
+        if ((yyout = fopen("scanner_output.txt", "w")) == NULL) 
         {
             printf("\033[0;31mCan not open default output file\033[0m\n");
             exit(0);
         }
     } else if (argc == 3)
     {
-        if ((yyin = fopen(argv[1], "r"))== NULL)
+        if ((yyin = fopen(argv[1], "r"))== NULL) 
         {
             printf("\033[0;31mCan not open source file\033[0m\n");
             exit(0);
         }
-        if((yyout = fopen(argv[2], "w")) == NULL)
+        if((yyout = fopen(argv[2], "w")) == NULL) 
         {
             printf("\033[0;31mCan not open output file\033[0m\n");
             exit(0);
