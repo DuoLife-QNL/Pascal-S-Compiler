@@ -16,21 +16,23 @@ typedef enum TYPE {
   FUNCTION
 }TYPE;
 
-class symbol {
+class id {
   private:
     TYPE type;
     std::string name;
 
   public:
-    symbol(std::string name, TYPE type);
+    id(std::string name, TYPE type);
     std::string get_name();
     TYPE get_type();
 };
 
-class basic_type_symbol: public symbol {
+class basic_type_id: public id {
   public:
-    basic_type_symbol(std::string name, TYPE type);
+    basic_type_id(std::string name, TYPE type);
 };
+
+class 
 typedef struct parameter_list{
   std::string name;
   int type;
