@@ -6,6 +6,7 @@
 using namespace std;
 
 int main(){
-    basic_type_id e((string)"test", REAL);
-    cout << e.get_type() << endl;
+    int a[6] = {1, 2, 3, 4, 0, 5};
+    array_id e("test", 3, a);
+    cout << e.get_period(2).start << endl;
 }

@@ -32,7 +32,31 @@ class basic_type_id: public id {
     basic_type_id(std::string name, TYPE type);
 };
 
-class 
+/* the start num and end num of a dimension of an array */
+typedef struct period{
+  int start;
+  int end;
+}period;
+class array_id: public id {
+  private:
+    /* dimension */
+    int dim;
+    period *prd;
+  
+  public:
+    /* 
+     * @prd is an array of int:
+     * [s0, e0, s1, e1......]
+     * in which s0 indicates the start num of 1st dimension,
+     * and e0 indicates the end num of 1st dimension
+     * NOTE THAT it starts from index 0
+     */
+    array_id(std::string name, int dim, int *prd);
+    int get_dim();
+    period get_period(int dim);
+};
+
+
 typedef struct parameter_list{
   std::string name;
   int type;
