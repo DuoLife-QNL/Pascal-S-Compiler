@@ -7,6 +7,6 @@ using namespace std;
 
 int main(){
     int a[6] = {1, 2, 3, 4, 0, 5};
-    array_id e("test", 3, a);
+    array_id e("test", INTEGER, 3, a);
     cout << e.get_period(2).start << endl;
 }

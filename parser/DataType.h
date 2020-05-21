@@ -3,6 +3,7 @@
 
 #include <stack>
 #include <string>
+#include <vector>
 
 // #define error_report(s) fprintf(stderr, s)
 
@@ -27,6 +28,10 @@ class id {
     TYPE get_type();
 };
 
+/* 
+ * according to PPT, basic type include:
+ * integer, real, boolean, char
+ */
 class basic_type_id: public id {
   public:
     basic_type_id(std::string name, TYPE type);
@@ -58,27 +63,46 @@ class array_id: public id {
 };
 
 
-typedef struct parameter_list{
-  std::string name;
-  int type;
-  /*
-   * @isVAR: is var_parameter
-   * false if value_parameter
-   */
-  bool isVAR;
-  parameter_list * next_element;
-}parameter_list;
+class parameter: public basic_type_id{
+  private:
+    /*
+    * @isVAR: is var_parameter
+    * false if value_parameter
+    */
+    bool is_var;
+  
+  public:
+    parameter(std::string name, TYPE type, bool is_var);
 
-typedef struct parameter_list_head{
-  parameter_list * pl;
-  int ret_type;
-}parameter_list_head;
+};
+
+/* function and procedure are inherited from block */
+class block: public id {
+  private:
+    /* parameter list */
+    std::vector<parameter>pl; 
+  public:
+    block(std::string name, TYPE type, std::vector<parameter> pl);
+};
+
+class procedure_id: public block {
+  public:
+    procedure_id(std::string name, std::vector<parameter> pl);
+};
+
+class function_id: public block {
+  private:
+    /* return type */
+    TYPE ret_type;
+  public:
+    function_id(std::string name, std::vector<parameter> pl, TYPE ret_type);
+    
+};
 
 /* an element in symbol table */
 typedef struct {
     std::string name;
     TYPE type;
-    parameter_list_head *plh;
 
    /*  std::string to_string(){
       return "{" + name + "," + std::to_string(type) + "}";

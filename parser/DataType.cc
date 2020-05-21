@@ -34,3 +34,21 @@ int array_id::get_dim(){
 period array_id::get_period(int dim){
     return *(prd + dim);
 }
+
+parameter::parameter(std::string name, TYPE type, bool is_var)
+:basic_type_id(name, type){
+    this->is_var = is_var;
+}
+
+block::block(std::string name, TYPE type, std::vector<parameter> pl)
+:id(name, type){
+    this->pl = pl;
+}
+
+procedure_id::procedure_id(std::string name, std::vector<parameter> pl)
+:block(name, PROCEDURE, pl){}
+
+function_id::function_id(std::string name, std::vector<parameter> pl, TYPE ret_type)
+:block(name, FUNCTION, pl){
+    this->ret_type = ret_type;
+}
