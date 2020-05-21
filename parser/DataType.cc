@@ -17,8 +17,9 @@ TYPE id::get_type(){
 basic_type_id::basic_type_id(std::string name, TYPE type)
 :id(name, type){}
 
-array_id::array_id(std::string name, int dim, int *prd)
+array_id::array_id(std::string name, TYPE et, int dim, int *prd)
 :id(name, ARRAY){
+    element_type = et;
     this->prd = (period *)malloc(sizeof(period) * dim);
     for (int i = 0; i < dim; i += 2) {
         (this->prd + i)->start = *(prd + i);

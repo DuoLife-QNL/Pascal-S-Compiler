@@ -42,6 +42,7 @@ class array_id: public id {
     /* dimension */
     int dim;
     period *prd;
+    TYPE element_type;
   
   public:
     /* 
@@ -51,7 +52,7 @@ class array_id: public id {
      * and e0 indicates the end num of 1st dimension
      * NOTE THAT it starts from index 0
      */
-    array_id(std::string name, int dim, int *prd);
+    array_id(std::string name, TYPE et, int dim, int *prd);
     int get_dim();
     period get_period(int dim);
 };
