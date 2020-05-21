@@ -5,7 +5,7 @@
 #ifndef PASCAL_S_COMPLIER_PARSER_NONTOKEN_H_
 #define PASCAL_S_COMPLIER_PARSER_NONTOKEN_H_
 
-#include "Symbol.h"
+#include "Symbol_old.h"
 
 enum class NonTokenType {
   // 一般非终结符：非终结、非开始
