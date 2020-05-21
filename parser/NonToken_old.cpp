@@ -2,9 +2,9 @@
 // Created by 侯崴瀛 on 2020-05-21.
 //
 
-#include "NonToken.h"
+#include "NonToken_old.h"
 
-#include "NonToken.h"
+#include "NonToken_old.h"
 NonToken::NonToken(std::string l) : Symbol(false), label(std::move(l)) {
   if (label == ".") {
     type = NonTokenType::DOT;
