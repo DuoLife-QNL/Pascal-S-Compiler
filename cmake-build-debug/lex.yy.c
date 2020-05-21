@@ -1,6 +1,5 @@
-#line 2 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp"
 
-#line 4 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -644,7 +643,7 @@ extern FILE* yyin, *yyout;
 
 unsigned int lex_column_index = 0;
 unsigned int lex_row_index = 1;
-#line 648 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp"
+#line 647 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -827,7 +826,7 @@ YY_DECL
 #line 92 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.l"
 
 
-#line 831 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp"
+#line 830 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -1181,7 +1180,7 @@ YY_RULE_SETUP
 #line 147 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.l"
 ECHO;
 	YY_BREAK
-#line 1185 "/Users/Halloween/Documents/GitHub/Pascal-S-Complier/scanner/scanner.cpp"
+#line 1184 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
