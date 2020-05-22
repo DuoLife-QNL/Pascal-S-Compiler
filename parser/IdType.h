@@ -9,22 +9,22 @@
 // #define error_report(s) fprintf(stderr, s)
 
 typedef enum TYPE {
-  ARRAY,
   INTEGER,
   REAL,
   BOOLEAN,
   CHAR,
+  ARRAY,
   PROCEDURE,
   FUNCTION
 }TYPE;
 
-class id {
+class Id {
   private:
     TYPE type;
     std::string name;
 
   public:
-    id(std::string name, TYPE type);
+    Id(std::string name, TYPE type);
     std::string get_name();
     TYPE get_type();
 };
@@ -33,9 +33,9 @@ class id {
  * according to PPT, basic type include:
  * integer, real, boolean, char
  */
-class basic_type_id: public id {
+class BasicTypeId: public Id {
   public:
-    basic_type_id(std::string name, TYPE type);
+    BasicTypeId(std::string name, TYPE type);
 };
 
 /* the start num and end num of a dimension of an array */
@@ -43,7 +43,7 @@ typedef struct period{
   int start;
   int end;
 }period;
-class array_id: public id {
+class ArrayId: public Id {
   private:
     /* dimension */
     int dim;
@@ -58,49 +58,49 @@ class array_id: public id {
      * and e0 indicates the end num of 1st dimension
      * NOTE THAT it starts from index 0
      */
-    array_id(std::string name, TYPE et, int dim, int *prd);
-    ~array_id();
+    ArrayId(std::string name, int dim, int *prd);
+    ~ArrayId();
     int get_dim();
     period get_period(int dim);
 };
 
 
-class parameter: public basic_type_id{
+class Parameter: public BasicTypeId{
   private:
     /*
-    * @isVAR: is var_parameter
-    * false if value_parameter
+    * @isVAR: is var_Parameter
+    * false if value_Parameter
     */
     bool is_var_;
   
   public:
-    parameter(std::string name, TYPE type, bool is_var);
+    Parameter(std::string name, TYPE type, bool is_var);
     bool is_var();
 
 };
 
-/* function and procedure are inherited from block */
-class block: public id {
+/* function and procedure are inherited from Block */
+class Block: public Id {
   private:
-    /* parameter list */
-    std::vector<parameter>pl; 
+    /* Parameter list */
+    std::vector<Parameter>pl; 
   public:
-    block(std::string name, TYPE type, std::vector<parameter> pl);
-    /* get parameter list */
-    std::vector<parameter> get_par_list();
+    Block(std::string name, TYPE type, std::vector<Parameter> pl);
+    /* get Parameter list */
+    std::vector<Parameter> get_par_list();
 };
 
-class procedure_id: public block {
+class ProcedureId: public Block {
   public:
-    procedure_id(std::string name, std::vector<parameter> pl);
+    ProcedureId(std::string name, std::vector<Parameter> pl);
 };
 
-class function_id: public block {
+class FunctionId: public Block {
   private:
     /* return type */
     TYPE ret_type;
   public:
-    function_id(std::string name, std::vector<parameter> pl, TYPE ret_type);
+    FunctionId(std::string name, std::vector<Parameter> pl, TYPE ret_type);
     TYPE get_ret_type();
 };
 

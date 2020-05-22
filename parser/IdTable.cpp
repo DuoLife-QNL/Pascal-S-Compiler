@@ -5,18 +5,18 @@
 #include <stdlib.h>
 #include <string>
 
-id_table::id_table(){
+IdTable::IdTable(){
   index.push(0);
 }
 
-void id_table::enter_id(id symbol){
+void IdTable::enter_id(id symbol){
   table.push_back(symbol);
   TYPE s_type = symbol.get_type();
   if (s_type == PROCEDURE || s_type == FUNCTION)
     locate();
 }
 
-int id_table::find_id(std::string name) { 
+int IdTable::find_id(std::string name) { 
   if (table.empty()){
     return -1;
   }
@@ -29,19 +29,19 @@ int id_table::find_id(std::string name) {
   return -1;
 }
 
-void id_table::locate() {
+void IdTable::locate() {
   index.push(table.size());
 }
 
-void id_table::relocate() {
+void IdTable::relocate() {
   index.pop();
 }
 
-void id_table::end_block(){
+void IdTable::end_block(){
   table.erase(table.begin() + index.top(), table.end());
   relocate();
 }
 
-inline bool id_table::in_cur_scope(int i){
+inline bool IdTable::in_cur_scope(int i){
   return i >= index.top();
 }
