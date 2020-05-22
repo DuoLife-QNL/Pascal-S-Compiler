@@ -1,30 +1,52 @@
 %{
     #define ACC 1
     #include <stdio.h>
+    #include <stdlib.h>
     #include "IdTable.h"
     extern int yylex();
     int yyerror(const char *s);
     int success = 1;
     extern symbol_table st;
+    using namespace std;
+    IdTable it;
+
+
+    typedef struct type{
+        TYPE type;
+
+        /* array */
+        int dim;
+        period *prd;
+        TYPE array_type;
+    }type;
+
+    void create_symbol(string name, type t);
 %}
 
 %union
 {
-    struct type{
-        TYPE type;
-    };
-
+    type symbol_type;
+    period prd;
+    typedef struct id{
+        string name;
+    }id;
 }
 
 %left PLUS MINUS TIMES DIV ADDOP MULOP
 
 %start programstruct
-%token PROGRAM_ID LEFT_PARENTHESIS RIGHT_PARENTHESIS ID
-%token CONST EQUAL NUM QUOTE LETTER VAR LEFT_BRACKET
-%token RIGHT_BRACKET INTEGER REAL BOOLEAN CHAR DIGITS..DIGITS PROCEDURE FUNCTION
+%token PROGRAM_ID LEFT_PARENTHESIS RIGHT_PARENTHESIS 
+%token CONST EQUAL NUM QUOTE LETTER VAR '('
+%token DIGITS..DIGITS PROCEDURE FUNCTION
 %token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
 
+%token <id> ID
+%token <prd> DIGITS..DIGITS
+%token <symbol_type> INTEGER REAL BOOLEAN CHAR
+
+%type <symbol_type> L
+%type <symbol_type> period
 
 %%
 
@@ -51,20 +73,72 @@ var_declarations    :   VAR var_declaration ';'
                     | 
                     ;
 var_declaration     :   var_declaration ';' ID L
+                        {
+                            create_symbol($3.name, $4);
+                        }
                     |   ID L
+                        {
+                            create_symbol($1.name, $2);
+                        }
                     ;
 L                   :   ':' type
-                    |   ':' ID L                     
+                        {
+                            $$ = $2;
+                        }
+                    |   ':' ID L
+                        {
+                            create_symbol($1.name, $2);
+                            $$ = $3;
+                        }                     
 type                :   basic_type
-                    |   ARRAY LEFT_BRACKET period RIGHT_BRACKET OF basic_type
+                        {
+                            $$ = $1;
+                        }
+                    |   ARRAY '(' period ')' OF basic_type
+                        {
+                            $$ = $3;
+                            $$.array_type = $6.type;
+                        }
                     ;
 basic_type          :   INTEGER
+                        {
+                            $$.type = INTEGER;
+                        }
                     |   REAL 
+                        {
+                            $$.type = REAL;
+                        }
                     |   BOOLEAN 
+                        {
+                            $$.type = BOOLEAN;
+                        }
                     |   CHAR 
+                        {
+                            $$.type = CHAR;
+                        }
                     ; 
-period              :   period ':' DIGITS..DIGITS
+/* period is <symbol_type>, it contains all informations including dimensions */
+period              :   period ',' DIGITS..DIGITS
+                        {
+                            $$.dim = $1.dim + 1;
+                            period *p = init_period();
+                            p->start = $3.start;
+                            p->end = $3.end;
+                            append_period($1.prd, p);
+                            $$.prd = $1.prd;
+                        }
+                        /* 
+                         * DIGITS..DIGITS is a <prd>, so we can get start 
+                         * and end directly
+                         */
+                        // TODO: ask lex to add start and end to this
                     |   DIGITS..DIGITS
+                        {
+                            $$.dim = 1;
+                            $$.prd = init_period();
+                            $$.prd->start = $1.start;
+                            $$.prd->end = $1.end;
+                        }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
                         |       
@@ -102,7 +176,7 @@ variable_list       :   variable_list ':' variable
                     |   variable 
                     ;
 variable            :   ID id_varpart;
-id_varpart          :   LEFT_BRACKET expression_list RIGHT_BRACKET
+id_varpart          :   '(' expression_list ')'
                     |   
                     ;
 procedure_call      :   ID 
@@ -132,6 +206,17 @@ factor              :   NUM
                     ;
 
 %%
+
+void create_symbol(string name, type t){
+    /* basic type */
+    if (t.type >= INTEGER and t.type <= CHAR){
+        Id id = new BasicTypeId(name, t.type);
+        it.enter_id(id);
+    } else if (t.type == ARRAY){  /* array */
+        Id id = new ArrayId(name, t.dim, t.prd);
+        it.enter_id(id);
+    }
+}
 
 int main(){
     yyparse();
