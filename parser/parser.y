@@ -8,12 +8,19 @@
     extern symbol_table st;
 %}
 
+%union
+{
+    struct type{
+        TYPE type;
+    };
+
+}
 
 %left PLUS MINUS TIMES DIV ADDOP MULOP
 
 %start programstruct
-%token SEMICOLON DOT PROGRAM_ID LEFT_PARENTHESIS RIGHT_PARENTHESIS COMMA ID
-%token CONST EQUAL NUM QUOTE LETTER VAR COLON LEFT_BRACKET
+%token PROGRAM_ID LEFT_PARENTHESIS RIGHT_PARENTHESIS ID
+%token CONST EQUAL NUM QUOTE LETTER VAR LEFT_BRACKET
 %token RIGHT_BRACKET INTEGER REAL BOOLEAN CHAR DIGITS..DIGITS PROCEDURE FUNCTION
 %token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
@@ -21,18 +28,18 @@
 
 %%
 
-programstruct       :   program_head SEMICOLON program_body DOT;
+programstruct       :   program_head ';' program_body '.';
 program_head        :   PROGRAM_ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS
                     |   PROGRAM_ID
                     ;
 program_body        :   const_declarations var_declarations subprogram_declarations compound_statement
-idlist              :   idlist COMMA ID
+idlist              :   idlist ':' ID
                     |   ID
                     ;
-const_declarations  :   CONST const_declaration SEMICOLON
+const_declarations  :   CONST const_declaration ';'
                     |   
                     ;
-const_declaration   :   const_declaration SEMICOLON ID EQUAL const_value
+claration   :   const_declaration ';' ID EQUAL const_value
                     |   ID EQUAL const_value
                     ;
 const_value         :   PLUS NUM
@@ -40,14 +47,14 @@ const_value         :   PLUS NUM
                     |   NUM 
                     |   QUOTE LETTER QUOTE
                     ;
-var_declarations    :   VAR var_declaration SEMICOLON 
+var_declarations    :   VAR var_declaration ';' 
                     | 
                     ;
-var_declaration     :   var_declaration SEMICOLON ID L
+var_declaration     :   var_declaration ';' ID L
                     |   ID L
                     ;
-L                   :   COLON type
-                    |   COMMA ID L                     
+L                   :   ':' type
+                    |   ':' ID L                     
 type                :   basic_type
                     |   ARRAY LEFT_BRACKET period RIGHT_BRACKET OF basic_type
                     ;
@@ -56,30 +63,30 @@ basic_type          :   INTEGER
                     |   BOOLEAN 
                     |   CHAR 
                     ; 
-period              :   period COMMA DIGITS..DIGITS
+period              :   period ':' DIGITS..DIGITS
                     |   DIGITS..DIGITS
                     ;
-subprogram_declarations :   subprogram_declarations subprogram SEMICOLON
+subprogram_declarations :   subprogram_declarations subprogram ';'
                         |       
                         ;
-subprogram          :   subprogram_head SEMICOLON subprogram_body;
+subprogram          :   subprogram_head ';' subprogram_body;
 subprogram_head     :   PROCEDURE ID formal_parameter 
-                    |   FUNCTION ID formal_parameter COLON basic_type 
+                    |   FUNCTION ID formal_parameter ':' basic_type 
                     ;
 formal_parameter    :   LEFT_PARENTHESIS parameter_list RIGHT_PARENTHESIS 
                     |   
                     ;
-parameter_list      :   parameter_list SEMICOLON parameter 
+parameter_list      :   parameter_list ';' parameter 
                     |   parameter
                     ;
 parameter           :   var_parameter 
                     |   value_parameter 
                     ;
 var_parameter       :   VAR value_parameter ;
-value_parameter     :   idlist COLON basic_type;
+value_parameter     :   idlist ':' basic_type;
 subprogram_body     :   const_declarations var_declarations compound_statement;
 compound_statement  :   BEGIN statement_list END;
-statement_list      :   statement_list SEMICOLON statement 
+statement_list      :   statement_list ';' statement 
                     |   statement
                     ;
 statement           :   variable ASSIGNOP expression
@@ -91,7 +98,7 @@ statement           :   variable ASSIGNOP expression
                     |   WRITE LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
                     |
                     ;
-variable_list       :   variable_list COMMA variable 
+variable_list       :   variable_list ':' variable 
                     |   variable 
                     ;
 variable            :   ID id_varpart;
@@ -104,7 +111,7 @@ procedure_call      :   ID
 else_part           :   ELSE statement 
                     |
                     ;
-expression_list     :   expression_list COLON expression 
+expression_list     :   expression_list ':' expression 
                     |   expression 
                     ;
 expression          :   simple_expression RELOP simple_expression 
