@@ -1,7 +1,7 @@
 %{
     #define ACC 1
     #include <stdio.h>
-    #include "SymbolTable.h"
+    #include "IdTable.h"
     extern int yylex();
     int yyerror(const char *s);
     int success = 1;
@@ -43,9 +43,11 @@ const_value         :   PLUS NUM
 var_declarations    :   VAR var_declaration SEMICOLON 
                     | 
                     ;
-var_declaration     :   var_declaration SEMICOLON idlist COLON type 
-                    |   idlist COLON type 
+var_declaration     :   var_declaration SEMICOLON ID L
+                    |   ID L
                     ;
+L                   :   COLON type
+                    |   COMMA ID L                     
 type                :   basic_type
                     |   ARRAY LEFT_BRACKET period RIGHT_BRACKET OF basic_type
                     ;
