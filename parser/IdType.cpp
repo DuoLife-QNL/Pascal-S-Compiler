@@ -21,7 +21,7 @@ TYPE Id::get_type(){
 BasicTypeId::BasicTypeId(std::string name, TYPE type)
 :Id(name, type){}
 
-ArrayId::ArrayId(std::string name, int dim, int *prd)
+ArrayId::ArrayId(std::string name, TYPE et, int dim, int *prd)
 :Id(name, ARRAY){
     element_type = et;
     this->prd = new period[dim];
@@ -44,32 +44,46 @@ period ArrayId::get_period(int dim){
     return *(prd + dim);
 }
 
-Prameter::Prameter(std::string name, TYPE type, bool is_var)
+Parameter::Parameter(std::string name, TYPE type, bool is_var)
 :BasicTypeId(name, type){
     is_var_ = is_var;
 }
 
-bool Prameter::is_var(){
+bool Parameter::is_var(){
     return is_var_;
 }
 
-Block::Block(std::string name, TYPE type, std::vector<Prameter> pl)
-:id(name, type){
+Block::Block(std::string name, TYPE type, std::vector<Parameter> pl)
+:Id(name, type){
     this->pl = pl;
 }
 
-std::vector<Prameter> Block::get_par_list(){
+std::vector<Parameter> Block::get_par_list(){
     return pl;
 }
 
-ProcedureId::ProcedureId(std::string name, std::vector<Prameter> pl)
+ProcedureId::ProcedureId(std::string name, std::vector<Parameter> pl)
 :Block(name, PROCEDURE, pl){}
 
-FunctionId::FunctionId(std::string name, std::vector<Prameter> pl, TYPE ret_type)
+FunctionId::FunctionId(std::string name, std::vector<Parameter> pl, TYPE ret_type)
 :Block(name, FUNCTION, pl){
     this->ret_type = ret_type;
 }
 
 TYPE FunctionId::get_ret_type(){
     return ret_type;
+}
+
+period *init_period(){
+    period *p = new period;
+    p->next = NULL;
+    return p;
+}
+
+void append_period(period *target_period, period *new_period){
+    period *tmp = target_period;
+    while (!tmp->next){
+        tmp++;
+    }
+    tmp->next = new_period;
 }

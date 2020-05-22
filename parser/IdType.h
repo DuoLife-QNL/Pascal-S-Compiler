@@ -38,11 +38,17 @@ class BasicTypeId: public Id {
     BasicTypeId(std::string name, TYPE type);
 };
 
-/* the start num and end num of a dimension of an array */
+/* struct period stores the start num and end num of a dimension of an array */
 typedef struct period{
   int start;
   int end;
+  period *next;
 }period;
+/* initiate a new period, and return the pointer */
+period *init_period();
+/* append a new period to the existed period list */
+void append_period(period *target_period, period *new_period);
+
 class ArrayId: public Id {
   private:
     /* dimension */
@@ -51,14 +57,15 @@ class ArrayId: public Id {
     TYPE element_type;
   
   public:
-    /* 
+    /* Constructor:
+     * @et: type of elements in this array
      * @prd is an array of int:
      * [s0, e0, s1, e1......]
      * in which s0 indicates the start num of 1st dimension,
      * and e0 indicates the end num of 1st dimension
      * NOTE THAT it starts from index 0
      */
-    ArrayId(std::string name, int dim, int *prd);
+    ArrayId(std::string name, TYPE et, int dim, int *prd);
     ~ArrayId();
     int get_dim();
     period get_period(int dim);

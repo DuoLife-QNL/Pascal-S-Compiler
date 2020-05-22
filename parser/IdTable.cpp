@@ -9,7 +9,7 @@ IdTable::IdTable(){
   index.push(0);
 }
 
-void IdTable::enter_id(id symbol){
+void IdTable::enter_id(Id symbol){
   table.push_back(symbol);
   TYPE s_type = symbol.get_type();
   if (s_type == PROCEDURE || s_type == FUNCTION)
