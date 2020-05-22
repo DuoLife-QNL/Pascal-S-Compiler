@@ -1,5 +1,9 @@
-#include "DataType.h"
-#include<stdlib.h>
+#include "IdType.h"
+#include <stdlib.h>
+#include <iostream>
+#include <stddef.h>
+using std::cout;
+using std::endl;
 
 id::id(std::string name, TYPE type){
     this->name = name;
@@ -20,11 +24,16 @@ basic_type_id::basic_type_id(std::string name, TYPE type)
 array_id::array_id(std::string name, TYPE et, int dim, int *prd)
 :id(name, ARRAY){
     element_type = et;
-    this->prd = (period *)malloc(sizeof(period) * dim);
+    this->prd = new period[dim];
     for (int i = 0; i < dim; i += 2) {
         (this->prd + i)->start = *(prd + i);
         (this->prd + i)->end = *(prd + i + 1);
     }
+}
+
+array_id::~array_id(){
+    delete prd;
+    prd = NULL;
 }
 
 int array_id::get_dim(){

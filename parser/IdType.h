@@ -1,6 +1,7 @@
 #ifndef STRUCT_DEF_H
 #define STRUCT_DEF_H
 
+#include <iostream>
 #include <stack>
 #include <string>
 #include <vector>
@@ -58,6 +59,7 @@ class array_id: public id {
      * NOTE THAT it starts from index 0
      */
     array_id(std::string name, TYPE et, int dim, int *prd);
+    ~array_id();
     int get_dim();
     period get_period(int dim);
 };
@@ -96,21 +98,7 @@ class function_id: public block {
     TYPE ret_type;
   public:
     function_id(std::string name, std::vector<parameter> pl, TYPE ret_type);
-    
 };
-
-/* an element in symbol table */
-typedef struct {
-    std::string name;
-    TYPE type;
-
-   /*  std::string to_string(){
-      return "{" + name + "," + std::to_string(type) + "}";
-    } */
-}symbol_e_t;
-
-void enter(std::string name, int type);
-
 
 
 #endif // STRUCT_DEF_H

@@ -30,9 +30,9 @@ IF(FLEX_FOUND)
 ENDIF()
 
 add_executable(Pascal_S_Complier
-        parser/DataType.h
-        parser/SymbolTable.cpp
-        parser/SymbolTable.h
+        parser/IdType.h
+        parser/IdTable.cpp
+        parser/IdTable.h
         ${BisonOutput}
         ${FlexOutput}
 #        main.cpp

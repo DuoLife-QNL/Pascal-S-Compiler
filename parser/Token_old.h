@@ -5,7 +5,7 @@
 #ifndef PASCAL_S_COMPLIER_PARSER_TOKEN_H_
 #define PASCAL_S_COMPLIER_PARSER_TOKEN_H_
 
-
+#if 0
 #include "Symbol_old.h"
 #include <sstream>
 #include <string>
@@ -48,4 +48,5 @@ public:
   bool operator>(const Token &t) const;
 };
 
+#endif
 #endif //PASCAL_S_COMPLIER_PARSER_TOKEN_H_
