@@ -71,10 +71,11 @@ class parameter: public basic_type_id{
     * @isVAR: is var_parameter
     * false if value_parameter
     */
-    bool is_var;
+    bool is_var_;
   
   public:
     parameter(std::string name, TYPE type, bool is_var);
+    bool is_var();
 
 };
 
@@ -85,6 +86,8 @@ class block: public id {
     std::vector<parameter>pl; 
   public:
     block(std::string name, TYPE type, std::vector<parameter> pl);
+    /* get parameter list */
+    std::vector<parameter> get_par_list();
 };
 
 class procedure_id: public block {
@@ -98,6 +101,7 @@ class function_id: public block {
     TYPE ret_type;
   public:
     function_id(std::string name, std::vector<parameter> pl, TYPE ret_type);
+    TYPE get_ret_type();
 };
 
 

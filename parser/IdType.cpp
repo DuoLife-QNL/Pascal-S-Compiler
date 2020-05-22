@@ -46,12 +46,20 @@ period array_id::get_period(int dim){
 
 parameter::parameter(std::string name, TYPE type, bool is_var)
 :basic_type_id(name, type){
-    this->is_var = is_var;
+    is_var_ = is_var;
+}
+
+bool parameter::is_var(){
+    return is_var_;
 }
 
 block::block(std::string name, TYPE type, std::vector<parameter> pl)
 :id(name, type){
     this->pl = pl;
+}
+
+std::vector<parameter> block::get_par_list(){
+    return pl;
 }
 
 procedure_id::procedure_id(std::string name, std::vector<parameter> pl)
@@ -60,4 +68,8 @@ procedure_id::procedure_id(std::string name, std::vector<parameter> pl)
 function_id::function_id(std::string name, std::vector<parameter> pl, TYPE ret_type)
 :block(name, FUNCTION, pl){
     this->ret_type = ret_type;
+}
+
+TYPE function_id::get_ret_type(){
+    return ret_type;
 }
