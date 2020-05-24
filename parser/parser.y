@@ -11,21 +11,21 @@
     IdTable it;
 
 
-    typedef struct type{
+    typedef struct info{
         TYPE type;
 
         /* array */
         int dim;
         period *prd;
-        TYPE array_type;
-    }type;
+        TYPE element_type;
+    }info;
 
-    void create_symbol(string name, type t);
+    void create_symbol(string name, info t);
 %}
 
 %union
 {
-    type symbol_type;
+    info symbol_info;
     period prd;
     typedef struct id{
         string name;
@@ -43,10 +43,11 @@
 
 %token <id> ID
 %token <prd> DIGITS..DIGITS
-%token <symbol_type> INTEGER REAL BOOLEAN CHAR
+%token <symbol_info> INTEGER REAL BOOLEAN CHAR
 
-%type <symbol_type> L
-%type <symbol_type> period
+%type <symbol_info> L
+%type <symbol_info> period
+%type <symbol_info> type
 
 %%
 
@@ -72,6 +73,12 @@ const_value         :   PLUS NUM
 var_declarations    :   VAR var_declaration ';' 
                     | 
                     ;
+                    /* 
+                     * L is type <info>, stores all the information of ID.
+                     * By create_symbol(), we insert the variable into the 
+                     * id table.
+                     * Here ID can be basic type or array.
+                     */
 var_declaration     :   var_declaration ';' ID L
                         {
                             create_symbol($3.name, $4);
@@ -97,7 +104,8 @@ type                :   basic_type
                     |   ARRAY '(' period ')' OF basic_type
                         {
                             $$ = $3;
-                            $$.array_type = $6.type;
+                            $$.element_type = $6.type;
+
                         }
                     ;
 basic_type          :   INTEGER
@@ -117,7 +125,7 @@ basic_type          :   INTEGER
                             $$.type = CHAR;
                         }
                     ; 
-/* period is <symbol_type>, it contains all informations including dimensions */
+/* period is <symbol_info>, it contains all informations including dimensions */
 period              :   period ',' DIGITS..DIGITS
                         {
                             $$.dim = $1.dim + 1;
@@ -144,7 +152,10 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                         |       
                         ;
 subprogram          :   subprogram_head ';' subprogram_body;
-subprogram_head     :   PROCEDURE ID formal_parameter 
+subprogram_head     :   PROCEDURE ID formal_parameter
+                        {
+
+                        }
                     |   FUNCTION ID formal_parameter ':' basic_type 
                     ;
 formal_parameter    :   LEFT_PARENTHESIS parameter_list RIGHT_PARENTHESIS 
@@ -207,13 +218,22 @@ factor              :   NUM
 
 %%
 
-void create_symbol(string name, type t){
+/* 
+ * create_symbol:
+ * when we know a symbol's name and all its information, we create this
+ * symbol and insert it into the id table
+ * @t: a info struct, stores all the information of the id
+ * NOTE that it(id table) should be a global object 
+ * TODO: is there a way not to declare it as a global ofject? Can it be
+ * declared in the main function?
+ */
+void create_symbol(string name, info t){
     /* basic type */
     if (t.type >= INTEGER and t.type <= CHAR){
         Id id = new BasicTypeId(name, t.type);
         it.enter_id(id);
     } else if (t.type == ARRAY){  /* array */
-        Id id = new ArrayId(name, t.dim, t.prd);
+        Id id = new ArrayId(name, t.type, t.dim, t.prd);
         it.enter_id(id);
     }
 }

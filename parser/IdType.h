@@ -59,13 +59,9 @@ class ArrayId: public Id {
   public:
     /* Constructor:
      * @et: type of elements in this array
-     * @prd is an array of int:
-     * [s0, e0, s1, e1......]
-     * in which s0 indicates the start num of 1st dimension,
-     * and e0 indicates the end num of 1st dimension
-     * NOTE THAT it starts from index 0
+     * @prd is an pointer to the array period list 
      */
-    ArrayId(std::string name, TYPE et, int dim, int *prd);
+    ArrayId(std::string name, TYPE et, int dim, period *prd);
     ~ArrayId();
     int get_dim();
     period get_period(int dim);
