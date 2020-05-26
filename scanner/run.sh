@@ -7,11 +7,11 @@ do
     echo "----------------------------------------------"
     echo ""
     
-    ./scanner_out ${file}
+    ./scanner_only_out ${file}
     tmp_file_path=${file##*/}
     filePath="./result/"${tmp_file_path%.*}"_R.txt"
     if [ ! -f "$filePath" ];then
         touch $filePath
     fi
-    ./scanner_out ${file} ${filePath}
+    ./scanner_only_out ${file} ${filePath}
 done
