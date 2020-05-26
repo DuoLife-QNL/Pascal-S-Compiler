@@ -32,7 +32,7 @@
     }id;
 }
 
-%left PLUS MINUS TIMES DIV ADDOP MULOP
+%left PLUS ADDOP MULOP
 
 %start programstruct
 %token PROGRAM
@@ -68,7 +68,7 @@ const_declaration   :   const_declaration ';' ID '=' const_value
                     |   ID '=' const_value
                     ;
 const_value         :   PLUS NUM
-                    |   MINUS NUM
+                    |   UMINUS NUM
                     |   NUM 
                     |   QUOTE LETTER QUOTE
                     ;
