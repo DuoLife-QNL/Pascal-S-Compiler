@@ -2,8 +2,8 @@ BIN = parser
 OBJ = parser.tab.c lex.yy.c
 parser: lex.l parser.y
 	bison -d parser.y
-	flex lex.l
-	gcc -o $(BIN) $(OBJ)
+	flex ../scanner/scanner.l
+	g++ -o $(BIN) $(OBJ)
 
 .PHONY: clean
 
