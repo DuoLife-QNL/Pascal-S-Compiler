@@ -35,8 +35,8 @@
 %left PLUS MINUS TIMES DIV ADDOP MULOP
 
 %start programstruct
-%token PROGRAM_ID LEFT_PARENTHESIS RIGHT_PARENTHESIS 
-%token CONST EQUAL NUM QUOTE LETTER VAR '('
+%token PROGRAM
+%token CONST NUM QUOTE LETTER VAR
 %token DIGITS..DIGITS PROCEDURE FUNCTION
 %token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
@@ -51,19 +51,21 @@
 
 %%
 
-programstruct       :   program_head ';' program_body '.';
-program_head        :   PROGRAM_ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS
-                    |   PROGRAM_ID
+programstruct       :   program_head ';' program_body '.'
+                    ;
+program_head        :   PROGRAM ID '(' idlist ')'
+                    |   PROGRAM ID
                     ;
 program_body        :   const_declarations var_declarations subprogram_declarations compound_statement
-idlist              :   idlist ':' ID
+                    ;
+idlist              :   idlist ',' ID
                     |   ID
                     ;
 const_declarations  :   CONST const_declaration ';'
                     |   
                     ;
-claration   :   const_declaration ';' ID EQUAL const_value
-                    |   ID EQUAL const_value
+const_declaration   :   const_declaration ';' ID '=' const_value
+                    |   ID '=' const_value
                     ;
 const_value         :   PLUS NUM
                     |   MINUS NUM
@@ -92,7 +94,7 @@ L                   :   ':' type
                         {
                             $$ = $2;
                         }
-                    |   ':' ID L
+                    |   ',' ID L
                         {
                             create_symbol($1.name, $2);
                             $$ = $3;
@@ -101,11 +103,10 @@ type                :   basic_type
                         {
                             $$ = $1;
                         }
-                    |   ARRAY '(' period ')' OF basic_type
+                    |   ARRAY '[' period ']' OF basic_type
                         {
                             $$ = $3;
                             $$.element_type = $6.type;
-
                         }
                     ;
 basic_type          :   INTEGER
@@ -151,14 +152,15 @@ period              :   period ',' DIGITS..DIGITS
 subprogram_declarations :   subprogram_declarations subprogram ';'
                         |       
                         ;
-subprogram          :   subprogram_head ';' subprogram_body;
+subprogram          :   subprogram_head ';' subprogram_body
+                    ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
 
                         }
                     |   FUNCTION ID formal_parameter ':' basic_type 
                     ;
-formal_parameter    :   LEFT_PARENTHESIS parameter_list RIGHT_PARENTHESIS 
+formal_parameter    :   '(' parameter_list ')' 
                     |   
                     ;
 parameter_list      :   parameter_list ';' parameter 
@@ -167,10 +169,14 @@ parameter_list      :   parameter_list ';' parameter
 parameter           :   var_parameter 
                     |   value_parameter 
                     ;
-var_parameter       :   VAR value_parameter ;
-value_parameter     :   idlist ':' basic_type;
-subprogram_body     :   const_declarations var_declarations compound_statement;
-compound_statement  :   BEGIN statement_list END;
+var_parameter       :   VAR value_parameter 
+                    ;
+value_parameter     :   idlist ':' basic_type
+                    ;
+subprogram_body     :   const_declarations var_declarations compound_statement
+                    ;
+compound_statement  :   BEGIN statement_list END
+                    ;
 statement_list      :   statement_list ';' statement 
                     |   statement
                     ;
@@ -179,24 +185,25 @@ statement           :   variable ASSIGNOP expression
                     |   compound_statement 
                     |   IF expression THEN statement else_part 
                     |   FOR ID ASSIGNOP expression TO expression DO statement 
-                    |   READ LEFT_PARENTHESIS variable_list RIGHT_PARENTHESIS
-                    |   WRITE LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
+                    |   READ '(' variable_list ')'
+                    |   WRITE '(' expression_list ')'
                     |
                     ;
-variable_list       :   variable_list ':' variable 
+variable_list       :   variable_list ',' variable 
                     |   variable 
                     ;
-variable            :   ID id_varpart;
-id_varpart          :   '(' expression_list ')'
+variable            :   ID id_varpart
+                    ;
+id_varpart          :   '[' expression_list ']'
                     |   
                     ;
 procedure_call      :   ID 
-                    |   ID LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
+                    |   ID '(' expression_list ')'
                     ;
 else_part           :   ELSE statement 
                     |
                     ;
-expression_list     :   expression_list ':' expression 
+expression_list     :   expression_list ',' expression 
                     |   expression 
                     ;
 expression          :   simple_expression RELOP simple_expression 
@@ -210,8 +217,8 @@ term                :   term MULOP factor
                     ;
 factor              :   NUM
                     |   variable
-                    |   ID LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
-                    |   LEFT_PARENTHESIS expression_list RIGHT_PARENTHESIS
+                    |   ID '(' expression_list ')'
+                    |   '(' expression_list ')'
                     |   NOT factor
                     |   UMINUS factor
                     ;
