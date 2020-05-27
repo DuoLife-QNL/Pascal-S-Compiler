@@ -8,14 +8,18 @@
 
 // #define error_report(s) fprintf(stderr, s)
 
+/*
+ * We add '_' before each type because they have 
+ * been declared as tokens in parser.y
+ */
 typedef enum TYPE {
-  INTEGER,
-  REAL,
-  BOOLEAN,
-  CHAR,
-  ARRAY,
-  PROCEDURE,
-  FUNCTION
+  _INTEGER,
+  _REAL,
+  _BOOLEAN,
+  _CHAR,
+  _ARRAY,
+  _PROCEDURE,
+  _FUNCTION
 }TYPE;
 
 class Id {

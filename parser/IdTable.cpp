@@ -12,7 +12,7 @@ IdTable::IdTable(){
 void IdTable::enter_id(Id symbol){
   table.push_back(symbol);
   TYPE s_type = symbol.get_type();
-  if (s_type == PROCEDURE || s_type == FUNCTION)
+  if (s_type == _PROCEDURE || s_type == _FUNCTION)
     locate();
 }
 

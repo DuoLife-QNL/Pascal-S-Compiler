@@ -21,8 +21,8 @@ TYPE Id::get_type(){
 BasicTypeId::BasicTypeId(std::string name, TYPE type)
 :Id(name, type){}
 
-ArrayId::ArrayId(std::string name, TYPE et, int dim, int *prd)
-:Id(name, ARRAY){
+ArrayId::ArrayId(std::string name, TYPE et, int dim, period *prd)
+:Id(name, _ARRAY){
     element_type = et;
     this->prd = new period[dim];
     for (int i = 0; i < dim; i += 2) {
@@ -63,10 +63,10 @@ std::vector<Parameter> Block::get_par_list(){
 }
 
 ProcedureId::ProcedureId(std::string name, std::vector<Parameter> pl)
-:Block(name, PROCEDURE, pl){}
+:Block(name, _PROCEDURE, pl){}
 
 FunctionId::FunctionId(std::string name, std::vector<Parameter> pl, TYPE ret_type)
-:Block(name, FUNCTION, pl){
+:Block(name, _FUNCTION, pl){
     this->ret_type = ret_type;
 }
 
