@@ -24,11 +24,7 @@ BasicTypeId::BasicTypeId(std::string name, TYPE type)
 ArrayId::ArrayId(std::string name, TYPE et, int dim, period *prd)
 :Id(name, _ARRAY){
     element_type = et;
-    this->prd = new period[dim];
-    for (int i = 0; i < dim; i += 2) {
-        (this->prd + i)->start = *(prd + i);
-        (this->prd + i)->end = *(prd + i + 1);
-    }
+    this->prd = prd;
 }
 
 ArrayId::~ArrayId(){
