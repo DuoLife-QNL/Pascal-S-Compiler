@@ -95,9 +95,9 @@ quotation_not_match     (\'|\")
 \"([^\^\n\"])*\"		  {SolveBasicType("String"); return();}
 '({noquote}|'')+'             {SolveBasicType("String"); return();}
 
-[0-9]+                {SolveBasicType("Integer");return(T_INTEGER);}
-[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, line_no);           return(T_ID);}
-[0-9]+|[0-9]+\.[0-9]+ {SolveBasicType("Float"); return(T_REAL);} 
+[0-9]+                {yylval.value.int_value = atoi(yytext); return(NUM);}
+[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, line_no);           return(ID);}
+[0-9]+|[0-9]+\.[0-9]+ {yylval.value.float_value = atof(yytext); return(NUM);} 
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
 

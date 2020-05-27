@@ -43,7 +43,7 @@
 %token PROGRAM
 %token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
-%token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
+%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
 
 %token <id> ID
@@ -179,7 +179,7 @@ value_parameter     :   idlist ':' basic_type
                     ;
 subprogram_body     :   const_declarations var_declarations compound_statement
                     ;
-compound_statement  :   BEGIN statement_list END
+compound_statement  :   _BEGIN statement_list END
                     ;
 statement_list      :   statement_list ';' statement 
                     |   statement
