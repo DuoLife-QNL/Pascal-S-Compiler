@@ -12,7 +12,7 @@
 
 
 // #define YYSTYPE char*;
-YYSTYPE yylval;
+// YYSTYPE yylval;
 void SolveComment ();
 void SolveMultiLineComment ();
 
