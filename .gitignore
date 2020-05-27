@@ -65,3 +65,8 @@ dkms.conf
 
 #build
 build/
+
+#parser
+parser/*.yy.c
+parser/*.tab.c
+parser/*.tab.h
