@@ -1,12 +1,12 @@
 %{
     #define ACC 1
+    #include <iostream>
     #include <stdio.h>
     #include <stdlib.h>
     #include "IdTable.h"
     extern int yylex();
     int yyerror(const char *s);
     int success = 1;
-    extern symbol_table st;
     using namespace std;
     IdTable it;
 
@@ -27,9 +27,7 @@
 {
     info symbol_info;
     period prd;
-    typedef struct id{
-        string name;
-    }id;
+    char *id;
 }
 
 %left PLUS ADDOP MULOP
@@ -37,17 +35,15 @@
 %start programstruct
 %token PROGRAM
 %token CONST NUM QUOTE LETTER VAR
-%token DIGITS..DIGITS PROCEDURE FUNCTION
+%token PROCEDURE FUNCTION
 %token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
 
 %token <id> ID
 %token <prd> DIGITS..DIGITS
-%token <symbol_info> INTEGER REAL BOOLEAN CHAR
+%token INTEGER REAL BOOLEAN CHAR
 
-%type <symbol_info> L
-%type <symbol_info> period
-%type <symbol_info> type
+%type <symbol_info> L period type basic_type
 
 %%
 
@@ -83,11 +79,11 @@ var_declarations    :   VAR var_declaration ';'
                      */
 var_declaration     :   var_declaration ';' ID L
                         {
-                            create_symbol($3.name, $4);
+                            create_symbol($3, $4);
                         }
                     |   ID L
                         {
-                            create_symbol($1.name, $2);
+                            create_symbol($1, $2);
                         }
                     ;
 L                   :   ':' type
@@ -96,7 +92,7 @@ L                   :   ':' type
                         }
                     |   ',' ID L
                         {
-                            create_symbol($1.name, $2);
+                            create_symbol($2, $3);
                             $$ = $3;
                         }                     
 type                :   basic_type
@@ -111,19 +107,19 @@ type                :   basic_type
                     ;
 basic_type          :   INTEGER
                         {
-                            $$.type = INTEGER;
+                            $$.type = _INTEGER;
                         }
                     |   REAL 
                         {
-                            $$.type = REAL;
+                            $$.type = _REAL;
                         }
                     |   BOOLEAN 
                         {
-                            $$.type = BOOLEAN;
+                            $$.type = _BOOLEAN;
                         }
                     |   CHAR 
                         {
-                            $$.type = CHAR;
+                            $$.type = _CHAR;
                         }
                     ; 
 /* period is <symbol_info>, it contains all informations including dimensions */
@@ -234,13 +230,14 @@ factor              :   NUM
  * TODO: is there a way not to declare it as a global ofject? Can it be
  * declared in the main function?
  */
-void create_symbol(string name, info t){
+void create_symbol(char *name_, info t){
+    string name = string(name_);
     /* basic type */
-    if (t.type >= INTEGER and t.type <= CHAR){
-        Id id = new BasicTypeId(name, t.type);
+    if (t.type >= _INTEGER and t.type <= _CHAR){
+        BasicTypeId id = BasicTypeId(name, t.type);
         it.enter_id(id);
-    } else if (t.type == ARRAY){  /* array */
-        Id id = new ArrayId(name, t.type, t.dim, t.prd);
+    } else if (t.type == _ARRAY){  /* array */
+        ArrayId id = ArrayId(name, t.type, t.dim, t.prd);
         it.enter_id(id);
     }
 }
