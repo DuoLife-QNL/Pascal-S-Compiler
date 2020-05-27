@@ -20,7 +20,7 @@
         TYPE element_type;
     }info;
 
-    void create_symbol(string name, info t);
+    void create_symbol(char *name_, info t);
 }
 
 %union
