@@ -4,6 +4,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include "IdTable.h"
+    #include "IdType.h"
     extern int yylex();
     int yyerror(const char *s);
     int success = 1;
@@ -28,6 +29,9 @@
     info symbol_info;
     period prd;
     char *id;
+    int value;
+    double value;
+    char value;
 }
 
 %left PLUS ADDOP MULOP
