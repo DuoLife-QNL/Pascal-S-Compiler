@@ -1,6 +1,6 @@
 BIN = parser
 OBJ = parser.tab.c lex.yy.c
-parser: lex.l parser.y
+parser: ../scanner/scanner.l parser.y
 	bison -d parser.y
 	flex ../scanner/scanner.l
 	g++ -o $(BIN) $(OBJ)
