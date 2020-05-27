@@ -29,16 +29,19 @@
     info symbol_info;
     period prd;
     char *id;
-    int value;
-    double value;
-    char value;
+    int value_int;
+    union {
+        int int_value;
+        double float_value;
+        char char_value;
+    }value;
 }
 
 %left PLUS ADDOP MULOP
 
 %start programstruct
 %token PROGRAM
-%token CONST NUM QUOTE LETTER VAR
+%token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
 %token BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
@@ -46,6 +49,7 @@
 %token <id> ID
 %token <prd> DIGITS..DIGITS
 %token INTEGER REAL BOOLEAN CHAR
+%token <value> NUM LETTER
 
 %type <symbol_info> L period type basic_type
 
