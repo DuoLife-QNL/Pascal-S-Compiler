@@ -1,20 +1,16 @@
-%{
+%code requires { 
     #define ACC 1
     #include <iostream>
     #include <stdio.h>
     #include <stdlib.h>
     #include "IdTable.h"
+    #include "IdType.h"
     extern int yylex();
     int yyerror(const char *s);
     int success = 1;
     using namespace std;
     IdTable it;
 
-    void create_symbol(string name, info t);
-%}
-
-%code requires { 
-    #include "IdType.h"
     typedef struct info{
         TYPE type;
 
@@ -23,6 +19,8 @@
         period *prd;
         TYPE element_type;
     }info;
+
+    void create_symbol(string name, info t);
 }
 
 %union
