@@ -50,14 +50,14 @@ quotation_not_match     (\'|\")
 [Aa][Rr][Rr][Aa][Yy]                                      {printf("shift ARRAY \n");   lex_column_index += yyleng; return(ARRAY);}
 [Pp][Rr][Oo][Cc][Ee][Dd][Uu][Rr][Ee]                      {printf("shift PROCEDURE \n");lex_column_index += yyleng;return(PROCEDURE);}
 [Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn]                          {printf("shift FUNCTION \n");lex_column_index += yyleng; return(FUNCTION);}
-[Bb][Ee][Gg][Ii][Nn]                                      {printf("shift BEGIN \n");   lex_column_index += yyleng; return(BEGIN);}
+[Bb][Ee][Gg][Ii][Nn]                                      {printf("shift BEGIN \n");   lex_column_index += yyleng; return(_BEGIN);}
 [Ee][Nn][Dd]                                              {printf("shift END \n");     lex_column_index += yyleng; return(END);}
 [Oo][Ff]                                                  {printf("shift OF \n");      lex_column_index += yyleng;  return(OF);}
 [Ii][Ff]                                                  {printf("shift IF \n");      lex_column_index += yyleng; return(IF);}
 [Tt][Hh][Ee][Nn]                                          {printf("shift THEN \n");    lex_column_index += yyleng;   return(THEN);}
 [Ee][Ll][Ss][Ee]                                          {printf("shift ELSE \n");    lex_column_index += yyleng;  return(ELSE);}
-[Ww][Hh][Ii][Ll][Ee]                                      {printf("shift WHILE \n");   lex_column_index += yyleng;  return(WHILE);}
-[Ff][Oo][Rr]                                              {Sprintf("shift FOR \n");    lex_column_index += yyleng;  zreturn(FOR);}
+    /* [Ww][Hh][Ii][Ll][Ee]                                      {printf("shift WHILE \n");   lex_column_index += yyleng;  return(WHILE);} */
+[Ff][Oo][Rr]                                              {printf("shift FOR \n");     lex_column_index += yyleng;  return(FOR);}
 [Tt][Oo]                                                  {printf("shift TO \n");      lex_column_index += yyleng; return(TO);}
 [Dd][Oo]                                                  {printf("shift DO \n");      lex_column_index += yyleng; return(DO);}
 
@@ -92,11 +92,11 @@ quotation_not_match     (\'|\")
 [Rr][Ee][Aa][Dd]      {printf("shift READ \n"); return READ;}
 [Ww][Rr][Ii][Tt][Ee]  {printf("shift WRITE \n"); return WRITE;}
 
-\"([^\^\n\"])*\"		  {SolveBasicType("String"); return();}
-'({noquote}|'')+'             {SolveBasicType("String"); return();}
+    /* \"([^\^\n\"])*\"		  {SolveBasicType("String"); return();} */
+'({noquote}|'')+'             {yylval.value.char_value = *(yytext + 1); return(LETTER);}
 
 [0-9]+                {yylval.value.int_value = atoi(yytext); return(NUM);}
-[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, line_no);           return(ID);}
+[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, yylineno);           return(ID);}
 [0-9]+|[0-9]+\.[0-9]+ {yylval.value.float_value = atof(yytext); return(NUM);} 
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
@@ -119,7 +119,7 @@ void SolveComment () {
 void SolveMultiLineComment () {
     register int c;
     printf(" line %d \tcolumn %d: \t<Comment, %s", lex_row_index, lex_column_index, yytext);
-    while ((c = input())) {
+    while ((c = getchar())) {
         lex_column_index++;
         printf("%c", c);
         if (c == '}')
