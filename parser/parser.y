@@ -49,7 +49,7 @@
     info symbol_info;
     period prd;
     char *name;
-    parameter *par;
+    parameter *par = nullptr;
     char *num;
     char letter;
 }
@@ -89,9 +89,11 @@ idlist              :   idlist ',' ID
                             $$ = $1;
                         }
                     |   ID
-                        {
+                        {   
+                            $$ = new parameter;
                             $$->name = string($1);
                             $$->is_var = false;
+                            $$->next = nullptr;
                         }
                     ;
 const_declarations  :   CONST const_declaration ';'
@@ -226,6 +228,9 @@ formal_parameter    :   '(' parameter_list ')'
                             $$ = $2;
                         }
                     |   
+                        {
+                            $$ = nullptr;
+                        }
                     ;
 parameter_list      :   parameter_list ';' parameter
                         {
