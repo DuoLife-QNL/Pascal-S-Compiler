@@ -38,8 +38,11 @@ class Id {
  * integer, real, boolean, char
  */
 class BasicTypeId: public Id {
+  private:
+    bool is_const;
   public:
     BasicTypeId(std::string name, TYPE type);
+    bool is_const();
 };
 
 /* struct period stores the start num and end num of a dimension of an array */

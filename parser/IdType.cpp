@@ -21,6 +21,10 @@ TYPE Id::get_type(){
 BasicTypeId::BasicTypeId(std::string name, TYPE type)
 :Id(name, type){}
 
+bool BasicTypeId::is_const(){
+    return is_const;
+}
+
 ArrayId::ArrayId(std::string name, TYPE et, int dim, period *prd)
 :Id(name, _ARRAY){
     element_type = et;
