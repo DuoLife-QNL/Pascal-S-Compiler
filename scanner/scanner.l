@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "../parser/parser.tab.h"
 
 #define COMMENT 100
@@ -96,7 +97,13 @@ quotation_not_match     (\'|\")
 '({noquote}|'')+'             {yylval.letter = *(yytext + 1); return(LETTER);}
 
 [0-9]+                {yylval.num = yytext; return(NUM);}
-[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, yylineno); yylval.name = yytext; return(ID);}
+[A-Za-z][A-Za-z0-9_]*   {
+                            printf("Shift [ID] %s (line %d)\n", yytext, yylineno);
+                            char *text = (char *)malloc(sizeof(char) * yyleng);
+                            memcpy(text, yytext, yyleng);
+                            yylval.name = text; 
+                            return(ID);
+                        }
 [0-9]+|[0-9]+\.[0-9]+ {yylval.num = yytext; return(NUM);} 
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}

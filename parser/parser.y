@@ -5,6 +5,7 @@
 %}
 
 %code requires { 
+    #define DEBUG 1
     #define ACC 1
     #include <iostream>
     #include <stdio.h>
@@ -33,7 +34,7 @@
     typedef struct parameter{
         string name;
         bool is_var = false;
-        TYPE type;
+        TYPE type = _DEFAULT;
         parameter *next = nullptr;
     }parameter;
 
@@ -41,6 +42,11 @@
     void insert_procedure(char *name_, parameter *par);
     void insert_function(char *name_, parameter *par, TYPE rt);
     void par_append(parameter *p, string name, bool is_var = false);
+
+#if DEBUG
+    void print_par_list(parameter *p);
+    void print_block_info(bool is_func, TYPE ret_type, parameter *p);
+#endif
     TYPE get_type(char *s);
 }
 
@@ -85,17 +91,27 @@ program_body        :   const_declarations var_declarations subprogram_declarati
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-                            /* cout << "id list" << endl;
+#if DEBUG
+                            cout << "parser: new id " << string($3) << endl;
+#endif                             
                             par_append($1, $3, false);
-                            $$ = $1; */
+                            $$ = $1;
+#if DEBUG
+                            print_par_list($$);
+#endif                              
                         }
                     |   ID
                         {   
-                            cout << "ID: " << string($1) << endl;
-                            /* $$ = new parameter;
+#if DEBUG
+                            cout << "parser: new id " << string($1) << endl;
+#endif                            
+                            $$ = new parameter;
                             $$->name = string($1);
                             $$->is_var = false;
-                            $$->next = nullptr; */
+                            $$->next = nullptr;
+#if DEBUG
+                            print_par_list($$);
+#endif                            
                         }
                     ;
 const_declarations  :   CONST const_declaration ';'
@@ -222,7 +238,13 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                         }
                     |   FUNCTION ID formal_parameter ':' basic_type 
                         {
+#if DEBUG
+                            cout << "inserting function " << string($2) << ":" << endl;
+                            print_block_info(true, $5.type, $3);
+
+#endif                            
                             insert_function($2, $3, $5.type);
+                            cout << "insert done" << endl;
                         }
                     ;
 formal_parameter    :   '(' parameter_list ')'
@@ -238,13 +260,24 @@ parameter_list      :   parameter_list ';' parameter
                         {
                             parameter *tmp = $1;
                             while(tmp->next)
-                                tmp++;
+                                tmp = tmp->next;
                             tmp->next = $3;
                             $$ = $1;
                         }
                     |   parameter
                         {
                             $$ = $1;
+#if DEBUG
+                            int is_var = $1->is_var;
+                            cout << "append "
+    #if is_var
+                            "var"
+    #else
+                            "non-var"
+    #endif
+                            "parameters to parameter list" << endl;
+                            print_par_list($$);
+#endif                
                         }
                     ;
 parameter           :   var_parameter 
@@ -259,16 +292,20 @@ parameter           :   var_parameter
 var_parameter       :   VAR value_parameter 
                         {
                             parameter *tmp = $2;
-                            while(tmp)
+                            while(tmp){
                                 tmp->is_var = true;
+                                tmp = tmp->next;
+                            }
                             $$ = $2;
                         }
                     ;
 value_parameter     :   idlist ':' basic_type
                         {
                             parameter *tmp = $1;
-                            while(tmp)
+                            while(tmp){
                                 tmp->type = $3.type;
+                                tmp = tmp->next;
+                            }
                             $$ = $1;
                         }
                     ;
@@ -371,6 +408,7 @@ void insert_function(char *name_, parameter *par, TYPE rt){
     while(par){
         Parameter p = Parameter(par->name, par->type, par->is_var);
         pl.push_back(p);
+        par = par->next;
     }
     FunctionId id = FunctionId(name, pl, rt);
     it.enter_id(id);
@@ -390,14 +428,35 @@ TYPE get_type(char *s){
 
 void par_append(parameter *p, string name, bool is_var){
     parameter *tmp = p;
-    while(tmp->next)
-        tmp ++;
+    while(tmp->next){
+        tmp = tmp->next;
+    }
     parameter *np = new parameter;
     np->next = nullptr;
     np->name = name;
     np->is_var = is_var;
     tmp->next = np;
 }
+
+#if DEBUG
+void print_par_list(parameter *p){
+    cout << "parameter list is now:" << endl;
+    while(p){
+        cout << "    [name: "   << p->name
+             << ", is_var: "    << p->is_var
+             << ", type: "      << p->type
+             << ", has next: "  << !(p->next == nullptr)
+             << "]" << endl;
+        p = p->next;
+    }
+}
+
+void print_block_info(bool is_func, TYPE ret_type, parameter *p){
+    print_par_list(p);
+    if (is_func)
+        cout << "return type: " << ret_type << endl;
+}
+#endif
 
 int main(){
     yyparse();

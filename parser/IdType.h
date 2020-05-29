@@ -13,6 +13,7 @@
  * been declared as tokens in parser.y
  */
 typedef enum TYPE {
+  _DEFAULT,
   _INTEGER,
   _REAL,
   _BOOLEAN,
