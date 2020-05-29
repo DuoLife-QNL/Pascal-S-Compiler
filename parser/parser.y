@@ -1,5 +1,4 @@
 %{
-    
     #include "IdTable.h"
     int success = 1;
     IdTable it;
@@ -17,11 +16,15 @@
 
     typedef struct info{
         TYPE type;
+        bool is_const = false;
 
         /* array */
         int dim;
         period *prd;
         TYPE element_type;
+
+        /* procedure or function */
+
     }info;
 
     void create_symbol(char *name_, info t);
@@ -31,13 +34,7 @@
 {
     info symbol_info;
     period prd;
-    char *id;
-    int value_int;
-    union {
-        int int_value;
-        double float_value;
-        char char_value;
-    }value;
+    char *name;
 }
 
 %left PLUS ADDOP MULOP
@@ -49,12 +46,11 @@
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
 %token READ WRITE ARRAY OF
 
-%token <id> ID
+%token <name> ID
 %token <prd> DIGITS..DIGITS
 %token INTEGER REAL BOOLEAN CHAR
-%token <value> NUM LETTER
 
-%type <symbol_info> L period type basic_type
+%type <symbol_info> L period type basic_type const_value
 
 %%
 
@@ -72,22 +68,45 @@ const_declarations  :   CONST const_declaration ';'
                     |   
                     ;
 const_declaration   :   const_declaration ';' ID '=' const_value
+                        {
+                            create_symbol($3, $5);
+                        }
                     |   ID '=' const_value
+                        {   
+                            create_symbol($1, $3);
+                        }
                     ;
 const_value         :   PLUS NUM
+                        {   
+                            $$.is_const = true;
+                            /* yytext point to NUM now */
+                            $$.type = get_type(yytext);
+                        }
                     |   UMINUS NUM
+                        {
+                            $$.is_const = true;
+                            $$.type = get_type(yytext);
+                        }
                     |   NUM 
+                        {
+                            $$.is_const = true;
+                            $$.type = get_type(yytext);
+                        }
                     |   QUOTE LETTER QUOTE
+                        {
+                            $$.is_const = true;
+                            $$.type = _CHAR;
+                        }
                     ;
 var_declarations    :   VAR var_declaration ';' 
                     | 
                     ;
-                    /* 
-                     * L is type <info>, stores all the information of ID.
-                     * By create_symbol(), we insert the variable into the 
-                     * id table.
-                     * Here ID can be basic type or array.
-                     */
+                        /* 
+                         * L is type <info>, storing all the information of ID.
+                         * By create_symbol(), we insert the variable into the 
+                         * id table.
+                         * Here ID can be basic type or array.
+                         */
 var_declaration     :   var_declaration ';' ID L
                         {
                             create_symbol($3, $4);
@@ -163,7 +182,7 @@ subprogram          :   subprogram_head ';' subprogram_body
                     ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
-
+                            
                         }
                     |   FUNCTION ID formal_parameter ':' basic_type 
                     ;
@@ -245,12 +264,24 @@ void create_symbol(char *name_, info t){
     string name = string(name_);
     /* basic type */
     if (t.type >= _INTEGER and t.type <= _CHAR){
-        BasicTypeId id = BasicTypeId(name, t.type);
+        BasicTypeId id = BasicTypeId(name, t.type, t.is_const);
         it.enter_id(id);
     } else if (t.type == _ARRAY){  /* array */
         ArrayId id = ArrayId(name, t.type, t.dim, t.prd);
         it.enter_id(id);
     }
+}
+
+/* 
+ * find what type(integer / real) is the num in yytext
+ * TODO: add boolean (true / false) here  
+ */
+TYPE get_type(char *s){
+    while(*s){
+        if('.' == *s)
+            return _REAL;
+    }
+    return _INTEGER;
 }
 
 int main(){
