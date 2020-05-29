@@ -18,11 +18,13 @@ TYPE Id::get_type(){
     return type;
 }
 
-BasicTypeId::BasicTypeId(std::string name, TYPE type)
-:Id(name, type){}
+BasicTypeId::BasicTypeId(std::string name, TYPE type, bool is_const)
+:Id(name, type){
+    this->is_const_ = is_const;
+}
 
 bool BasicTypeId::is_const(){
-    return is_const;
+    return is_const_;
 }
 
 ArrayId::ArrayId(std::string name, TYPE et, int dim, period *prd)

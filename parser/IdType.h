@@ -39,9 +39,9 @@ class Id {
  */
 class BasicTypeId: public Id {
   private:
-    bool is_const;
+    bool is_const_;
   public:
-    BasicTypeId(std::string name, TYPE type);
+    BasicTypeId(std::string name, TYPE type, bool is_const);
     bool is_const();
 };
 
