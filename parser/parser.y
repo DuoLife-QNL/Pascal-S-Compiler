@@ -205,6 +205,9 @@ period              :   period ',' DIGITS..DIGITS
                         }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
+                            {
+                                it.end_block();
+                            }
                         |       
                         ;
 subprogram          :   subprogram_head ';' subprogram_body
