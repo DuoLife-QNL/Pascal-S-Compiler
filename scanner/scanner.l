@@ -96,7 +96,7 @@ quotation_not_match     (\'|\")
 '({noquote}|'')+'             {yylval.letter = *(yytext + 1); return(LETTER);}
 
 [0-9]+                {yylval.num = yytext; return(NUM);}
-[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, yylineno);           return(ID);}
+[A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, yylineno); yylval.name = yytext; return(ID);}
 [0-9]+|[0-9]+\.[0-9]+ {yylval.num = yytext; return(NUM);} 
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}

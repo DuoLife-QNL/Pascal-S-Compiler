@@ -85,15 +85,17 @@ program_body        :   const_declarations var_declarations subprogram_declarati
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
+                            /* cout << "id list" << endl;
                             par_append($1, $3, false);
-                            $$ = $1;
+                            $$ = $1; */
                         }
                     |   ID
                         {   
-                            $$ = new parameter;
+                            cout << "ID: " << string($1) << endl;
+                            /* $$ = new parameter;
                             $$->name = string($1);
                             $$->is_var = false;
-                            $$->next = nullptr;
+                            $$->next = nullptr; */
                         }
                     ;
 const_declarations  :   CONST const_declaration ';'
