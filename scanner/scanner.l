@@ -93,11 +93,11 @@ quotation_not_match     (\'|\")
 [Ww][Rr][Ii][Tt][Ee]  {printf("shift WRITE \n"); return WRITE;}
 
     /* \"([^\^\n\"])*\"		  {SolveBasicType("String"); return();} */
-'({noquote}|'')+'             {yylval.value.char_value = *(yytext + 1); return(LETTER);}
+'({noquote}|'')+'             {yylval.letter = *(yytext + 1); return(LETTER);}
 
-[0-9]+                {yylval.value.int_value = atoi(yytext); return(NUM);}
+[0-9]+                {yylval.num = yytext; return(NUM);}
 [A-Za-z][A-Za-z0-9_]* {printf("Shift [ID] %s (line %d)\n", yytext, yylineno);           return(ID);}
-[0-9]+|[0-9]+\.[0-9]+ {yylval.value.float_value = atof(yytext); return(NUM);} 
+[0-9]+|[0-9]+\.[0-9]+ {yylval.num = yytext; return(NUM);} 
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
 

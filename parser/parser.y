@@ -9,6 +9,7 @@
     #include <iostream>
     #include <stdio.h>
     #include <stdlib.h>
+    #include <stddef.h>
     #include "IdType.h"
     extern int yylex();
     int yyerror(const char *s);
@@ -16,18 +17,31 @@
 
     typedef struct info{
         TYPE type;
-        bool is_const = false;
+
+        /* 
+         * will raise error if set default to false
+         * TODO: WHY? 
+         */
+        bool is_const;
 
         /* array */
         int dim;
         period *prd;
         TYPE element_type;
-
-        /* procedure or function */
-
     }info;
 
-    void create_symbol(char *name_, info t);
+    typedef struct parameter{
+        string name;
+        bool is_var = false;
+        TYPE type;
+        parameter *next = nullptr;
+    }parameter;
+
+    void insert_symbol(char *name_, info t);
+    void insert_procedure(char *name_, parameter *par);
+    void insert_function(char *name_, parameter *par, TYPE rt);
+    void par_append(parameter *p, string name, bool is_var = false);
+    TYPE get_type(char *s);
 }
 
 %union
@@ -35,6 +49,9 @@
     info symbol_info;
     period prd;
     char *name;
+    parameter *par;
+    char *num;
+    char letter;
 }
 
 %left PLUS ADDOP MULOP
@@ -49,8 +66,12 @@
 %token <name> ID
 %token <prd> DIGITS..DIGITS
 %token INTEGER REAL BOOLEAN CHAR
+%token <num> NUM
+%token <letter> LETTER
 
 %type <symbol_info> L period type basic_type const_value
+%type <par> idlist formal_parameter parameter_list
+%type <par> parameter var_parameter value_parameter
 
 %%
 
@@ -61,36 +82,44 @@ program_head        :   PROGRAM ID '(' idlist ')'
                     ;
 program_body        :   const_declarations var_declarations subprogram_declarations compound_statement
                     ;
+/* this is now only used for parameters */
 idlist              :   idlist ',' ID
+                        {
+                            par_append($1, $3, false);
+                            $$ = $1;
+                        }
                     |   ID
+                        {
+                            $$->name = string($1);
+                            $$->is_var = false;
+                        }
                     ;
 const_declarations  :   CONST const_declaration ';'
                     |   
                     ;
 const_declaration   :   const_declaration ';' ID '=' const_value
                         {
-                            create_symbol($3, $5);
+                            insert_symbol($3, $5);
                         }
                     |   ID '=' const_value
                         {   
-                            create_symbol($1, $3);
+                            insert_symbol($1, $3);
                         }
                     ;
 const_value         :   PLUS NUM
                         {   
                             $$.is_const = true;
-                            /* yytext point to NUM now */
-                            $$.type = get_type(yytext);
+                            $$.type = get_type($2);
                         }
                     |   UMINUS NUM
                         {
                             $$.is_const = true;
-                            $$.type = get_type(yytext);
+                            $$.type = get_type($2);
                         }
                     |   NUM 
                         {
                             $$.is_const = true;
-                            $$.type = get_type(yytext);
+                            $$.type = get_type($1);
                         }
                     |   QUOTE LETTER QUOTE
                         {
@@ -103,17 +132,17 @@ var_declarations    :   VAR var_declaration ';'
                     ;
                         /* 
                          * L is type <info>, storing all the information of ID.
-                         * By create_symbol(), we insert the variable into the 
+                         * By insert_symbol(), we insert the variable into the 
                          * id table.
                          * Here ID can be basic type or array.
                          */
 var_declaration     :   var_declaration ';' ID L
                         {
-                            create_symbol($3, $4);
+                            insert_symbol($3, $4);
                         }
                     |   ID L
                         {
-                            create_symbol($1, $2);
+                            insert_symbol($1, $2);
                         }
                     ;
 L                   :   ':' type
@@ -122,7 +151,7 @@ L                   :   ':' type
                         }
                     |   ',' ID L
                         {
-                            create_symbol($2, $3);
+                            insert_symbol($2, $3);
                             $$ = $3;
                         }                     
 type                :   basic_type
@@ -182,22 +211,56 @@ subprogram          :   subprogram_head ';' subprogram_body
                     ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
-                            
+                            insert_procedure($2, $3);
                         }
                     |   FUNCTION ID formal_parameter ':' basic_type 
+                        {
+                            insert_function($2, $3, $5.type);
+                        }
                     ;
-formal_parameter    :   '(' parameter_list ')' 
+formal_parameter    :   '(' parameter_list ')'
+                        {
+                            $$ = $2;
+                        }
                     |   
                     ;
-parameter_list      :   parameter_list ';' parameter 
+parameter_list      :   parameter_list ';' parameter
+                        {
+                            parameter *tmp = $1;
+                            while(tmp->next)
+                                tmp++;
+                            tmp->next = $3;
+                            $$ = $1;
+                        }
                     |   parameter
+                        {
+                            $$ = $1;
+                        }
                     ;
 parameter           :   var_parameter 
+                        {
+                            $$ = $1;
+                        }
                     |   value_parameter 
+                        {
+                            $$ = $1;
+                        }
                     ;
 var_parameter       :   VAR value_parameter 
+                        {
+                            parameter *tmp = $2;
+                            while(tmp)
+                                tmp->is_var = true;
+                            $$ = $2;
+                        }
                     ;
 value_parameter     :   idlist ':' basic_type
+                        {
+                            parameter *tmp = $1;
+                            while(tmp)
+                                tmp->type = $3.type;
+                            $$ = $1;
+                        }
                     ;
 subprogram_body     :   const_declarations var_declarations compound_statement
                     ;
@@ -252,7 +315,7 @@ factor              :   NUM
 %%
 
 /* 
- * create_symbol:
+ * insert_symbol:
  * when we know a symbol's name and all its information, we create this
  * symbol and insert it into the id table
  * @t: a info struct, stores all the information of the id
@@ -260,7 +323,7 @@ factor              :   NUM
  * TODO: is there a way not to declare it as a global ofject? Can it be
  * declared in the main function?
  */
-void create_symbol(char *name_, info t){
+void insert_symbol(char *name_, info t){
     string name = string(name_);
     /* basic type */
     if (t.type >= _INTEGER and t.type <= _CHAR){
@@ -269,11 +332,42 @@ void create_symbol(char *name_, info t){
     } else if (t.type == _ARRAY){  /* array */
         ArrayId id = ArrayId(name, t.type, t.dim, t.prd);
         it.enter_id(id);
-    }
+    } 
 }
 
 /* 
- * find what type(integer / real) is the num in yytext
+ * insert_procedure():
+ * @par: parameter list
+ */
+void insert_procedure(char *name_, parameter *par){
+    string name = string(name_);
+    vector<Parameter> pl;
+    while(par){
+        Parameter p = Parameter(par->name, par->type, par->is_var);
+        pl.push_back(p);
+    }
+    ProcedureId id = ProcedureId(name, pl);
+    it.enter_id(id);
+}
+
+/* 
+ * insert_function():
+ * @par: parameter list
+ * @rt: return type
+ */
+void insert_function(char *name_, parameter *par, TYPE rt){
+    string name = string(name_);
+    vector<Parameter> pl;
+    while(par){
+        Parameter p = Parameter(par->name, par->type, par->is_var);
+        pl.push_back(p);
+    }
+    FunctionId id = FunctionId(name, pl, rt);
+    it.enter_id(id);
+}
+
+/* 
+ * find what type(integer / real) is the num
  * TODO: add boolean (true / false) here  
  */
 TYPE get_type(char *s){
@@ -282,6 +376,17 @@ TYPE get_type(char *s){
             return _REAL;
     }
     return _INTEGER;
+}
+
+void par_append(parameter *p, string name, bool is_var){
+    parameter *tmp = p;
+    while(tmp->next)
+        tmp ++;
+    parameter *np = new parameter;
+    np->next = nullptr;
+    np->name = name;
+    np->is_var = is_var;
+    tmp->next = np;
 }
 
 int main(){
