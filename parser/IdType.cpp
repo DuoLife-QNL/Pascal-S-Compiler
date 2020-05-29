@@ -47,7 +47,7 @@ period ArrayId::get_period(int dim){
 }
 
 Parameter::Parameter(std::string name, TYPE type, bool is_var)
-:BasicTypeId(name, type){
+:BasicTypeId(name, type, false){
     is_var_ = is_var;
 }
 
