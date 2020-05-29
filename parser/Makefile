@@ -5,7 +5,7 @@ parser: ../scanner/scanner.l parser.y IdTable.h IdType.h
 	flex ../scanner/scanner.l
 	mv parser.tab.c parser.tab.cpp
 	mv lex.yy.c lex.yy.cpp
-	g++ -o $(BIN) $(OBJ)
+	g++ -o $(BIN) $(OBJ) -std=c++11
 
 .PHONY: clean
 
