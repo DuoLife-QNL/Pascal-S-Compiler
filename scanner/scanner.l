@@ -17,7 +17,7 @@
 void SolveComment ();
 void SolveMultiLineComment ();
 
-extern unsigned long yyleng;
+// extern unsigned long yyleng;
 
 unsigned int lex_column_index = 0;
 unsigned int lex_row_index = 1;
@@ -101,10 +101,10 @@ quotation_not_match     (\'|\")
                             printf("Shift [ID] %s (line %d)\n", yytext, yylineno);
                             char *text = (char *)malloc(sizeof(char) * yyleng);
                             memcpy(text, yytext, yyleng);
-                            yylval.name = text; 
+                            yylval.name = text;
                             return(ID);
                         }
-[0-9]+|[0-9]+\.[0-9]+ {yylval.num = yytext; return(NUM);} 
+[0-9]+|[0-9]+\.[0-9]+ {yylval.num = yytext; return(NUM);}
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
 
@@ -118,7 +118,7 @@ quotation_not_match     (\'|\")
 %%
 
 void SolveComment () {
-    printf(" line %d \tcolumn %d: \t<Comment, %s> \n", 
+    printf(" line %d \tcolumn %d: \t<Comment, %s> \n",
         lex_row_index, lex_column_index, yytext);
     lex_column_index = 0;
 }

@@ -4,7 +4,7 @@
     IdTable it;
 %}
 
-%code requires { 
+%code requires {
     #define DEBUG 1
     #define ACC 1
     #include <iostream>
@@ -19,9 +19,9 @@
     typedef struct info{
         TYPE type;
 
-        /* 
+        /*
          * will raise error if set default to false
-         * TODO: WHY? 
+         * TODO: WHY?
          */
         bool is_const;
 
@@ -48,6 +48,12 @@
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
     TYPE get_type(char *s);
+
+// target code generation funciton start
+    void write_file(const char *s);
+    void write_file(const string &s);
+    void write_file(TYPE t);
+// target code generation function end
 }
 
 %union
@@ -93,41 +99,41 @@ idlist              :   idlist ',' ID
                         {
 #if DEBUG
                             cout << "parser: new id " << string($3) << endl;
-#endif                             
+#endif
                             par_append($1, $3, false);
                             $$ = $1;
 #if DEBUG
                             print_par_list($$);
-#endif                              
+#endif
                         }
                     |   ID
-                        {   
+                        {
 #if DEBUG
                             cout << "parser: new id " << string($1) << endl;
-#endif                            
+#endif
                             $$ = new parameter;
                             $$->name = string($1);
                             $$->is_var = false;
                             $$->next = nullptr;
 #if DEBUG
                             print_par_list($$);
-#endif                            
+#endif
                         }
                     ;
 const_declarations  :   CONST const_declaration ';'
-                    |   
+                    |
                     ;
 const_declaration   :   const_declaration ';' ID '=' const_value
                         {
                             insert_symbol($3, $5);
                         }
                     |   ID '=' const_value
-                        {   
+                        {
                             insert_symbol($1, $3);
                         }
                     ;
 const_value         :   PLUS NUM
-                        {   
+                        {
                             $$.is_const = true;
                             $$.type = get_type($2);
                         }
@@ -136,7 +142,7 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = get_type($2);
                         }
-                    |   NUM 
+                    |   NUM
                         {
                             $$.is_const = true;
                             $$.type = get_type($1);
@@ -147,12 +153,12 @@ const_value         :   PLUS NUM
                             $$.type = _CHAR;
                         }
                     ;
-var_declarations    :   VAR var_declaration ';' 
-                    | 
+var_declarations    :   VAR var_declaration ';'
+                    |
                     ;
-                        /* 
+                        /*
                          * L is type <info>, storing all the information of ID.
-                         * By insert_symbol(), we insert the variable into the 
+                         * By insert_symbol(), we insert the variable into the
                          * id table.
                          * Here ID can be basic type or array.
                          */
@@ -173,7 +179,7 @@ L                   :   ':' type
                         {
                             insert_symbol($2, $3);
                             $$ = $3;
-                        }                     
+                        }
 type                :   basic_type
                         {
                             $$ = $1;
@@ -188,19 +194,19 @@ basic_type          :   INTEGER
                         {
                             $$.type = _INTEGER;
                         }
-                    |   REAL 
+                    |   REAL
                         {
                             $$.type = _REAL;
                         }
-                    |   BOOLEAN 
+                    |   BOOLEAN
                         {
                             $$.type = _BOOLEAN;
                         }
-                    |   CHAR 
+                    |   CHAR
                         {
                             $$.type = _CHAR;
                         }
-                    ; 
+                    ;
 /* period is <symbol_info>, it contains all informations including dimensions */
 period              :   period ',' DIGITS..DIGITS
                         {
@@ -211,8 +217,8 @@ period              :   period ',' DIGITS..DIGITS
                             append_period($1.prd, p);
                             $$.prd = $1.prd;
                         }
-                        /* 
-                         * DIGITS..DIGITS is a <prd>, so we can get start 
+                        /*
+                         * DIGITS..DIGITS is a <prd>, so we can get start
                          * and end directly
                          */
                         // TODO: ask lex to add start and end to this
@@ -228,7 +234,7 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                             {
                                 it.end_block();
                             }
-                        |       
+                        |
                         ;
 subprogram          :   subprogram_head ';' subprogram_body
                     ;
@@ -236,13 +242,13 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                         {
                             insert_procedure($2, $3);
                         }
-                    |   FUNCTION ID formal_parameter ':' basic_type 
+                    |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
                             cout << "inserting function " << string($2) << ":" << endl;
                             print_block_info(true, $5.type, $3);
 
-#endif                            
+#endif
                             insert_function($2, $3, $5.type);
                             cout << "insert done" << endl;
                         }
@@ -251,7 +257,7 @@ formal_parameter    :   '(' parameter_list ')'
                         {
                             $$ = $2;
                         }
-                    |   
+                    |
                         {
                             $$ = nullptr;
                         }
@@ -277,19 +283,43 @@ parameter_list      :   parameter_list ';' parameter
     #endif
                             "parameters to parameter list" << endl;
                             print_par_list($$);
-#endif                
+#endif
                         }
                     ;
-parameter           :   var_parameter 
+parameter           :   var_parameter
                         {
                             $$ = $1;
+                            bool first = true;
+                            for (auto *cur = $1; cur; cur = cur->next)
+                            {
+                                if (first)
+                                    first = false;
+                                else
+                                    write_file(", ");
+                                write_file(cur->type);
+                                if (cur->is_var) write_file("*");
+                                write_file(" ");
+                                write_file(cur->name);
+                            }
                         }
-                    |   value_parameter 
+                    |   value_parameter
                         {
                             $$ = $1;
+                            bool first = true;
+                            for (auto *cur = $1; cur; cur = cur->next)
+                            {
+                                if (first)
+                                    first = false;
+                                else
+                                    write_file(", ");
+                                write_file(cur->type);
+                                if (cur->is_var) write_file("*");
+                                write_file(" ");
+                                write_file(cur->name);
+                            }
                         }
                     ;
-var_parameter       :   VAR value_parameter 
+var_parameter       :   VAR value_parameter
                         {
                             parameter *tmp = $2;
                             while(tmp){
@@ -307,48 +337,50 @@ value_parameter     :   idlist ':' basic_type
                                 tmp = tmp->next;
                             }
                             $$ = $1;
+
+
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations compound_statement
+subprogram_body     :   const_declarations var_declarations {write_file("{\n");} compound_statement {write_file("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
-statement_list      :   statement_list ';' statement 
+statement_list      :   statement_list ';'{write_file(";\n");} statement
                     |   statement
                     ;
 statement           :   variable ASSIGNOP expression
-                    |   procedure_call 
-                    |   compound_statement 
-                    |   IF expression THEN statement else_part 
-                    |   FOR ID ASSIGNOP expression TO expression DO statement 
+                    |   procedure_call
+                    |   { write_file("{\n");}compound_statement{ write_file("}\n");}
+                    |   IF {write_file("if(");} expression { write_file(")\n");}THEN {write_file("{\n");} statement {write_file("}\n");} else_part
+                    |   FOR ID ASSIGNOP expression TO expression DO statement
                     |   READ '(' variable_list ')'
                     |   WRITE '(' expression_list ')'
                     |
                     ;
-variable_list       :   variable_list ',' variable 
-                    |   variable 
+variable_list       :   variable_list ',' variable
+                    |   variable
                     ;
 variable            :   ID id_varpart
                     ;
 id_varpart          :   '[' expression_list ']'
-                    |   
-                    ;
-procedure_call      :   ID 
-                    |   ID '(' expression_list ')'
-                    ;
-else_part           :   ELSE statement 
                     |
                     ;
-expression_list     :   expression_list ',' expression 
-                    |   expression 
+procedure_call      :   ID
+                    |   ID '(' expression_list ')'
                     ;
-expression          :   simple_expression RELOP simple_expression 
-                    |   simple_expression 
+else_part           :   ELSE {write_file("else{\n");} statement {write_file("}\n");}
+                    |
                     ;
-simple_expression   :   simple_expression ADDOP term 
+expression_list     :   expression_list ',' expression
+                    |   expression
+                    ;
+expression          :   simple_expression RELOP simple_expression
+                    |   simple_expression
+                    ;
+simple_expression   :   simple_expression ADDOP term
                     |   term
                     ;
-term                :   term MULOP factor 
+term                :   term MULOP factor
                     |   factor
                     ;
 factor              :   NUM
@@ -361,12 +393,12 @@ factor              :   NUM
 
 %%
 
-/* 
+/*
  * insert_symbol:
  * when we know a symbol's name and all its information, we create this
  * symbol and insert it into the id table
  * @t: a info struct, stores all the information of the id
- * NOTE that it(id table) should be a global object 
+ * NOTE that it(id table) should be a global object
  * TODO: is there a way not to declare it as a global ofject? Can it be
  * declared in the main function?
  */
@@ -379,10 +411,10 @@ void insert_symbol(char *name_, info t){
     } else if (t.type == _ARRAY){  /* array */
         ArrayId id = ArrayId(name, t.type, t.dim, t.prd);
         it.enter_id(id);
-    } 
+    }
 }
 
-/* 
+/*
  * insert_procedure():
  * @par: parameter list
  */
@@ -397,7 +429,7 @@ void insert_procedure(char *name_, parameter *par){
     it.enter_id(id);
 }
 
-/* 
+/*
  * insert_function():
  * @par: parameter list
  * @rt: return type
@@ -414,9 +446,9 @@ void insert_function(char *name_, parameter *par, TYPE rt){
     it.enter_id(id);
 }
 
-/* 
+/*
  * find what type(integer / real) is the num
- * TODO: add boolean (true / false) here  
+ * TODO: add boolean (true / false) here
  */
 TYPE get_type(char *s){
     while(*s){
@@ -458,6 +490,41 @@ void print_block_info(bool is_func, TYPE ret_type, parameter *p){
 }
 #endif
 
+// target code generation start
+void write_file(const char *s)
+{
+    extern FILE* yyout;
+    fputs(s, yyout);
+}
+
+void write_file(const string &s)
+{
+    write_file(s.c_str());
+}
+
+void write_file(TYPE t)
+{
+    switch (t)
+    {
+
+    case _INTEGER:
+        write_file("int");
+        break;
+    case _REAL:
+        write_file("double");
+        break;
+    case _BOOLEAN:
+        write_file("int");
+        break;
+    case _CHAR:
+        write_file("char");
+        break;
+    default:
+        yyerror("Unsupport Type");
+    }
+}
+// target code generation end
+
 int main(){
     char* FileName = new char[100];
     scanf("%s",FileName);
@@ -467,7 +534,9 @@ int main(){
         return -1;
     }
     extern FILE* yyin;
+    extern FILE* yyout;
     yyin = fp;
+    yyout = fopen("out.c", "w");
     yyparse();
     if (success == 1)
         printf("Parsing done.\n");
