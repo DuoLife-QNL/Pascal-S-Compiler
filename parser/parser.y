@@ -459,6 +459,15 @@ void print_block_info(bool is_func, TYPE ret_type, parameter *p){
 #endif
 
 int main(){
+    char* FileName = new char[100];
+    scanf("%s",FileName);
+    FILE* fp = fopen(FileName,"r");
+    if (fp == NULL){
+        printf("cannot open %s\n",FileName);
+        return -1;
+    }
+    extern FILE* yyin;
+    yyin = fp;
     yyparse();
     if (success == 1)
         printf("Parsing done.\n");
