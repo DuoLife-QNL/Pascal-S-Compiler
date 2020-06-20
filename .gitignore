@@ -79,3 +79,6 @@ out.c
 
 #build
 cmake-build-debug
+
+#CLion
+.idea
