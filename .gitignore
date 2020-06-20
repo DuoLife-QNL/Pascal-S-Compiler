@@ -71,3 +71,6 @@ parser/*.yy.c*
 parser/*.tab.c*
 parser/*.tab.h
 parser/parser
+
+#output C
+out.c
