@@ -1,3 +1,0 @@
-/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/Halloween/Documents/GitHub/Pascal-S-Complier/cmake-build-debug/CMakeFiles/Pascal_S_Complier.dir
