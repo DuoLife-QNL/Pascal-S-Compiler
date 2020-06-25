@@ -53,6 +53,12 @@
         parameter *next = nullptr;
     }parameter;
 
+    typedef struct expression{
+        bool is_var = false;
+		TYPE type = _DEFAULT;
+        expression *next = nullptr;
+	}expression;
+
     void insert_symbol(char *name_, info t);
     void insert_procedure(char *name_, parameter *par);
     void insert_function(char *name_, parameter *par, TYPE rt);
@@ -79,6 +85,9 @@
     parameter *par = nullptr;
     char *num;
     char letter;
+    char addop;
+    char mulop;
+    expression *exp = nullptr;
 }
 
 %left PLUS ADDOP MULOP
@@ -95,10 +104,14 @@
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
 %token <letter> LETTER
+%token <addop> ADDOP
+%token <mulop> MULOP
 
 %type <symbol_info> L period type basic_type const_value
 %type <par> idlist formal_parameter parameter_list
 %type <par> parameter var_parameter value_parameter
+%type <exp> expression_list variable_list
+%type <exp> expression simple_expression term factor variable id_varpart
 
 %%
 
@@ -377,9 +390,22 @@ statement           :   variable ASSIGNOP expression
                     |
                     ;
 variable_list       :   variable_list ',' variable
+                        {
+                            expression*tmp = $1;
+                            while(tmp->next)
+                                tmp = tmp->next;
+                            tmp->next = $3;
+                            $$ = $1;
+                        }
                     |   variable
+                        {
+                            $$ = $1;
+                        }
                     ;
 variable            :   ID id_varpart
+                        {
+                            // TODO 判断ID is_var
+                        }
                     ;
 id_varpart          :   '[' expression_list ']'
                     |
@@ -391,23 +417,109 @@ else_part           :   ELSE {write_file("else{\n");} statement {write_file("}\n
                     |
                     ;
 expression_list     :   expression_list ',' expression
+                        {
+                            expression*tmp = $1;
+                            while(tmp->next)
+                                tmp = tmp->next;
+                            tmp->next = $3;
+                            $$ = $1;
+                        }
                     |   expression
+                        {
+                            $$ = $1;
+                        }
                     ;
 expression          :   simple_expression RELOP simple_expression
+                        {
+                            $$.type = _BOOLEAN;
+                            $$.is_var = $1.is_val | $2.is_val;
+                        }
                     |   simple_expression
+                        {
+                            $$ = $1;
+                        }
                     ;
 simple_expression   :   simple_expression ADDOP term
+                        {
+                            $$.is_val = $1.is_val | $2.is_val;
+                            string s = $2;
+                            // Todo: 错误处理
+                            $$.type = _BOOLEAN;
+                        }
+                    |   simple_expression PLUS term
+                        {
+                            $$.is_val = $1.is_val | $2.is_val;
+                            string s = $2;
+                            // Todo: 错误处理
+                            $$.type = cmp_type($1.type, $3.type);
+                        }
+                    |   simple_expression UNMINUS term
+                        {
+                            $$.is_val = $1.is_val | $2.is_val;
+                            string s = $2;
+                            // Todo: 错误处理
+                            $$.type = cmp_type($1.type, $3.type);
+                        }
                     |   term
+                        {
+                            $$ = $1;
+                        }
                     ;
 term                :   term MULOP factor
+                        {
+                            $$.is_val = $1.is_val | $2.is_val;
+                            string s = $2;
+                            switch (s)
+                            {
+                            case "and":
+                                // Todo: 错误处理
+                                $$.type = _BOOLEAN;
+                                break;
+                            case "div":
+                                // Todo: 错误处理
+                                $$.type = cmp_type($1.type, $3.type);
+                                break;
+                            case "mod":
+                                // Todo: 错误处理
+                                $$.type = cmp_type($1.type, $3.type);
+                                break;
+                            default:
+                                // Todo: 错误处理
+                                $$.type = cmp_type($1.type, $3.type);
+                                break;
+                            }
+                        }
                     |   factor
+                        {
+                            $$ = $1;
+                        }
                     ;
 factor              :   NUM
+                        {
+                            $$.is_var = false;
+                            $$.type = get_type($1);
+                        }
                     |   variable
+                        {
+                            // Todo
+                        }
                     |   ID '(' expression_list ')'
+                        {
+                            // 根据ID（函数）确定type
+
+                        }
                     |   '(' expression_list ')'
+                        {
+                            $$.type = $2.type;
+                        }
                     |   NOT factor
+                        {
+                            $$.type = $2.type;
+                        }
                     |   UMINUS factor
+                        {
+                            $$.type = $2.type;
+                        }
                     ;
 
 %%
@@ -475,6 +587,19 @@ TYPE get_type(char *s){
             return _REAL;
     }
     return _INTEGER;
+}
+
+/*
+ * find which type return 
+ */
+TYPE cmp_type(TYPE t1, TYPE t2){
+    if (t1 == _BOOLEAN || t2 == _BOOLEAN) {
+        return _BOOLEAN;
+    } else if (t1 == _REAL || t2 == _REAL) {
+        return _REAL;
+    } else {
+        return _INTEGER;
+    }
 }
 
 void par_append(parameter *p, string name, bool is_var){
