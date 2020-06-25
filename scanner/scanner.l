@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../parser/parser.tab.h"
+#include "../parser/parser.tab.hpp"
 
 #define COMMENT 100
 

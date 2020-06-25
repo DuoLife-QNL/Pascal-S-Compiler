@@ -3,7 +3,7 @@ project(Pascal_S_Complier)
 
 set(CMAKE_CXX_STANDARD 11)
 
-find_package(BISON REQUIRED)
+find_package(BISON REQUIRED 3.5)
 find_package(FLEX REQUIRED)
 
 #BIN = parser
@@ -31,7 +31,7 @@ IF(BISON_FOUND)
     ADD_CUSTOM_COMMAND(
             MAIN_DEPENDENCY ${parser_dir}/parser.y
             OUTPUT ${bison_output}
-            COMMAND ${BISON_EXECUTABLE} -d ${parser_dir}/parser.y
+            COMMAND ${BISON_EXECUTABLE} -d parser.y
             -o ${CMAKE_SOURCE_DIR}/parser/parser.tab.cpp
             WORKING_DIRECTORY ${parser_dir}
             COMMENT "Generating parser.y"
@@ -42,7 +42,7 @@ IF(FLEX_FOUND)
     ADD_CUSTOM_COMMAND(
             MAIN_DEPENDENCY ${scanner_dir}/scanner.l
             OUTPUT ${flex_output}
-            COMMAND ${FLEX_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scanner/scanner.l
+            COMMAND ${FLEX_EXECUTABLE} scanner.l
             COMMENT "Generating scanner.l"
             COMMAND mv lex.yy.c lex.yy.cpp
             WORKING_DIRECTORY ${scanner_dir}
@@ -54,4 +54,4 @@ add_executable(Pascal_S_Complier
         ${flex_output}
         parser/IdTable.cpp
         parser/IdType.cpp
-        )
+        parser/debug.cpp)

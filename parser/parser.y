@@ -5,13 +5,28 @@
 %}
 
 %code requires {
-    #define DEBUG 1
+    /**
+     * debug level:
+     * 000 no debug
+     * 001 error
+     * 010 warning
+     * 100 info
+     * example : debug = 7, error + warning + info
+     */
+
+
     #define ACC 1
     #include <iostream>
     #include <stdio.h>
     #include <stdlib.h>
     #include <stddef.h>
     #include "IdType.h"
+    #include "debug.h"
+
+    #define INFO(msg) info(__FILE__, __LINE__, msg)
+    #define WARN(msg) warn(__FILE__, __LINE__, msg)
+    #define ERR(msg) err(__FILE__, __LINE__, msg)
+
     extern int yylex();
     int yyerror(const char *s);
     using namespace std;
@@ -99,6 +114,10 @@ idlist              :   idlist ',' ID
                         {
 #if DEBUG
                             cout << "parser: new id " << string($3) << endl;
+                            INFO("info");
+                            WARN("warn");
+                            ERR("err");
+
 #endif
                             par_append($1, $3, false);
                             $$ = $1;

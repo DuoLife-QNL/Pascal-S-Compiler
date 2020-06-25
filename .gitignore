@@ -65,6 +65,7 @@ dkms.conf
 
 #build
 build/
+cmake-build-debug/
 
 #parser
 parser/*.yy.c*
