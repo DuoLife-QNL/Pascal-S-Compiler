@@ -68,6 +68,9 @@ dkms.conf
 build/
 cmake-build-debug/
 
+#idea
+.idea/
+
 #parser
 parser/*.yy.c*
 parser/*.tab.c*
