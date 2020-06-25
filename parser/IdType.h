@@ -117,25 +117,4 @@ class FunctionId: public Block {
     TYPE get_ret_type();
 };
 
-class ExpressionList{
-  private:
-    /* Expression list */
-    std::vector<Expression>pl; 
-  public:
-    ExpressionList(std::string name, TYPE type, std::vector<Parameter> pl);
-    /* get Parameter list */
-    std::vector<Parameter> get_par_list();
-}
-
-class ExpressionId: public Id{
-  private:
-    /* Expression list */
-    std::vector<Expression>pl; 
-  public:
-    ExpressionId(std::string name, TYPE type, std::vector<Parameter> pl);
-    /* get Parameter list */
-    std::vector<Parameter> get_par_list();
-}
-
-
 #endif // STRUCT_DEF_H

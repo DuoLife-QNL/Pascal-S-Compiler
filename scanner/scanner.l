@@ -7,9 +7,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../parser/parser.tab.hpp"
+#include "../parser/parser.tab.h"
 
-#define COMMENT 100
+#define COMMENT 100ß
 
 
 // #define YYSTYPE char*;
@@ -105,7 +105,7 @@ quotation_not_match     (\'|\")
                             yylval.name = text;
                             return(ID);
                         }
-[0-9]+|[0-9]+\.[0-9]+ {yylval.num = yytext; return(NUM);}
+[0-9]+|[0-9]+\.[0-9]+ {printf("num:"); yylval.num = yytext; return(NUM);}
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
 

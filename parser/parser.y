@@ -21,7 +21,7 @@
     #include <stdlib.h>
     #include <stddef.h>
     #include "IdType.h"
-    #include "debug.h"
+    //#include "debug.h"
 
     #define INFO(msg) info(__FILE__, __LINE__, msg)
     #define WARN(msg) warn(__FILE__, __LINE__, msg)
@@ -69,6 +69,8 @@
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
     TYPE get_type(char *s);
+    TYPE cmp_type(TYPE t1, TYPE t2);
+    int get_mulop_type(string s);
 
 // target code generation funciton start
     void write_file(const char *s);
@@ -85,9 +87,9 @@
     parameter *par = nullptr;
     char *num;
     char letter;
-    char addop;
-    char mulop;
-    expression *exp = nullptr;
+    char *addop;
+    char *mulop;
+    
 }
 
 %left PLUS ADDOP MULOP
@@ -104,14 +106,14 @@
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
 %token <letter> LETTER
-%token <addop> ADDOP
+%token <addop> ADDOP PLUS UMINUS
 %token <mulop> MULOP
 
 %type <symbol_info> L period type basic_type const_value
 %type <par> idlist formal_parameter parameter_list
 %type <par> parameter var_parameter value_parameter
-%type <exp> expression_list variable_list
-%type <exp> expression simple_expression term factor variable id_varpart
+%type <par> expression_list variable_list
+%type <par> expression simple_expression term factor variable id_varpart
 
 %%
 
@@ -380,10 +382,10 @@ compound_statement  :   _BEGIN statement_list END
 statement_list      :   statement_list ';'{write_file(";\n");} statement
                     |   statement
                     ;
-statement           :   variable ASSIGNOP expression
+statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                     |   procedure_call
                     |   { write_file("{\n");}compound_statement{ write_file("}\n");}
-                    |   IF {write_file("if(");} expression { write_file(")\n");}THEN {write_file("{\n");} statement {write_file("}\n");} else_part
+                    |   IF {write_file("if(");} expression { write_file(")\n");}THEN {write_file("{\n");} statement {write_file("}\n");cout<<"else"<<endl;} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO statement
                     |   READ '(' variable_list ')'
                     |   WRITE '(' expression_list ')'
@@ -391,11 +393,7 @@ statement           :   variable ASSIGNOP expression
                     ;
 variable_list       :   variable_list ',' variable
                         {
-                            expression*tmp = $1;
-                            while(tmp->next)
-                                tmp = tmp->next;
-                            tmp->next = $3;
-                            $$ = $1;
+                            
                         }
                     |   variable
                         {
@@ -413,27 +411,20 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID
                     |   ID '(' expression_list ')'
                     ;
-else_part           :   ELSE {write_file("else{\n");} statement {write_file("}\n");}
+else_part           :   ELSE {write_file("else{\n");cout<<"ELSE"<<endl;} statement {write_file("}\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
                         {
-                            expression*tmp = $1;
-                            while(tmp->next)
-                                tmp = tmp->next;
-                            tmp->next = $3;
-                            $$ = $1;
+                            
                         }
                     |   expression
                         {
                             $$ = $1;
                         }
                     ;
-expression          :   simple_expression RELOP simple_expression
-                        {
-                            $$.type = _BOOLEAN;
-                            $$.is_var = $1.is_val | $2.is_val;
-                        }
+expression          :   simple_expression RELOP{cout<<"fds"<<endl;} simple_expression
+
                     |   simple_expression
                         {
                             $$ = $1;
@@ -441,66 +432,68 @@ expression          :   simple_expression RELOP simple_expression
                     ;
 simple_expression   :   simple_expression ADDOP term
                         {
-                            $$.is_val = $1.is_val | $2.is_val;
-                            string s = $2;
+                            $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
-                            $$.type = _BOOLEAN;
+                            $$->type = _BOOLEAN;
                         }
                     |   simple_expression PLUS term
                         {
-                            $$.is_val = $1.is_val | $2.is_val;
-                            string s = $2;
+                            $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
-                            $$.type = cmp_type($1.type, $3.type);
+                            $$->type = cmp_type($1->type, $3->type);
                         }
-                    |   simple_expression UNMINUS term
+                    |   simple_expression UMINUS term
                         {
-                            $$.is_val = $1.is_val | $2.is_val;
-                            string s = $2;
+                            $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
-                            $$.type = cmp_type($1.type, $3.type);
+                            $$->type = cmp_type($1->type, $3->type);
                         }
                     |   term
                         {
+                            cout<<"smp"<<endl;
                             $$ = $1;
                         }
                     ;
 term                :   term MULOP factor
                         {
-                            $$.is_val = $1.is_val | $2.is_val;
+                            /*$$->is_var = $1->is_var | $3->is_var;
                             string s = $2;
-                            switch (s)
+                            int i = get_mulop_type(s);
+                            switch (i)
                             {
-                            case "and":
+                            case 1: // and
                                 // Todo: 错误处理
-                                $$.type = _BOOLEAN;
+                                $$->type = _BOOLEAN;
                                 break;
-                            case "div":
+                            case 2: // div
                                 // Todo: 错误处理
-                                $$.type = cmp_type($1.type, $3.type);
+                                $$->type = cmp_type($1->type, $3->type);
                                 break;
-                            case "mod":
+                            case 3: // mod
                                 // Todo: 错误处理
-                                $$.type = cmp_type($1.type, $3.type);
+                                $$->type = cmp_type($1->type, $3->type);
                                 break;
-                            default:
+                            default: // * /
                                 // Todo: 错误处理
-                                $$.type = cmp_type($1.type, $3.type);
+                                $$->type = cmp_type($1->type, $3->type);
                                 break;
-                            }
+                            }*/
                         }
                     |   factor
                         {
+                            cout<<"term"<<endl;
                             $$ = $1;
                         }
                     ;
 factor              :   NUM
                         {
-                            $$.is_var = false;
-                            $$.type = get_type($1);
+                            cout<<"factor"<<endl;
+                            //$$->is_var = false;
+                            // $$->type = get_type($1);
                         }
                     |   variable
                         {
+                            cout<<"variable"<<endl;
                             // Todo
                         }
                     |   ID '(' expression_list ')'
@@ -510,15 +503,15 @@ factor              :   NUM
                         }
                     |   '(' expression_list ')'
                         {
-                            $$.type = $2.type;
+                            $$->type = $2->type;
                         }
                     |   NOT factor
                         {
-                            $$.type = $2.type;
+                            $$->type = $2->type;
                         }
                     |   UMINUS factor
                         {
-                            $$.type = $2.type;
+                            $$->type = $2->type;
                         }
                     ;
 
@@ -582,11 +575,15 @@ void insert_function(char *name_, parameter *par, TYPE rt){
  * TODO: add boolean (true / false) here
  */
 TYPE get_type(char *s){
-    while(*s){
-        if('.' == *s)
-            return _REAL;
+    
+    string ss = s;cout<<"sss  "<<ss<<endl;
+    string::size_type idx;
+    idx = ss.find(".");
+    if (idx == string::npos){
+        return _INTEGER;
+    } else {
+        return _REAL;
     }
-    return _INTEGER;
 }
 
 /*
@@ -599,6 +596,18 @@ TYPE cmp_type(TYPE t1, TYPE t2){
         return _REAL;
     } else {
         return _INTEGER;
+    }
+}
+
+int get_mulop_type(string s){
+    if (s == "and") {
+        return 1;
+    } else if (s == "div") {
+        return 2;
+    } else if (s == "mod") {
+        return 3;
+    } else {
+        return 4;
     }
 }
 
