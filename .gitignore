@@ -53,6 +53,7 @@ scanner_only/lex.yy.c
 scanner_only/result.txt
 scanner_only/result
 scanner_only/scanner_out 
+lex.yy.cpp
 
 
 modules.order
@@ -72,3 +73,10 @@ parser/*.yy.c*
 parser/*.tab.c*
 parser/*.tab.h
 parser/parser
+parser/*.tab.*
+
+#output C
+out.c
+
+#build
+cmake-build-debug
