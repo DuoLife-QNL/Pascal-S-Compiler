@@ -5,9 +5,10 @@
 using std::cout;
 using std::endl;
 
-Id::Id(std::string name, TYPE type){
+Id::Id(std::string name, TYPE type, TYPE ret_type=_DEFAULT){
     this->name = name;
     this->type = type;
+    this->ret_type = ret_type;
 }
 
 std::string Id::get_name(){
@@ -16,6 +17,10 @@ std::string Id::get_name(){
 
 TYPE Id::get_type(){
     return type;
+}
+
+TYPE Id::get_ret_type(){
+    return ret_type;
 }
 
 BasicTypeId::BasicTypeId(std::string name, TYPE type, bool is_const)
@@ -55,8 +60,8 @@ bool Parameter::is_var(){
     return is_var_;
 }
 
-Block::Block(std::string name, TYPE type, std::vector<Parameter> pl)
-:Id(name, type){
+Block::Block(std::string name, TYPE type, std::vector<Parameter> pl, TYPE ret_type=_DEFAULT)
+:Id(name, type, ret_type){
     this->pl = pl;
 }
 
@@ -68,13 +73,7 @@ ProcedureId::ProcedureId(std::string name, std::vector<Parameter> pl)
 :Block(name, _PROCEDURE, pl){}
 
 FunctionId::FunctionId(std::string name, std::vector<Parameter> pl, TYPE ret_type)
-:Block(name, _FUNCTION, pl){
-    this->ret_type = ret_type;
-}
-
-TYPE FunctionId::get_ret_type(){
-    return ret_type;
-}
+:Block(name, _FUNCTION, pl, ret_type){}
 
 period *init_period(){
     period *p = new period;

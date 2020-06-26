@@ -23,15 +23,18 @@ typedef enum TYPE {
   _FUNCTION
 }TYPE;
 
+
 class Id {
   private:
     TYPE type;
     std::string name;
+    TYPE ret_type;
 
   public:
-    Id(std::string name, TYPE type);
+    Id(std::string name, TYPE type, TYPE ret_type);
     std::string get_name();
     TYPE get_type();
+    TYPE get_ret_type();
 };
 
 /* 
@@ -96,7 +99,7 @@ class Block: public Id {
     /* Parameter list */
     std::vector<Parameter>pl; 
   public:
-    Block(std::string name, TYPE type, std::vector<Parameter> pl);
+    Block(std::string name, TYPE type, std::vector<Parameter> pl, TYPE ret_type);
     /* get Parameter list */
     std::vector<Parameter> get_par_list();
 };
@@ -109,11 +112,9 @@ class ProcedureId: public Block {
 class FunctionId: public Block {
   private:
     /* return type */
-    TYPE ret_type;
+    // TYPE ret_type;
   public:
     FunctionId(std::string name, std::vector<Parameter> pl, TYPE ret_type);
-    TYPE get_ret_type();
 };
-
 
 #endif // STRUCT_DEF_H
