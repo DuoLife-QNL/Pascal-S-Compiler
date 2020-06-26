@@ -53,15 +53,9 @@
         parameter *next = nullptr;
     }parameter;
 
-    typedef struct expression{
-        bool is_var = false;
-		TYPE type = _DEFAULT;
-        expression *next = nullptr;
-	}expression;
-
-    void insert_symbol(char *name_, info t);
-    void insert_procedure(char *name_, parameter *par);
-    void insert_function(char *name_, parameter *par, TYPE rt);
+    void insert_symbol(string name, info t);
+    void insert_procedure(string name, parameter *par);
+    void insert_function(string name, parameter *par, TYPE rt);
     void par_append(parameter *p, string name, bool is_var = false);
 
 #if DEBUG
@@ -70,7 +64,8 @@
 #endif
     TYPE get_type(char *s);
     TYPE cmp_type(TYPE t1, TYPE t2);
-    int get_mulop_type(string s);
+    int get_mulop_type(string *s);
+    TYPE get_fun_type(string name);
 
 // target code generation funciton start
     void write_file(const char *s);
@@ -83,12 +78,12 @@
 {
     info symbol_info;
     period prd;
-    char *name;
-    parameter *par = nullptr;
+    string *name;
+    parameter *par = nullptr; 
     char *num;
     char letter;
-    char *addop;
-    char *mulop;
+    string *addop;
+    string *mulop;
     
 }
 
@@ -134,7 +129,7 @@ idlist              :   idlist ',' ID
                             ERR("err");
 
 #endif
-                            par_append($1, $3, false);
+                            par_append($1, *$3, false);
                             $$ = $1;
 #if DEBUG
                             print_par_list($$);
@@ -143,10 +138,10 @@ idlist              :   idlist ',' ID
                     |   ID
                         {
 #if DEBUG
-                            cout << "parser: new id " << string($1) << endl;
+                            cout << "parser: new id " << *$1 << endl;
 #endif
                             $$ = new parameter;
-                            $$->name = string($1);
+                            $$->name = *$1;
                             $$->is_var = false;
                             $$->next = nullptr;
 #if DEBUG
@@ -159,11 +154,11 @@ const_declarations  :   CONST const_declaration ';'
                     ;
 const_declaration   :   const_declaration ';' ID '=' const_value
                         {
-                            insert_symbol($3, $5);
+                            insert_symbol(*$3, $5);
                         }
                     |   ID '=' const_value
                         {
-                            insert_symbol($1, $3);
+                            insert_symbol(*$1, $3);
                         }
                     ;
 const_value         :   PLUS NUM
@@ -198,11 +193,11 @@ var_declarations    :   VAR var_declaration ';'
                          */
 var_declaration     :   var_declaration ';' ID L
                         {
-                            insert_symbol($3, $4);
+                            insert_symbol(*$3, $4);
                         }
                     |   ID L
                         {
-                            insert_symbol($1, $2);
+                            insert_symbol(*$1, $2);
                         }
                     ;
 L                   :   ':' type
@@ -211,7 +206,7 @@ L                   :   ':' type
                         }
                     |   ',' ID L
                         {
-                            insert_symbol($2, $3);
+                            insert_symbol(*$2, $3);
                             $$ = $3;
                         }
 type                :   basic_type
@@ -274,16 +269,16 @@ subprogram          :   subprogram_head ';' subprogram_body
                     ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
-                            insert_procedure($2, $3);
+                            insert_procedure(*$2, $3);
                         }
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
-                            cout << "inserting function " << string($2) << ":" << endl;
+                            cout << "inserting function " << *$2 << ":" << endl;
                             print_block_info(true, $5.type, $3);
 
 #endif
-                            insert_function($2, $3, $5.type);
+                            insert_function(*$2, $3, $5.type);
                             cout << "insert done" << endl;
                         }
                     ;
@@ -416,48 +411,63 @@ else_part           :   ELSE {write_file("else{\n");cout<<"ELSE"<<endl;} stateme
                     ;
 expression_list     :   expression_list ',' expression
                         {
-                            
+                            parameter *tmp = $1;
+                            while(tmp){
+                                tmp->type = $3->type;
+                                tmp = tmp->next;
+                            }
+                            $$ = $1;
                         }
                     |   expression
                         {
-                            $$ = $1;
+                            $$->type = $1->type;
                         }
                     ;
-expression          :   simple_expression RELOP{cout<<"fds"<<endl;} simple_expression
-
+expression          :   simple_expression RELOP simple_expression
+                        {
+                            $$ = new parameter;
+                            $$->type = _BOOLEAN;
+                            cout<<"\nexpression "<<$$->type<<endl<<endl;
+                        }
                     |   simple_expression
                         {
-                            $$ = $1;
+                            $$ = new parameter;
+                            $$->type = $1->type;
+                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                         }
                     ;
 simple_expression   :   simple_expression ADDOP term
                         {
+                            $$ = new parameter;
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = _BOOLEAN;
                         }
                     |   simple_expression PLUS term
                         {
+                            $$ = new parameter;
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
                         }
                     |   simple_expression UMINUS term
                         {
+                            $$ = new parameter;
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
                         }
                     |   term
                         {
-                            cout<<"smp"<<endl;
-                            $$ = $1;
+                            $$ = new parameter;
+                            $$->type = $1->type;
                         }
                     ;
 term                :   term MULOP factor
                         {
-                            /*$$->is_var = $1->is_var | $3->is_var;
-                            string s = $2;
+                            $$ = new parameter;
+                            $$->is_var = $1->is_var | $3->is_var;
+                            string* s = $2;
                             int i = get_mulop_type(s);
                             switch (i)
                             {
@@ -477,40 +487,47 @@ term                :   term MULOP factor
                                 // Todo: 错误处理
                                 $$->type = cmp_type($1->type, $3->type);
                                 break;
-                            }*/
+                            }
                         }
                     |   factor
                         {
-                            cout<<"term"<<endl;
-                            $$ = $1;
+                            $$ = new parameter;
+                            $$->type = $1->type;
                         }
                     ;
 factor              :   NUM
                         {
-                            cout<<"factor"<<endl;
+                            $$ = new parameter;
                             //$$->is_var = false;
-                            // $$->type = get_type($1);
+                            $$->type = get_type($1); 
+                            cout<<"factor "<<$$->type<<endl;
                         }
                     |   variable
                         {
+                            $$ = new parameter;
                             cout<<"variable"<<endl;
+                            $$->type = _INTEGER;
                             // Todo
                         }
                     |   ID '(' expression_list ')'
                         {
+                            $$ = new parameter;
                             // 根据ID（函数）确定type
-
+                            $$->type = get_fun_type(*$1);
                         }
                     |   '(' expression_list ')'
                         {
+                            $$ = new parameter;
                             $$->type = $2->type;
                         }
                     |   NOT factor
                         {
+                            $$ = new parameter;
                             $$->type = $2->type;
                         }
                     |   UMINUS factor
                         {
+                            $$ = new parameter;
                             $$->type = $2->type;
                         }
                     ;
@@ -526,15 +543,14 @@ factor              :   NUM
  * TODO: is there a way not to declare it as a global ofject? Can it be
  * declared in the main function?
  */
-void insert_symbol(char *name_, info t){
-    string name = string(name_);
-    /* basic type */
+void insert_symbol(string name, info t){
+    /* basic type */ 
     if (t.type >= _INTEGER and t.type <= _CHAR){
-        BasicTypeId id = BasicTypeId(name, t.type, t.is_const);
-        it.enter_id(id);
+        BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
+        it.enter_id((Id*)id);
     } else if (t.type == _ARRAY){  /* array */
-        ArrayId id = ArrayId(name, t.type, t.dim, t.prd);
-        it.enter_id(id);
+        ArrayId *id = new ArrayId(name, t.type, t.dim, t.prd);
+        it.enter_id((Id*)id);
     }
 }
 
@@ -542,32 +558,30 @@ void insert_symbol(char *name_, info t){
  * insert_procedure():
  * @par: parameter list
  */
-void insert_procedure(char *name_, parameter *par){
-    string name = string(name_);
+void insert_procedure(string name, parameter *par){
     vector<Parameter> pl;
     while(par){
         Parameter p = Parameter(par->name, par->type, par->is_var);
         pl.push_back(p);
     }
-    ProcedureId id = ProcedureId(name, pl);
-    it.enter_id(id);
-}
+    ProcedureId *id = new ProcedureId(name, pl);
+    it.enter_id((Id*)&id);
+} 
 
 /*
  * insert_function():
  * @par: parameter list
  * @rt: return type
  */
-void insert_function(char *name_, parameter *par, TYPE rt){
-    string name = string(name_);
+void insert_function(string name, parameter *par, TYPE rt){ 
     vector<Parameter> pl;
     while(par){
         Parameter p = Parameter(par->name, par->type, par->is_var);
         pl.push_back(p);
         par = par->next;
-    }
-    FunctionId id = FunctionId(name, pl, rt);
-    it.enter_id(id);
+    } 
+    FunctionId *id = new FunctionId(name, pl, rt);
+    it.enter_id((Id*)id);
 }
 
 /*
@@ -575,8 +589,7 @@ void insert_function(char *name_, parameter *par, TYPE rt){
  * TODO: add boolean (true / false) here
  */
 TYPE get_type(char *s){
-    
-    string ss = s;cout<<"sss  "<<ss<<endl;
+    string ss = s;
     string::size_type idx;
     idx = ss.find(".");
     if (idx == string::npos){
@@ -599,17 +612,32 @@ TYPE cmp_type(TYPE t1, TYPE t2){
     }
 }
 
-int get_mulop_type(string s){
-    if (s == "and") {
+int get_mulop_type(string* s){
+    if (*s == "and") {
         return 1;
-    } else if (s == "div") {
+    } else if (*s == "div") {
         return 2;
-    } else if (s == "mod") {
+    } else if (*s == "mod") {
         return 3;
     } else {
         return 4;
     }
 }
+
+/*
+ * return function type by name
+ */
+TYPE get_fun_type(string name) {
+    int index;
+    index = it.find_id(name);
+    if (index == -1) {
+        return _DEFAULT;
+    } else {
+        Id* id = it.get_id(index);
+        return id->get_ret_type();
+    }
+}
+
 
 void par_append(parameter *p, string name, bool is_var){
     parameter *tmp = p;

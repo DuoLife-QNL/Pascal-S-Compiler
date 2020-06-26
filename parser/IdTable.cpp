@@ -9,9 +9,9 @@ IdTable::IdTable(){
   index.push(0);
 }
 
-void IdTable::enter_id(Id symbol){
+void IdTable::enter_id(Id *symbol){
   table.push_back(symbol);
-  TYPE s_type = symbol.get_type();
+  TYPE s_type = symbol->get_type();
   if (s_type == _PROCEDURE || s_type == _FUNCTION)
     locate();
 }
@@ -22,7 +22,7 @@ int IdTable::find_id(std::string name) {
   }
 
   for(int i = table.size() - 1; i >= 0; i--){
-    if (table.at(i).get_name() == name){
+    if (table.at(i)->get_name() == name){
       return i;
     }
   }
@@ -44,4 +44,8 @@ void IdTable::end_block(){
 
 inline bool IdTable::in_cur_scope(int i){
   return i >= index.top();
+}
+
+Id* IdTable::get_id(int i) {
+  return table.at(i);
 }
