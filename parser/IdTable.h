@@ -9,7 +9,7 @@
 #define array(a,b,c,d)
 class IdTable {
 private:
-  std::vector<Id> table;
+  std::vector<Id*> table;
   /* block index table */
   std::stack<int> index;
 
@@ -31,7 +31,7 @@ public:
    * NOTE That locate() is considered to be a private
    * function
    */
-  void enter_id(Id symbol);
+  void enter_id(Id *symbol);
 
   /* 
    * We need to know whether the symbol is in current scope,
@@ -56,6 +56,12 @@ public:
    * @i: the index of the id
    */
   bool in_cur_scope(int i);  
+
+  /* 
+   * return id instance by index
+   * @i: the index of the id
+   */
+  Id* get_id(int i);
 
 };
 
