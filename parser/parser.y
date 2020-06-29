@@ -101,11 +101,7 @@
 %token PROGRAM
 %token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
-<<<<<<< HEAD
-%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
-=======
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP
->>>>>>> a1246c25b3866e0a0e58f009c7554ce5d4bc428a
 %token READ WRITE ARRAY OF
 
 %token <name> ID MULOP ADDOP PLUS UMINUS RELOP
@@ -479,7 +475,7 @@ procedure_call      :   ID {wf(*$1, "()");}
                             {
                                 if (argc != 0)
                                     wf(", ");
-                                wf((par_list[argc].is_var() ? "&": "") + c->text);
+                                wf((par_list[argc].is_var ? "&": "") + c->text);
                                 ++argc;
                             }
                         }
@@ -492,12 +488,8 @@ expression_list     :   expression_list ',' expression
                             parameter *tmp = $1;
                             while(tmp->next){
                                 tmp = tmp->next;
-<<<<<<< HEAD
                             }
                             tmp->next = $3;
-=======
-                           }
->>>>>>> a1246c25b3866e0a0e58f009c7554ce5d4bc428a
                             $$ = $1;
                         }
                     |   expression
@@ -617,7 +609,7 @@ factor              :   NUM
                             {
                                 if (argc != 0)
                                     $$->text += ", ";
-                                $$->text += (par_list[argc].is_var() ? "&": "") + c->text;
+                                $$->text += (par_list[argc].is_var ? "&": "") + c->text;
                                 ++argc;
                             }
                             $$->text += ")";
