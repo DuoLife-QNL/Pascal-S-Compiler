@@ -281,7 +281,7 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                            print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
-			    cout << "insert done" << endl;
+			                cout << "insert done" << endl;
 
                             wf("void ", *$2, "(");
                             bool first = true;
@@ -371,8 +371,6 @@ value_parameter     :   idlist ':' basic_type
                                 tmp = tmp->next;
                             }
                             $$ = $1;
-
-
                         }
                     ;
 subprogram_body     :   const_declarations var_declarations {wf("{\n");} compound_statement {wf("}\n");}
@@ -678,13 +676,21 @@ void insert_procedure(string name, parameter *par){
  */
 void insert_function(string name, parameter *par, TYPE rt){
     vector<Parameter> pl;
-    while(par){
-        Parameter p = Parameter(par->name, par->type, par->is_var);
+    parameter* par1 = par;
+    while(par1){
+        Parameter p = Parameter(par1->name, par1->type, par1->is_var);
         pl.push_back(p);
-        par = par->next;
+        par1 = par1->next;
     }
     FunctionId *id = new FunctionId(name, pl, rt);
     it.enter_id((Id*)id);
+
+    parameter* par2 = par;
+    while(par2){
+        Parameter *p = new Parameter(par2->name, par2->type, par2->is_var);
+        it.enter_id((Id*)p);
+        par2 = par2->next;
+    }
 }
 
 /*
