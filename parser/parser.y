@@ -100,7 +100,7 @@
 %token READ WRITE ARRAY OF
 
 %token <name> ID
-%token <prd> DIGITS..DIGITS
+%token <prd> DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
 %token <letter> LETTER
@@ -127,28 +127,22 @@ idlist              :   idlist ',' ID
                         {
 
 #if DEBUG
-                            cout << "parser: new id " << string(*$3) << endl;
+                            INFO("new id %s", (char *)$3->data());
 #endif
                             par_append($1, *$3, false);
                             $$ = $1;
-#if DEBUG
-                            print_par_list($$);
-#endif
                         }
                     |   ID
                         {
 #if DEBUG
-//                            cout << "parser: new id " << *$1 << endl;
-
                             INFO("new id %s", (char *)$1->data());
 #endif
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
                             $$->next = nullptr;
-#if DEBUG
-                            print_par_list($$);
-#endif
+
+
                         }
                     |	error
                     	{
@@ -241,9 +235,13 @@ basic_type          :   INTEGER
                         {
                             $$.type = _CHAR;
                         }
+                    |	error
+                    	{
+                    	    ERR("unknown type");
+                    	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
-period              :   period ',' DIGITS..DIGITS
+period              :   period ',' DIGITSDOTDOTDIGITS
                         {
                             $$.dim = $1.dim + 1;
                             period *p = init_period();
@@ -257,7 +255,7 @@ period              :   period ',' DIGITS..DIGITS
                          * and end directly
                          */
                         // TODO: ask lex to add start and end to this
-                    |   DIGITS..DIGITS
+                    |   DIGITSDOTDOTDIGITS
                         {
                             $$.dim = 1;
                             $$.prd = init_period();
@@ -275,7 +273,12 @@ subprogram          :   subprogram_head ';' subprogram_body
                     ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
+#if DEBUG
+                           cout << "inserting procedure " << *$2 << ":" << endl;
+                           print_block_info(false, _VOID , $3);
+#endif
                             insert_procedure(*$2, $3);
+			    cout << "insert done" << endl;
 
                             wf("void ", *$2, "(");
                             bool first = true;
@@ -333,14 +336,7 @@ parameter_list      :   parameter_list ';' parameter
                         {
                             $$ = $1;
 #if DEBUG
-                            int is_var = $1->is_var;
-                            cout << "append "
-    #if is_var
-                            "var"
-    #else
-                            "non-var"
-    #endif
-                            "parameters to parameter list" << endl;
+                            INFO("append %s to parameter list\n", $1->is_var ? "var" : "non-var");
                             print_par_list($$);
 #endif
                         }
@@ -442,7 +438,7 @@ expression_list     :   expression_list ',' expression
                             while(tmp){
                                 tmp->type = $3->type;
                                 tmp = tmp->next;
-                            }
+                           }
                             $$ = $1;
                         }
                     |   expression
@@ -604,9 +600,10 @@ void insert_procedure(string name, parameter *par){
     while(par){
         Parameter p = Parameter(par->name, par->type, par->is_var);
         pl.push_back(p);
+        par = par->next;
     }
     ProcedureId *id = new ProcedureId(name, pl);
-    it.enter_id((Id*)&id);
+    it.enter_id((Id*)id);
 }
 
 /*
@@ -675,7 +672,8 @@ TYPE get_fun_type(string name) {
         return _DEFAULT;
     } else {
         Id* id = it.get_id(index);
-        return id->get_ret_type();
+//       TODO check if it is an instanceof block
+         return ((Block*)id)->get_ret_type();
     }
 }
 
