@@ -69,21 +69,21 @@ quotation_not_match     (\'|\")
 ")"                   {printf("shift ) \n");  lex_column_index += 1; return(')');}
 "["                   {printf("shift [ \n"); lex_column_index += 1; return('[');}
 "]"                   {printf("shift ] \n"); lex_column_index += 1; return(']');}
-"+"                   {printf("shift + \n"); yylval.addop = new string(yytext); lex_column_index += 1;return(PLUS);   }
-"-"                   {printf("shift - \n"); yylval.addop = new string(yytext); lex_column_index += 1;return(UMINUS);      }
-"*"                   {printf("shift * \n"); yylval.mulop = new string(yytext); lex_column_index += 1;return(MULOP);      }
-"/"                   {printf("shift / \n"); yylval.mulop = new string(yytext); lex_column_index += 1;return(MULOP);      }
-[Mm][Oo][Dd]          {printf("shift mod \n"); yylval.mulop = new string(yytext); lex_column_index += 3;  return(MULOP);      }
-[Aa][Nn][Dd]          {printf("shift and \n"); yylval.mulop = new string(yytext); lex_column_index += 3;  return(MULOP);      }
-[Dd][Ii][Vv]          {printf("shift div \n"); yylval.mulop = new string(yytext); lex_column_index += 3;  return(MULOP);      }
-[Oo][Rr]              {printf("shift or \n"); yylval.addop = new string(yytext); lex_column_index += 2; return(ADDOP);       }
+"+"                   {printf("shift + \n"); yylval.name = new string(yytext); lex_column_index += 1;return(PLUS);   }
+"-"                   {printf("shift - \n"); yylval.name = new string(yytext); lex_column_index += 1;return(UMINUS);      }
+"*"                   {printf("shift * \n"); yylval.name = new string(yytext); lex_column_index += 1;return(MULOP);      }
+"/"                   {printf("shift / \n"); yylval.name = new string(yytext); lex_column_index += 1;return(MULOP);      }
+[Mm][Oo][Dd]          {printf("shift mod \n"); yylval.name = new string(yytext); lex_column_index += 3;  return(MULOP);      }
+[Aa][Nn][Dd]          {printf("shift and \n"); yylval.name = new string(yytext); lex_column_index += 3;  return(MULOP);      }
+[Dd][Ii][Vv]          {printf("shift div \n"); yylval.name = new string(yytext); lex_column_index += 3;  return(MULOP);      }
+[Oo][Rr]              {printf("shift or \n"); yylval.name = new string(yytext); lex_column_index += 2; return(ADDOP);       }
 [Nn][Oo][Tt]          {printf("shift not \n");lex_column_index += 3;  return(NOT);      }
-">"                   {printf("shift > \n");  lex_column_index += 1;return(RELOP);      }
-"<"                   {printf("shift < \n");  lex_column_index += 1;return(RELOP);      }
-"="                   {printf("shift = \n");  lex_column_index += 1;return(RELOP);      }
-"<>"                  {printf("shift <> \n"); lex_column_index += 2; return(RELOP);      }
-">="                  {printf("shift >= \n"); lex_column_index += 2; return(RELOP);      }
-"<="                  {printf("shift <= \n"); lex_column_index += 2;return(RELOP);      }
+">"                   {printf("shift > \n"); yylval.name = new string(yytext); lex_column_index += 1;return(RELOP);      }
+"<"                   {printf("shift < \n"); yylval.name = new string(yytext); lex_column_index += 1;return(RELOP);      }
+"="                   {printf("shift = \n"); yylval.name = new string(yytext); lex_column_index += 1;return(RELOP);      }
+"<>"                  {printf("shift <> \n"); yylval.name = new string(yytext); lex_column_index += 2; return(RELOP);      }
+">="                  {printf("shift >= \n"); yylval.name = new string(yytext); lex_column_index += 2; return(RELOP);      }
+"<="                  {printf("shift <= \n"); yylval.name = new string(yytext); lex_column_index += 2;return(RELOP);      }
 ";"                   {printf("shift ; \n"); lex_column_index += 1;return(';');}
 ":"                   {printf("shift : \n");  lex_column_index += 1;  return(':');}
 "."                   {printf("shift . \n");   lex_column_index += 1;   return('.');}

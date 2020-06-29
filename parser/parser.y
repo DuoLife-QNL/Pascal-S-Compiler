@@ -99,13 +99,11 @@
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP
 %token READ WRITE ARRAY OF
 
-%token <name> ID
+%token <name> ID MULOP ADDOP PLUS UMINUS RELOP
 %token <prd> DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
 %token <letter> LETTER
-%token <addop> ADDOP PLUS UMINUS
-%token <mulop> MULOP
 
 %type <symbol_info> L period type basic_type const_value
 %type <par> idlist formal_parameter parameter_list
