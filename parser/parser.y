@@ -51,6 +51,7 @@
         bool is_var = false;
         TYPE type = _DEFAULT;
         parameter *next = nullptr;
+        string text = "test";
     }parameter;
 
     void insert_symbol(string name, info t);
@@ -275,6 +276,18 @@ subprogram          :   subprogram_head ';' subprogram_body
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
                             insert_procedure(*$2, $3);
+
+                            wf("void ", *$2, "(");
+                            bool first = true;
+                            for (auto *cur = $3; cur; cur = cur->next)
+                            {
+                                if (first)
+                                    first = false;
+                                else
+                                    wf(", ");
+                                wf(cur->type, cur->is_var ? " *": " ", cur->name);
+                            }
+                            wf(")");
                         }
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
@@ -285,6 +298,18 @@ subprogram_head     :   PROCEDURE ID formal_parameter
 #endif
                             insert_function(*$2, $3, $5.type);
                             cout << "insert done" << endl;
+
+                            wf($5.type, " ", *$2, "(");
+                            bool first = true;
+                            for (auto *cur = $3; cur; cur = cur->next)
+                            {
+                                if (first)
+                                    first = false;
+                                else
+                                    wf(", ");
+                                wf(cur->type, cur->is_var ? " *": " ", cur->name);
+                            }
+                            wf(")");
                         }
                     ;
 formal_parameter    :   '(' parameter_list ')'
@@ -323,34 +348,10 @@ parameter_list      :   parameter_list ';' parameter
 parameter           :   var_parameter
                         {
                             $$ = $1;
-                            bool first = true;
-                            for (auto *cur = $1; cur; cur = cur->next)
-                            {
-                                if (first)
-                                    first = false;
-                                else
-                                    wf(", ");
-                                wf(cur->type);
-                                if (cur->is_var) wf("*");
-                                wf(" ");
-                                wf(cur->name);
-                            }
                         }
                     |   value_parameter
                         {
                             $$ = $1;
-                            bool first = true;
-                            for (auto *cur = $1; cur; cur = cur->next)
-                            {
-                                if (first)
-                                    first = false;
-                                else
-                                    wf(", ");
-                                wf(cur->type);
-                                if (cur->is_var) wf("*");
-                                wf(" ");
-                                wf(cur->name);
-                            }
                         }
                     ;
 var_parameter       :   VAR value_parameter
@@ -384,7 +385,9 @@ statement_list      :   statement_list ';'{wf(";\n");} statement
                     ;
 statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         {
-                            wf($1.name, "=");
+                            auto is_func = get_fun_type($1->name) != _DEFAULT;
+                            if (is_func) wf("return ", $3->text);
+                            else wf($1->name, "=", $3->text);
                         }
                     |   procedure_call
                         {
@@ -393,14 +396,18 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                     |   { wf("{\n");}
                         compound_statement
                         { wf("}\n");}
-                    |   IF {wf("if(");} expression { wf(")\n");}THEN {wf("{\n");} statement {wf("}\n");cout<<"else"<<endl;} else_part
+                    |   IF expression THEN
+                        {
+                            wf("if(", $2->text, "){\n");
+                        }
+                        statement {wf(";}\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            wf("for(", $1.name, "=", "", ";", $1.name, "<", "", ";", "++", $1.name, ")\n{\n");
+                            wf("for(int", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
                         }
                         statement
                         {
-                            wf("}\n");
+                            wf(";\n}\n");
                         }
                     |   READ '(' variable_list ')'
                     |   WRITE '(' expression_list ')'
@@ -426,7 +433,7 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID
                     |   ID '(' expression_list ')'
                     ;
-else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf("}\n");}
+else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf(";\n}\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -448,12 +455,14 @@ expression          :   simple_expression RELOP simple_expression
                             $$ = new parameter;
                             $$->type = _BOOLEAN;
                             cout<<"\nexpression "<<$$->type<<endl<<endl;
+                            $$->text = $1->text + "relop" + $3->text;
                         }
                     |   simple_expression
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
                             cout<<"\nexpression "<<$$->type<<endl<<endl;
+                            $$->text = $1->text;
                         }
                     ;
 simple_expression   :   simple_expression ADDOP term
@@ -462,6 +471,7 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = _BOOLEAN;
+                            $$->text = $1->text + "addop" + $3->text;
                         }
                     |   simple_expression PLUS term
                         {
@@ -469,6 +479,7 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
+                            $$->text = $1->text + "plus" + $3->text;
                         }
                     |   simple_expression UMINUS term
                         {
@@ -476,11 +487,13 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
+                            $$->text = $1->text + "uminus" + $3->text;
                         }
                     |   term
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
+                            $$->text = $1->text;
                         }
                     ;
 term                :   term MULOP factor
@@ -508,11 +521,13 @@ term                :   term MULOP factor
                                 $$->type = cmp_type($1->type, $3->type);
                                 break;
                             }
+                            $$->text = $1->text + "mulop" + $3->text;
                         }
                     |   factor
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
+                            $$->text = $1->text;
                         }
                     ;
 factor              :   NUM
@@ -521,12 +536,14 @@ factor              :   NUM
                             //$$->is_var = false;
                             $$->type = get_type($1);
                             cout<<"factor "<<$$->type<<endl;
+                            $$->text = $1;
                         }
                     |   variable
                         {
                             $$ = new parameter;
                             cout<<"variable"<<endl;
                             $$->type = _INTEGER;
+                            $$->text = $1->name;
                             // Todo
                         }
                     |   ID '(' expression_list ')'
@@ -534,21 +551,25 @@ factor              :   NUM
                             $$ = new parameter;
                             // 根据ID（函数）确定type
                             $$->type = get_fun_type(*$1);
+                            $$->text = *$1 + "()";
                         }
                     |   '(' expression_list ')'
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
+                            $$->text = $2->text;
                         }
                     |   NOT factor
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
+                            $$->text = "!" + $2->text;
                         }
                     |   UMINUS factor
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
+                            $$->text = "-" + $2->text;
                         }
                     ;
 
