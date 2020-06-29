@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.14)
 project(Pascal_S_Complier)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -31,7 +30,7 @@ IF(BISON_FOUND)
     ADD_CUSTOM_COMMAND(
             MAIN_DEPENDENCY ${parser_dir}/parser.y
             OUTPUT ${bison_output}
-            COMMAND ${BISON_EXECUTABLE} -d parser.y
+            COMMAND ${BISON_EXECUTABLE} -d parser.y --graph --report=lookaheads
             -o ${CMAKE_SOURCE_DIR}/parser/parser.tab.cpp
             WORKING_DIRECTORY ${parser_dir}
             COMMENT "Generating parser.y"

@@ -21,11 +21,11 @@
     #include <stdlib.h>
     #include <stddef.h>
     #include "IdType.h"
-    //#include "debug.h"
+    #include "debug.h"
 
-    #define INFO(msg) info(__FILE__, __LINE__, msg)
-    #define WARN(msg) warn(__FILE__, __LINE__, msg)
-    #define ERR(msg) err(__FILE__, __LINE__, msg)
+    #define INFO(args...) do {char msg[1024]; sprintf(msg, ##args); info(__FILE__, __LINE__, msg);} while(0)
+    #define WARN(args...) do {char msg[1024]; sprintf(msg, ##args); warn(__FILE__, __LINE__, msg);} while(0)
+    #define ERR(args...) do {char msg[1024]; sprintf(msg, ##args); err(__FILE__, __LINE__, msg);} while(0)
 
     extern int yylex();
     int yyerror(const char *s);
@@ -93,7 +93,7 @@
 %token PROGRAM
 %token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
-%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP UMINUS
+%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP
 %token READ WRITE ARRAY OF
 
 %token <name> ID
@@ -122,12 +122,9 @@ program_body        :   const_declarations var_declarations subprogram_declarati
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-#if DEBUG
-                            cout << "parser: new id " << string($3) << endl;
-                            INFO("info");
-                            WARN("warn");
-                            ERR("err");
 
+#if DEBUG
+                            cout << "parser: new id " << string(*$3) << endl;
 #endif
                             par_append($1, *$3, false);
                             $$ = $1;
@@ -138,7 +135,9 @@ idlist              :   idlist ',' ID
                     |   ID
                         {
 #if DEBUG
-                            cout << "parser: new id " << *$1 << endl;
+//                            cout << "parser: new id " << *$1 << endl;
+
+                            INFO("new id %s", (char *)$1->data());
 #endif
                             $$ = new parameter;
                             $$->name = *$1;
@@ -148,6 +147,10 @@ idlist              :   idlist ',' ID
                             print_par_list($$);
 #endif
                         }
+                    |	error
+                    	{
+                    	    ERR("err id");
+                    	}
                     ;
 const_declarations  :   CONST const_declaration ';'
                     |
@@ -726,8 +729,9 @@ int main(){
 
 int yyerror(const char *msg)
 {
+	static int err_no = 1;
 	extern int yylineno;
-	printf("Parsing Failed\nLine Number: %d %s\n",yylineno,msg);
+	printf("Error %d, Line Number: %d %s\n", err_no++, yylineno, msg);
     success = 0;
 	return 0;
 }
