@@ -68,6 +68,7 @@
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
+    parameter* get_id_info(string name);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -448,7 +449,12 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                     ;
 variable_list       :   variable_list ',' variable
                         {
-
+                            parameter *tmp = $1;
+                            while(tmp->next){
+                                tmp = tmp->next;
+                            }
+                            tmp->next = $3;
+                            $$ = $1;
                         }
                     |   variable
                         {
@@ -458,6 +464,8 @@ variable_list       :   variable_list ',' variable
 variable            :   ID id_varpart
                         {
                             // TODO 判断ID is_var
+                            $$ = get_id_info(*$1);
+                            // cout<<"  variable/:" <<$$->type<<" "<<$$->is_var<<endl;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
@@ -590,10 +598,9 @@ factor              :   NUM
                     |   variable
                         {
                             $$ = new parameter;
-                            cout<<"variable"<<endl;
-                            $$->type = _INTEGER;
+                            $$ = $1;
                             $$->text = $1->name;
-                            // Todo
+                            cout<<"variable "<<$$->name<<" "<<$$->type<<" "<<$$->is_var<<endl;
                         }
                     |   ID '(' expression_list ')'
                         {
@@ -660,13 +667,21 @@ void insert_symbol(string name, info t){
  */
 void insert_procedure(string name, parameter *par){
     vector<Parameter> pl;
-    while(par){
-        Parameter p = Parameter(par->name, par->type, par->is_var);
+    parameter* par1 = par;
+    while(par1){
+        Parameter p = Parameter(par1->name, par1->type, par1->is_var);
         pl.push_back(p);
-        par = par->next;
+        par1 = par1->next;
     }
     ProcedureId *id = new ProcedureId(name, pl);
     it.enter_id((Id*)id);
+
+    parameter* par2 = par;
+    while(par2){
+        Parameter *p = new Parameter(par2->name, par2->type, par2->is_var);
+        it.enter_id((Id*)p);
+        par2 = par2->next;
+    }
 }
 
 /*
@@ -746,6 +761,28 @@ TYPE get_fun_type(string name) {
 //       TODO check if it is an instanceof block
          return ((Block*)id)->get_ret_type();
     }
+}
+
+/*
+ * return id type and is_var by name
+ */
+parameter* get_id_info(string name) {
+    int index;
+    index = it.find_id(name);
+    parameter* par = new parameter;
+    if (index == -1) {
+        par = nullptr;
+    } else {
+        Id* id = it.get_id(index);
+        par->name = name;
+        par->type = id->get_type();
+        try {
+            par->is_var = ((Parameter*)id)->get_is_var();
+        } catch(...) {
+            par->is_var = false;
+        }
+    }
+    return par;
 }
 
 

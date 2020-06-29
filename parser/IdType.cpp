@@ -62,6 +62,10 @@ Parameter::Parameter(std::string name, TYPE type, bool is_var)
     this->is_var = is_var;
 }
 
+bool Parameter::get_is_var() {
+    return this->is_var;
+}
+
 Block::Block(std::string name,
              TYPE type,
              std::vector<Parameter> pl,

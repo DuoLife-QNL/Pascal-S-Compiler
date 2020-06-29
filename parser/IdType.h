@@ -82,6 +82,8 @@ class Parameter : public BasicTypeId {
   */
   bool is_var;
   Parameter(std::string name, TYPE type, bool is_var);
+
+  bool get_is_var();
 };
 
 /* function and procedure are inherited from Block */
