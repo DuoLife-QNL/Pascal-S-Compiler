@@ -1,10 +1,10 @@
 program idTest(input, output);
     var x, y: integer;
-    var a: real;
-    var b: boolean;
-    var c: char;
-    var d: array [1..2] of char;
-    procedure out(a: real, b: boolean, c: char)
+    a: real;
+    b: boolean;
+    c: char;
+    d: array [1..2] of char;
+    procedure out(a: real; b: boolean; c: char);
         begin
         end;
 
@@ -14,7 +14,6 @@ program idTest(input, output);
             else gcd:=gcd(b, a mod b)
         end;
     begin
-        out();
         read(x, y);
         write(gcd(x, y))
     end.
