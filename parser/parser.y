@@ -68,9 +68,11 @@
     TYPE get_fun_type(string name);
 
 // target code generation funciton start
-    void write_file(const char *s);
-    void write_file(const string &s);
-    void write_file(TYPE t);
+    void wf(const char *s);
+    void wf(const string &s);
+    void wf(TYPE t);
+    template<class T, class ...Args>
+    void wf(T head, Args ...rest);
 // target code generation function end
 }
 
@@ -79,12 +81,12 @@
     info symbol_info;
     period prd;
     string *name;
-    parameter *par = nullptr; 
+    parameter *par = nullptr;
     char *num;
     char letter;
     string *addop;
     string *mulop;
-    
+
 }
 
 %left PLUS ADDOP MULOP
@@ -327,11 +329,11 @@ parameter           :   var_parameter
                                 if (first)
                                     first = false;
                                 else
-                                    write_file(", ");
-                                write_file(cur->type);
-                                if (cur->is_var) write_file("*");
-                                write_file(" ");
-                                write_file(cur->name);
+                                    wf(", ");
+                                wf(cur->type);
+                                if (cur->is_var) wf("*");
+                                wf(" ");
+                                wf(cur->name);
                             }
                         }
                     |   value_parameter
@@ -343,11 +345,11 @@ parameter           :   var_parameter
                                 if (first)
                                     first = false;
                                 else
-                                    write_file(", ");
-                                write_file(cur->type);
-                                if (cur->is_var) write_file("*");
-                                write_file(" ");
-                                write_file(cur->name);
+                                    wf(", ");
+                                wf(cur->type);
+                                if (cur->is_var) wf("*");
+                                wf(" ");
+                                wf(cur->name);
                             }
                         }
                     ;
@@ -373,25 +375,40 @@ value_parameter     :   idlist ':' basic_type
 
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations {write_file("{\n");} compound_statement {write_file("}\n");}
+subprogram_body     :   const_declarations var_declarations {wf("{\n");} compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
-statement_list      :   statement_list ';'{write_file(";\n");} statement
+statement_list      :   statement_list ';'{wf(";\n");} statement
                     |   statement
                     ;
 statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
+                        {
+                            wf($1.name, "=");
+                        }
                     |   procedure_call
-                    |   { write_file("{\n");}compound_statement{ write_file("}\n");}
-                    |   IF {write_file("if(");} expression { write_file(")\n");}THEN {write_file("{\n");} statement {write_file("}\n");cout<<"else"<<endl;} else_part
-                    |   FOR ID ASSIGNOP expression TO expression DO statement
+                        {
+
+                        }
+                    |   { wf("{\n");}
+                        compound_statement
+                        { wf("}\n");}
+                    |   IF {wf("if(");} expression { wf(")\n");}THEN {wf("{\n");} statement {wf("}\n");cout<<"else"<<endl;} else_part
+                    |   FOR ID ASSIGNOP expression TO expression DO
+                        {
+                            wf("for(", $1.name, "=", "", ";", $1.name, "<", "", ";", "++", $1.name, ")\n{\n");
+                        }
+                        statement
+                        {
+                            wf("}\n");
+                        }
                     |   READ '(' variable_list ')'
                     |   WRITE '(' expression_list ')'
                     |
                     ;
 variable_list       :   variable_list ',' variable
                         {
-                            
+
                         }
                     |   variable
                         {
@@ -409,7 +426,7 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID
                     |   ID '(' expression_list ')'
                     ;
-else_part           :   ELSE {write_file("else{\n");cout<<"ELSE"<<endl;} statement {write_file("}\n");}
+else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf("}\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -502,7 +519,7 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             //$$->is_var = false;
-                            $$->type = get_type($1); 
+                            $$->type = get_type($1);
                             cout<<"factor "<<$$->type<<endl;
                         }
                     |   variable
@@ -547,7 +564,7 @@ factor              :   NUM
  * declared in the main function?
  */
 void insert_symbol(string name, info t){
-    /* basic type */ 
+    /* basic type */
     if (t.type >= _INTEGER and t.type <= _CHAR){
         BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
         it.enter_id((Id*)id);
@@ -569,20 +586,20 @@ void insert_procedure(string name, parameter *par){
     }
     ProcedureId *id = new ProcedureId(name, pl);
     it.enter_id((Id*)&id);
-} 
+}
 
 /*
  * insert_function():
  * @par: parameter list
  * @rt: return type
  */
-void insert_function(string name, parameter *par, TYPE rt){ 
+void insert_function(string name, parameter *par, TYPE rt){
     vector<Parameter> pl;
     while(par){
         Parameter p = Parameter(par->name, par->type, par->is_var);
         pl.push_back(p);
         par = par->next;
-    } 
+    }
     FunctionId *id = new FunctionId(name, pl, rt);
     it.enter_id((Id*)id);
 }
@@ -603,7 +620,7 @@ TYPE get_type(char *s){
 }
 
 /*
- * find which type return 
+ * find which type return
  */
 TYPE cmp_type(TYPE t1, TYPE t2){
     if (t1 == _BOOLEAN || t2 == _BOOLEAN) {
@@ -675,37 +692,44 @@ void print_block_info(bool is_func, TYPE ret_type, parameter *p){
 #endif
 
 // target code generation start
-void write_file(const char *s)
+void wf(const char *s)
 {
     extern FILE* yyout;
     fputs(s, yyout);
 }
 
-void write_file(const string &s)
+void wf(const string &s)
 {
-    write_file(s.c_str());
+    wf(s.c_str());
 }
 
-void write_file(TYPE t)
+void wf(TYPE t)
 {
     switch (t)
     {
 
     case _INTEGER:
-        write_file("int");
+        wf("int");
         break;
     case _REAL:
-        write_file("double");
+        wf("double");
         break;
     case _BOOLEAN:
-        write_file("int");
+        wf("int");
         break;
     case _CHAR:
-        write_file("char");
+        wf("char");
         break;
     default:
         yyerror("Unsupport Type");
     }
+}
+
+template<class T, class ...Args>
+void wf(T head, Args ...rest)
+{
+    wf(head);
+    wf(rest...);
 }
 // target code generation end
 
@@ -723,7 +747,7 @@ int main(){
     yyout = fopen("out.c", "w");
     yyparse();
     if (success == 1)
-        printf("Parsing done.\n");
+        printf("Parsing doneee.\n");
     return 0;
 }
 

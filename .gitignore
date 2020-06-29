@@ -52,7 +52,7 @@
 scanner_only/lex.yy.c
 scanner_only/result.txt
 scanner_only/result
-scanner_only/scanner_out 
+scanner_only/scanner_out
 lex.yy.cpp
 
 
@@ -83,3 +83,7 @@ out.c
 
 #build
 cmake-build-debug
+CMakeFiles/
+Makefile
+Pascal_S_Complier
+cmake_install.cmake
