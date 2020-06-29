@@ -1,1 +1,0 @@
-/usr/bin/c++    -rdynamic CMakeFiles/Pascal_S_Complier.dir/parser/parser.tab.o CMakeFiles/Pascal_S_Complier.dir/scanner/lex.yy.o CMakeFiles/Pascal_S_Complier.dir/parser/IdTable.o CMakeFiles/Pascal_S_Complier.dir/parser/IdType.o CMakeFiles/Pascal_S_Complier.dir/parser/debug.o  -o Pascal_S_Complier 

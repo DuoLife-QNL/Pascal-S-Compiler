@@ -1,3 +1,0 @@
-/root/Pascal-S-Complier/CMakeFiles/rebuild_cache.dir
-/root/Pascal-S-Complier/CMakeFiles/Pascal_S_Complier.dir
-/root/Pascal-S-Complier/CMakeFiles/edit_cache.dir
