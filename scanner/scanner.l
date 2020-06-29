@@ -26,6 +26,7 @@ unsigned int lex_row_index = 1;
 // Todo1 : begin from line 64 需要填 return 的 Token
 // Todo2 : Integer ,Boolean, String, Float 需要吧 yylval 的值添上
 // Todo3 : RELOP ADDOP MULOP 需要有相应的属性来知道到底是那种运算。
+// Todo digitdotdotdigit 回传start 和 end
 %}
 
 %option yylineno
@@ -97,6 +98,9 @@ quotation_not_match     (\'|\")
 
     /* \"([^\^\n\"])*\"		  {SolveBasicType("String"); return();} */
 '({noquote}|'')+'             {yylval.letter = *(yytext + 1); return(LETTER);}
+
+
+[0-9]+\.\.[0-9]+    {printf("shift DIGITSDOTDOTDIGITS \n"); return(DIGITSDOTDOTDIGITS);}
 
 [0-9]+                {yylval.num = yytext; return(NUM);}
 [A-Za-z][A-Za-z0-9_]*   {
