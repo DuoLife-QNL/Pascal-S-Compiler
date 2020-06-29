@@ -67,6 +67,7 @@
     TYPE cmp_type(TYPE t1, TYPE t2);
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
+    std::vector<Parameter> get_par_list(string id);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -74,6 +75,10 @@
     void wf(TYPE t);
     template<class T, class ...Args>
     void wf(T head, Args ...rest);
+
+    string convert_relop(string s);
+    string convert_type(TYPE t);
+    string convert_type_printf(TYPE t);
 // target code generation function end
 }
 
@@ -96,7 +101,7 @@
 %token PROGRAM
 %token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
-%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT 
+%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
 
 %token <name> ID MULOP ADDOP PLUS UMINUS RELOP
@@ -405,7 +410,43 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                             wf(";\n}\n");
                         }
                     |   READ '(' variable_list ')'
+                        {
+                            /*
+                            string s, t;
+                            bool first = true;
+                            for (auto cur = $3; cur; cur = cur->next)
+                            {
+                                s += convert_type_printf(cur->type);
+                                t += "&" + cur->name;
+                                if (first)
+                                    first = true;
+                                else
+                                {
+                                    t += ", ";
+                                }
+                            }
+                            wf("scanf(\"", s, "\",", t, ")");
+                            */
+                        }
                     |   WRITE '(' expression_list ')'
+                        {
+                            string s, t;
+                            bool first = true;
+                            for (auto cur = $3; cur; cur = cur->next)
+                            {
+                                s += convert_type_printf(cur->type);
+                                t += cur->text;
+                                if (first)
+                                    first = false;
+                                else
+                                {
+                                    s += " ";
+                                    t += ", ";
+                                }
+                            }
+                            s += "\\n";
+                            wf("printf(\"", s, "\",", t, ")");
+                        }
                     |
                     ;
 variable_list       :   variable_list ',' variable
@@ -425,8 +466,20 @@ variable            :   ID id_varpart
 id_varpart          :   '[' expression_list ']'
                     |
                     ;
-procedure_call      :   ID
+procedure_call      :   ID {wf(*$1, "()");}
                     |   ID '(' expression_list ')'
+                        {
+                            wf(*$1, "(");
+                            std::vector<Parameter> par_list = get_par_list(*$1);
+                            int argc = 0;
+                            for (auto *c = $3; c; c = c->next)
+                            {
+                                if (argc != 0)
+                                    wf(", ");
+                                wf((par_list[argc].is_var() ? "&": "") + c->text);
+                                ++argc;
+                            }
+                        }
                     ;
 else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf(";\n}\n");}
                     |
@@ -434,15 +487,14 @@ else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf("
 expression_list     :   expression_list ',' expression
                         {
                             parameter *tmp = $1;
-                            while(tmp){
-                                tmp->type = $3->type;
+                            while(tmp->next){
                                 tmp = tmp->next;
                             }
+                            tmp->next = $3;
                             $$ = $1;
                         }
                     |   expression
                         {
-                            $$->type = $1->type;
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
@@ -450,7 +502,7 @@ expression          :   simple_expression RELOP simple_expression
                             $$ = new parameter;
                             $$->type = _BOOLEAN;
                             cout<<"\nexpression "<<$$->type<<endl<<endl;
-                            $$->text = $1->text + "relop" + $3->text;
+                            $$->text = $1->text + convert_relop(*$2) + $3->text;
                         }
                     |   simple_expression
                         {
@@ -466,7 +518,7 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = _BOOLEAN;
-                            $$->text = $1->text + "addop" + $3->text;
+                            $$->text = $1->text + "|" + $3->text;
                         }
                     |   simple_expression PLUS term
                         {
@@ -474,7 +526,7 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
-                            $$->text = $1->text + "plus" + $3->text;
+                            $$->text = $1->text + "+" + $3->text;
                         }
                     |   simple_expression UMINUS term
                         {
@@ -482,7 +534,7 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
-                            $$->text = $1->text + "uminus" + $3->text;
+                            $$->text = $1->text + "-" + $3->text;
                         }
                     |   term
                         {
@@ -497,26 +549,31 @@ term                :   term MULOP factor
                             $$->is_var = $1->is_var | $3->is_var;
                             string* s = $2;
                             int i = get_mulop_type(s);
+                            string mulop_s;
                             switch (i)
                             {
                             case 1: // and
                                 // Todo: 错误处理
                                 $$->type = _BOOLEAN;
+                                mulop_s = "&";
                                 break;
                             case 2: // div
                                 // Todo: 错误处理
                                 $$->type = cmp_type($1->type, $3->type);
+                                mulop_s = "/";
                                 break;
                             case 3: // mod
                                 // Todo: 错误处理
                                 $$->type = cmp_type($1->type, $3->type);
+                                mulop_s = "%";
                                 break;
                             default: // * /
                                 // Todo: 错误处理
                                 $$->type = cmp_type($1->type, $3->type);
+                                mulop_s = *$2;
                                 break;
                             }
-                            $$->text = $1->text + "mulop" + $3->text;
+                            $$->text = $1->text + mulop_s + $3->text;
                         }
                     |   factor
                         {
@@ -546,13 +603,23 @@ factor              :   NUM
                             $$ = new parameter;
                             // 根据ID（函数）确定type
                             $$->type = get_fun_type(*$1);
-                            $$->text = *$1 + "()";
+                            $$->text = *$1 + "(";
+                            std::vector<Parameter> par_list = get_par_list(*$1);
+                            int argc = 0;
+                            for (auto *c = $3; c; c = c->next)
+                            {
+                                if (argc != 0)
+                                    $$->text += ", ";
+                                $$->text += (par_list[argc].is_var() ? "&": "") + c->text;
+                                ++argc;
+                            }
+                            $$->text += ")";
                         }
                     |   '(' expression_list ')'
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
-                            $$->text = $2->text;
+                            $$->text = "not implement";
                         }
                     |   NOT factor
                         {
@@ -707,6 +774,14 @@ void print_block_info(bool is_func, TYPE ret_type, parameter *p){
 }
 #endif
 
+std::vector<Parameter> get_par_list(string id)
+{
+    int index = it.find_id(id);
+    auto f = it.get_id(index);
+    return static_cast<Block *>(f)->get_par_list();
+}
+
+
 // target code generation start
 void wf(const char *s)
 {
@@ -721,24 +796,7 @@ void wf(const string &s)
 
 void wf(TYPE t)
 {
-    switch (t)
-    {
-
-    case _INTEGER:
-        wf("int");
-        break;
-    case _REAL:
-        wf("double");
-        break;
-    case _BOOLEAN:
-        wf("int");
-        break;
-    case _CHAR:
-        wf("char");
-        break;
-    default:
-        yyerror("Unsupport Type");
-    }
+    wf(convert_type(t));
 }
 
 template<class T, class ...Args>
@@ -746,6 +804,59 @@ void wf(T head, Args ...rest)
 {
     wf(head);
     wf(rest...);
+}
+
+string convert_relop(const string s)
+{
+    if (s == "=") return string("==");
+    else if (s == "<>") return string("!=");
+    else return s;
+}
+
+string convert_type(TYPE t)
+{
+    string ret;
+    switch (t)
+    {
+    case _INTEGER:
+        ret = "int";
+        break;
+    case _REAL:
+        ret = "double";
+        break;
+    case _BOOLEAN:
+        ret = "int";
+        break;
+    case _CHAR:
+        ret = "char";
+        break;
+    default:
+        yyerror("Unsupport Type");
+    }
+    return ret;
+}
+
+string convert_type_printf(TYPE t)
+{
+    string ret;
+    switch (t)
+    {
+    case _INTEGER:
+        ret = "%d";
+        break;
+    case _REAL:
+        ret = "%f";
+        break;
+    case _BOOLEAN:
+        ret = "%d";
+        break;
+    case _CHAR:
+        ret = "%c";
+        break;
+    default:
+        yyerror("Unsupport Type");
+    }
+    return ret;
 }
 // target code generation end
 

@@ -9,7 +9,7 @@
 // #define error_report(s) fprintf(stderr, s)
 
 /*
- * We add '_' before each type because they have 
+ * We add '_' before each type because they have
  * been declared as tokens in parser.y
  */
 typedef enum TYPE {
@@ -22,7 +22,6 @@ typedef enum TYPE {
   _PROCEDURE,
   _FUNCTION
 }TYPE;
-
 
 class Id {
   private:
@@ -37,7 +36,7 @@ class Id {
     TYPE get_ret_type();
 };
 
-/* 
+/*
  * according to PPT, basic type include:
  * integer, real, boolean, char
  */
@@ -66,11 +65,11 @@ class ArrayId: public Id {
     int dim;
     period *prd;
     TYPE element_type;
-  
+
   public:
     /* Constructor:
      * @et: type of elements in this array
-     * @prd is an pointer to the array period list 
+     * @prd is an pointer to the array period list
      */
     ArrayId(std::string name, TYPE et, int dim, period *prd);
     ~ArrayId();
@@ -86,7 +85,7 @@ class Parameter: public BasicTypeId{
     * false if value_Parameter
     */
     bool is_var_;
-  
+
   public:
     Parameter(std::string name, TYPE type, bool is_var);
     bool is_var();
@@ -97,7 +96,7 @@ class Parameter: public BasicTypeId{
 class Block: public Id {
   private:
     /* Parameter list */
-    std::vector<Parameter>pl; 
+    std::vector<Parameter>pl;
   public:
     Block(std::string name, TYPE type, std::vector<Parameter> pl, TYPE ret_type);
     /* get Parameter list */
