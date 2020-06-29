@@ -21,11 +21,11 @@
     #include <stdlib.h>
     #include <stddef.h>
     #include "IdType.h"
-    //#include "debug.h"
+    #include "debug.h"
 
-    #define INFO(msg) info(__FILE__, __LINE__, msg)
-    #define WARN(msg) warn(__FILE__, __LINE__, msg)
-    #define ERR(msg) err(__FILE__, __LINE__, msg)
+    #define INFO(args...) do {char msg[1024]; sprintf(msg, ##args); info(__FILE__, __LINE__, msg);} while(0)
+    #define WARN(args...) do {char msg[1024]; sprintf(msg, ##args); warn(__FILE__, __LINE__, msg);} while(0)
+    #define ERR(args...) do {char msg[1024]; sprintf(msg, ##args); err(__FILE__, __LINE__, msg);} while(0)
 
     extern int yylex();
     int yyerror(const char *s);
@@ -101,11 +101,15 @@
 %token PROGRAM
 %token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
+<<<<<<< HEAD
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
+=======
+%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP
+>>>>>>> a1246c25b3866e0a0e58f009c7554ce5d4bc428a
 %token READ WRITE ARRAY OF
 
 %token <name> ID MULOP ADDOP PLUS UMINUS RELOP
-%token <prd> DIGITS..DIGITS
+%token <prd> DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
 %token <letter> LETTER
@@ -128,32 +132,29 @@ program_body        :   const_declarations var_declarations subprogram_declarati
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-#if DEBUG
-                            cout << "parser: new id " << string($3) << endl;
-                            INFO("info");
-                            WARN("warn");
-                            ERR("err");
 
+#if DEBUG
+                            INFO("new id %s", (char *)$3->data());
 #endif
                             par_append($1, *$3, false);
                             $$ = $1;
-#if DEBUG
-                            print_par_list($$);
-#endif
                         }
                     |   ID
                         {
 #if DEBUG
-                            cout << "parser: new id " << *$1 << endl;
+                            INFO("new id %s", (char *)$1->data());
 #endif
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
                             $$->next = nullptr;
-#if DEBUG
-                            print_par_list($$);
-#endif
+
+
                         }
+                    |	error
+                    	{
+                    	    ERR("err id");
+                    	}
                     ;
 const_declarations  :   CONST const_declaration ';'
                     |
@@ -241,9 +242,13 @@ basic_type          :   INTEGER
                         {
                             $$.type = _CHAR;
                         }
+                    |	error
+                    	{
+                    	    ERR("unknown type");
+                    	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
-period              :   period ',' DIGITS..DIGITS
+period              :   period ',' DIGITSDOTDOTDIGITS
                         {
                             $$.dim = $1.dim + 1;
                             period *p = init_period();
@@ -257,7 +262,7 @@ period              :   period ',' DIGITS..DIGITS
                          * and end directly
                          */
                         // TODO: ask lex to add start and end to this
-                    |   DIGITS..DIGITS
+                    |   DIGITSDOTDOTDIGITS
                         {
                             $$.dim = 1;
                             $$.prd = init_period();
@@ -275,7 +280,12 @@ subprogram          :   subprogram_head ';' subprogram_body
                     ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
+#if DEBUG
+                           cout << "inserting procedure " << *$2 << ":" << endl;
+                           print_block_info(false, _VOID , $3);
+#endif
                             insert_procedure(*$2, $3);
+			    cout << "insert done" << endl;
 
                             wf("void ", *$2, "(");
                             bool first = true;
@@ -333,14 +343,7 @@ parameter_list      :   parameter_list ';' parameter
                         {
                             $$ = $1;
 #if DEBUG
-                            int is_var = $1->is_var;
-                            cout << "append "
-    #if is_var
-                            "var"
-    #else
-                            "non-var"
-    #endif
-                            "parameters to parameter list" << endl;
+                            INFO("append %s to parameter list\n", $1->is_var ? "var" : "non-var");
                             print_par_list($$);
 #endif
                         }
@@ -489,8 +492,12 @@ expression_list     :   expression_list ',' expression
                             parameter *tmp = $1;
                             while(tmp->next){
                                 tmp = tmp->next;
+<<<<<<< HEAD
                             }
                             tmp->next = $3;
+=======
+                           }
+>>>>>>> a1246c25b3866e0a0e58f009c7554ce5d4bc428a
                             $$ = $1;
                         }
                     |   expression
@@ -666,9 +673,10 @@ void insert_procedure(string name, parameter *par){
     while(par){
         Parameter p = Parameter(par->name, par->type, par->is_var);
         pl.push_back(p);
+        par = par->next;
     }
     ProcedureId *id = new ProcedureId(name, pl);
-    it.enter_id((Id*)&id);
+    it.enter_id((Id*)id);
 }
 
 /*
@@ -737,7 +745,8 @@ TYPE get_fun_type(string name) {
         return _DEFAULT;
     } else {
         Id* id = it.get_id(index);
-        return id->get_ret_type();
+//       TODO check if it is an instanceof block
+         return ((Block*)id)->get_ret_type();
     }
 }
 
@@ -880,8 +889,9 @@ int main(){
 
 int yyerror(const char *msg)
 {
+	static int err_no = 1;
 	extern int yylineno;
-	printf("Parsing Failed\nLine Number: %d %s\n",yylineno,msg);
+	printf("Error %d, Line Number: %d %s\n", err_no++, yylineno, msg);
     success = 0;
 	return 0;
 }

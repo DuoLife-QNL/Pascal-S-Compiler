@@ -1,89 +1,100 @@
+#include <utility>
+
+#include <utility>
+
+#include <utility>
+
+#include <utility>
+
+#include <utility>
+
+#include <utility>
+
+#include <utility>
+
 #include "IdType.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
-#include <stddef.h>
+#include <cstddef>
 using std::cout;
 using std::endl;
 
-Id::Id(std::string name, TYPE type, TYPE ret_type=_DEFAULT){
-    this->name = name;
+Id::Id(std::string name, TYPE type) {
+    this->name = std::move(name);
     this->type = type;
-    this->ret_type = ret_type;
 }
 
-std::string Id::get_name(){
+std::string Id::get_name() {
     return name;
 }
 
-TYPE Id::get_type(){
+TYPE Id::get_type() {
     return type;
 }
 
-TYPE Id::get_ret_type(){
-    return ret_type;
-}
-
 BasicTypeId::BasicTypeId(std::string name, TYPE type, bool is_const)
-:Id(name, type){
-    this->is_const_ = is_const;
-}
-
-bool BasicTypeId::is_const(){
-    return is_const_;
+    : Id(std::move(name), type) {
+    this->is_const = is_const;
 }
 
 ArrayId::ArrayId(std::string name, TYPE et, int dim, period *prd)
-:Id(name, _ARRAY){
-    element_type = et;
+    : Id(std::move(name), _ARRAY) {
+    this->dim = dim;
+    this->element_type = et;
     this->prd = prd;
 }
 
-ArrayId::~ArrayId(){
+ArrayId::~ArrayId() {
     delete prd;
-    prd = NULL;
+    prd = nullptr;
 }
 
-int ArrayId::get_dim(){
+int ArrayId::get_dim() {
     return dim;
 }
 
-period ArrayId::get_period(int dim){
+period ArrayId::get_period(int dim) {
     return *(prd + dim);
 }
 
 Parameter::Parameter(std::string name, TYPE type, bool is_var)
-:BasicTypeId(name, type, false){
-    is_var_ = is_var;
+    : BasicTypeId(std::move(name), type, false) {
+    this->is_var = is_var;
 }
 
-bool Parameter::is_var(){
-    return is_var_;
+Block::Block(std::string name,
+             TYPE type,
+             std::vector<Parameter> pl,
+             TYPE ret_type)
+    : Id(std::move(name), type) {
+    this->ret_type = ret_type;
+    this->pl = std::move(pl);
 }
 
-Block::Block(std::string name, TYPE type, std::vector<Parameter> pl, TYPE ret_type=_DEFAULT)
-:Id(name, type, ret_type){
-    this->pl = pl;
-}
-
-std::vector<Parameter> Block::get_par_list(){
+std::vector<Parameter> Block::get_par_list() {
     return pl;
+}
+TYPE Block::get_ret_type() {
+    return ret_type;
 }
 
 ProcedureId::ProcedureId(std::string name, std::vector<Parameter> pl)
-:Block(name, _PROCEDURE, pl){}
+    : Block(std::move(name), _PROCEDURE, std::move(pl), _VOID) {}
 
-FunctionId::FunctionId(std::string name, std::vector<Parameter> pl, TYPE ret_type)
-:Block(name, _FUNCTION, pl, ret_type){}
+FunctionId::FunctionId(std::string name,
+                       std::vector<Parameter> pl,
+                       TYPE ret_type)
+    : Block(std::move(name), _FUNCTION, std::move(pl), ret_type) {}
 
-period *init_period(){
-    period *p = new period;
-    p->next = NULL;
+period *init_period() {
+    auto *p = new period;
+    p->next = nullptr;
     return p;
 }
 
-void append_period(period *target_period, period *new_period){
+void append_period(period *target_period, period *new_period) {
     period *tmp = target_period;
-    while (!tmp->next){
+    while (!tmp->next) {
         tmp++;
     }
     tmp->next = new_period;
