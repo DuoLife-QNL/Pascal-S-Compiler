@@ -89,7 +89,7 @@ quotation_not_match     (\'|\")
 ":"                   {printf("shift : \n");  lex_column_index += 1;  return(':');}
 "."                   {printf("shift . \n");   lex_column_index += 1;   return('.');}
 ","                   {printf("shift , \n");   lex_column_index += 1;return(',');}
-charac                {printf("shift '.' \n"); yylval.letter = *(yytext + 1); lex_column_index += 3; return(QLQ);}
+{charac}                {printf("shift '.' \n"); yylval.letter = *(yytext + 1); lex_column_index += 3; return(QLQ);}
 
 {annotation1}		  {SolveComment(); }
 "{"                   {SolveMultiLineComment(); }
