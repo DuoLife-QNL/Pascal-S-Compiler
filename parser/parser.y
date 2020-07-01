@@ -650,10 +650,10 @@ factor              :   NUM
 
 %%
 int get_first_digit(const string &s){
-    stoi(s.substr(0,s.find(".")));
+    return stoi(s.substr(0,s.find(".")));
 }
 int get_last_digit(const string &s){
-    stoi(s.substr(s.rfind(".") + 1));
+    return stoi(s.substr(s.rfind(".") + 1));
 }
 /*
  * insert_symbol:
