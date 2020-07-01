@@ -102,7 +102,7 @@
 
 %start programstruct
 %token PROGRAM
-%token CONST QUOTE VAR
+%token CONST VAR
 %token PROCEDURE FUNCTION
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
@@ -110,7 +110,7 @@
 %token <text> ID MULOP ADDOP PLUS UMINUS RELOP EQUAL DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
-%token <letter> LETTER
+%token <letter> QLQ
 
 %type <symbol_info> L period type basic_type const_value
 %type <par> idlist formal_parameter parameter_list
@@ -179,7 +179,15 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = get_type($1);
                         }
-                    |   QUOTE LETTER QUOTE
+/*
+ * @QLQ: QUOTE LETTER QUOTE
+ *
+ * In this case, the parser do not deal with quote,
+ * and thus QUOTE is removed from the token declaration.
+ * QLQ is a <letter> token, so the value of the
+ * letter (char) can be retrived from @QLQ directly
+ */
+                    |   QLQ
                         {
                             $$.is_const = true;
                             $$.type = _CHAR;

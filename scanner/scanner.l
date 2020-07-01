@@ -37,6 +37,7 @@ letter                  [a-zA-Z]
 digits                  [0-9]
 annotation1             \/\/.*?
 noquote                 [^'^\n]
+charac                  ['].[']
 wrong_identifier        {digits}+({letter}|_)({digits}|{letter}|_)*
 quotation_not_match     (\'|\")
 
@@ -88,6 +89,7 @@ quotation_not_match     (\'|\")
 ":"                   {printf("shift : \n");  lex_column_index += 1;  return(':');}
 "."                   {printf("shift . \n");   lex_column_index += 1;   return('.');}
 ","                   {printf("shift , \n");   lex_column_index += 1;return(',');}
+charac                {printf("shift '.' \n"); yylval.letter = *(yytext + 1); lex_column_index += 3; return(QLQ);}
 
 {annotation1}		  {SolveComment(); }
 "{"                   {SolveMultiLineComment(); }
@@ -95,9 +97,6 @@ quotation_not_match     (\'|\")
 
 [Rr][Ee][Aa][Dd]      {printf("shift READ \n"); return READ;}
 [Ww][Rr][Ii][Tt][Ee]  {printf("shift WRITE \n"); return WRITE;}
-
-    /* \"([^\^\n\"])*\"		  {SolveBasicType("String"); return();} */
-'({noquote}|'')+'             {yylval.letter = *(yytext + 1); return(LETTER);}
 
 [A-Za-z][A-Za-z0-9_]*   {
                             printf("Shift [ID] %s (line %d)\n", yytext, yylineno);
