@@ -98,8 +98,8 @@ period *init_period() {
 
 void append_period(period *target_period, period *new_period) {
     period *tmp = target_period;
-    while (!tmp->next) {
-        tmp++;
+    while (tmp->next!=nullptr) {
+        tmp=tmp->next;
     }
     tmp->next = new_period;
 }
