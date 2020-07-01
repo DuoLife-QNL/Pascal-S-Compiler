@@ -5,6 +5,7 @@
 #include <stack>
 #include <string>
 #include <vector>
+#include <getopt.h>
 
 /*
  * We add '_' before each type because they have

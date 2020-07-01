@@ -89,7 +89,7 @@
 {
     info symbol_info;
     period prd;
-    string *name;
+    string *text;
     parameter *par = nullptr;
     char *num;
     char letter;
@@ -107,7 +107,7 @@
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
 
-%token <name> ID MULOP ADDOP PLUS UMINUS RELOP DIGITSDOTDOTDIGITS
+%token <text> ID MULOP ADDOP PLUS UMINUS RELOP EQUAL DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM
 %token <letter> LETTER
@@ -155,11 +155,11 @@ idlist              :   idlist ',' ID
 const_declarations  :   CONST const_declaration ';'
                     |
                     ;
-const_declaration   :   const_declaration ';' ID '=' const_value
+const_declaration   :   const_declaration ';' ID EQUAL const_value
                         {
                             insert_symbol(*$3, $5);
                         }
-                    |   ID '=' const_value
+                    |   ID EQUAL const_value
                         {
                             insert_symbol(*$1, $3);
                         }
@@ -497,6 +497,13 @@ expression_list     :   expression_list ',' expression
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
+                        {
+                            $$ = new parameter;
+                            $$->type = _BOOLEAN;
+                            cout<<"\nexpression "<<$$->type<<endl<<endl;
+                            $$->text = $1->text + convert_relop(*$2) + $3->text;
+                        }
+                    |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
                             $$->type = _BOOLEAN;
@@ -903,22 +910,38 @@ string convert_type_printf(TYPE t)
 }
 // target code generation end
 
-int main(){
-    char* FileName = new char[100];
-    scanf("%s",FileName);
-    FILE* fp = fopen(FileName,"r");
-    if (fp == NULL){
-        printf("cannot open %s\n",FileName);
-        return -1;
+int main(int argc, char* argv[]){
+    const char *optstring = "f:h";
+    int opt;
+    int option_index = 0;
+    static struct option long_options[] = {
+        {"file", required_argument, NULL, 'f'},
+        {"help",  no_argument,       NULL, 'h'},
+        {0, 0, 0, 0}
+    };
+    while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
+        if (opt == 'f') {
+            FILE* fp = fopen(optarg,"r");
+            if (fp == NULL){
+                printf("Cannot open %s\n",optarg);
+                return -1;
+            }
+            extern FILE* yyin;
+            extern FILE* yyout;
+            yyin = fp;
+            yyout = fopen("out.c", "w");
+            yyparse();
+            if (success == 1)
+                printf("Parsing doneee.\n");
+            return 0;
+        } else if (opt == 'h' || opt == '?'){
+            printf("\nUsage ./Pascal_S_Complier [options] [target]...\n");
+            printf("Options:\n");
+            printf("  -f FILE, --file FILE      Read file as input\n");
+            printf("  -h, --help                Print the message and exit\n\n");
+            return -1;
+        }
     }
-    extern FILE* yyin;
-    extern FILE* yyout;
-    yyin = fp;
-    yyout = fopen("out.c", "w");
-    yyparse();
-    if (success == 1)
-        printf("Parsing doneee.\n");
-    return 0;
 }
 
 int yyerror(const char *msg)
