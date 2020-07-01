@@ -87,7 +87,7 @@
 {
     info symbol_info;
     period prd;
-    string *name;
+    string *text;
     parameter *par = nullptr;
     char *num;
     char letter;
@@ -105,7 +105,7 @@
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
 
-%token <name> ID MULOP ADDOP PLUS UMINUS RELOP
+%token <text> ID MULOP ADDOP PLUS UMINUS RELOP EQUAL
 %token INTEGER REAL BOOLEAN CHAR
 %token <num> NUM DIGIT
 %token <letter> LETTER
@@ -153,11 +153,11 @@ idlist              :   idlist ',' ID
 const_declarations  :   CONST const_declaration ';'
                     |
                     ;
-const_declaration   :   const_declaration ';' ID '=' const_value
+const_declaration   :   const_declaration ';' ID EQUAL const_value
                         {
                             insert_symbol(*$3, $5);
                         }
-                    |   ID '=' const_value
+                    |   ID EQUAL const_value
                         {
                             insert_symbol(*$1, $3);
                         }
@@ -495,6 +495,13 @@ expression_list     :   expression_list ',' expression
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
+                        {
+                            $$ = new parameter;
+                            $$->type = _BOOLEAN;
+                            cout<<"\nexpression "<<$$->type<<endl<<endl;
+                            $$->text = $1->text + convert_relop(*$2) + $3->text;
+                        }
+                    |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
                             $$->type = _BOOLEAN;
