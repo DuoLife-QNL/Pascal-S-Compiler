@@ -906,12 +906,6 @@ int main(int argc, char* argv[]){
         {0, 0, 0, 0}  
     };
     while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
-        printf("opt = %c\n", opt); // 命令参数，亦即 -a -b -n -r
-        printf("optarg = %s\n", optarg); // 参数内容
-        printf("optind = %d\n", optind); // 下一个被处理的下标值
-        printf("argv[optind - 1] = %s\n",  argv[optind - 1]); // 参数内容
-        printf("option_index = %d\n", option_index);  
-        printf("\n");
         if (opt == 'f') {
             FILE* fp = fopen(optarg,"r");
             if (fp == NULL){
