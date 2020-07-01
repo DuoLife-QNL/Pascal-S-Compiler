@@ -99,10 +99,7 @@ quotation_not_match     (\'|\")
     /* \"([^\^\n\"])*\"		  {SolveBasicType("String"); return();} */
 '({noquote}|'')+'             {yylval.letter = *(yytext + 1); return(LETTER);}
 
-
-[0-9]+\.\.[0-9]+    {printf("shift DIGITSDOTDOTDIGITS \n"); return(DIGITSDOTDOTDIGITS);}
-
-[0-9]+                {yylval.num = yytext; return(NUM);}
+[0-9]+                {printf("shift digit: %s\n",yytext); yylval.num = yytext; return(DIGIT);}
 [A-Za-z][A-Za-z0-9_]*   {
                             printf("Shift [ID] %s (line %d)\n", yytext, yylineno);
                             // char *text = (char *)malloc(sizeof(char) * yyleng);

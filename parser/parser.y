@@ -102,13 +102,12 @@
 %token PROGRAM
 %token CONST QUOTE VAR
 %token PROCEDURE FUNCTION
-%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT RELOP
+%token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
 
 %token <name> ID MULOP ADDOP PLUS UMINUS RELOP
-%token <prd> DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
-%token <num> NUM
+%token <num> NUM DIGIT
 %token <letter> LETTER
 
 %type <symbol_info> L period type basic_type const_value
@@ -145,8 +144,6 @@ idlist              :   idlist ',' ID
                             $$->name = *$1;
                             $$->is_var = false;
                             $$->next = nullptr;
-
-
                         }
                     |	error
                     	{
@@ -245,26 +242,21 @@ basic_type          :   INTEGER
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
-period              :   period ',' DIGITSDOTDOTDIGITS
+period              :   period ',' DIGIT '.' '.' DIGIT
                         {
                             $$.dim = $1.dim + 1;
                             period *p = init_period();
-                            p->start = $3.start;
-                            p->end = $3.end;
+                            p->start = stoi($3);
+                            p->end = stoi($6);
                             append_period($1.prd, p);
                             $$.prd = $1.prd;
                         }
-                        /*
-                         * DIGITS..DIGITS is a <prd>, so we can get start
-                         * and end directly
-                         */
-                        // TODO: ask lex to add start and end to this
-                    |   DIGITSDOTDOTDIGITS
+                    |   DIGIT '.' '.' DIGIT
                         {
                             $$.dim = 1;
                             $$.prd = init_period();
-                            $$.prd->start = $1.start;
-                            $$.prd->end = $1.end;
+                            $$.prd->start = stoi($1);
+                            $$.prd->end = stoi($4);
                         }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
