@@ -1,7 +1,10 @@
 %{
     #include "IdTable.h"
+    #include "string.h"
     int success = 1;
     IdTable it;
+    
+    std::string nowConst = "";
 %}
 
 %code requires {
@@ -123,7 +126,7 @@ programstruct       :   program_head ';' program_body '.'
 program_head        :   PROGRAM ID '(' idlist ')'
                     |   PROGRAM ID
                     ;
-program_body        :   const_declarations var_declarations subprogram_declarations compound_statement
+program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf("\nreturn 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
@@ -153,34 +156,42 @@ idlist              :   idlist ',' ID
 const_declarations  :   CONST const_declaration ';'
                     |
                     ;
-const_declaration   :   const_declaration ';' ID '=' const_value
-                        {
-                            insert_symbol(*$3, $5);
-                        }
-                    |   ID '=' const_value
-                        {
+const_declaration   :     ID RELOP const_value{
                             insert_symbol(*$1, $3);
+                            wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
+                        }
+                |         const_declaration ';' ID RELOP const_value{
+                          insert_symbol(*$3, $5);
+                          wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
                     ;
 const_value         :   PLUS NUM
                         {
                             $$.is_const = true;
                             $$.type = get_type($2);
+                            nowConst=$2;
                         }
                     |   UMINUS NUM
                         {
                             $$.is_const = true;
                             $$.type = get_type($2);
+                            nowConst=$2;
+                            nowConst="-"+nowConst;
                         }
-                    |   NUM
+                    |  NUM
                         {
                             $$.is_const = true;
                             $$.type = get_type($1);
+                            nowConst=$1;
+                           
                         }
                     |   QUOTE LETTER QUOTE
                         {
                             $$.is_const = true;
                             $$.type = _CHAR;
+                            nowConst=$2;
+                            nowConst+="\"";
+                            nowConst="\""+nowConst;
                         }
                     ;
 var_declarations    :   VAR var_declaration ';'
@@ -195,20 +206,24 @@ var_declarations    :   VAR var_declaration ';'
 var_declaration     :   var_declaration ';' ID L
                         {
                             insert_symbol(*$3, $4);
+                            wf(*$3,";\n");
                         }
                     |   ID L
                         {
                             insert_symbol(*$1, $2);
+                            wf(*$1,";\n");
                         }
                     ;
 L                   :   ':' type
                         {
-                            $$ = $2;
+                                  $$ = $2;
+                            wf($$.type," ");
                         }
                     |   ',' ID L
                         {
                             insert_symbol(*$2, $3);
-                            $$ = $3;
+                                  $$ = $3;
+                            wf(*$2,", ");
                         }
 type                :   basic_type
                         {
@@ -265,7 +280,7 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                             }
                         |
                         ;
-subprogram          :   subprogram_head ';' subprogram_body
+subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
                     ;
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
@@ -366,7 +381,7 @@ value_parameter     :   idlist ':' basic_type
                             $$ = $1;
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations {wf("{\n");} compound_statement {wf("}\n");}
+subprogram_body     :   const_declarations var_declarations compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
