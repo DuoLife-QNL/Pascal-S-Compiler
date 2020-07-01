@@ -98,7 +98,6 @@ quotation_not_match     (\'|\")
 [Rr][Ee][Aa][Dd]      {printf("shift READ \n"); return READ;}
 [Ww][Rr][Ii][Tt][Ee]  {printf("shift WRITE \n"); return WRITE;}
 
-[0-9]+                {printf("shift digit: %s\n",yytext); yylval.num = yytext; return(DIGIT);}
 [A-Za-z][A-Za-z0-9_]*   {
                             printf("Shift [ID] %s (line %d)\n", yytext, yylineno);
                             // char *text = (char *)malloc(sizeof(char) * yyleng);
@@ -107,6 +106,7 @@ quotation_not_match     (\'|\")
                             yylval.text = new string(yytext);
                             return(ID);
                         }
+{digits}[.][.]{digits} {printf("shift digitsdotdotdigits\n");yylval.text = new string(yytext); return(DIGITSDOTDOTDIGITS);}
 [0-9]+|[0-9]+\.[0-9]+ {printf("num:"); yylval.num = yytext; return(NUM);}
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}

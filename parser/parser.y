@@ -59,6 +59,8 @@
     void insert_function(string name, parameter *par, TYPE rt);
     void par_append(parameter *p, string name, bool is_var = false);
 
+    int get_first_digit(const string &s);
+    int get_last_digit(const string &s);
 #if DEBUG
     void print_par_list(parameter *p);
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
@@ -105,9 +107,9 @@
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
 
-%token <text> ID MULOP ADDOP PLUS UMINUS RELOP EQUAL
+%token <text> ID MULOP ADDOP PLUS UMINUS RELOP EQUAL DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
-%token <num> NUM DIGIT
+%token <num> NUM
 %token <letter> QLQ
 
 %type <symbol_info> L period type basic_type const_value
@@ -177,13 +179,13 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = get_type($1);
                         }
-/* 
+/*
  * @QLQ: QUOTE LETTER QUOTE
- * 
+ *
  * In this case, the parser do not deal with quote,
  * and thus QUOTE is removed from the token declaration.
  * QLQ is a <letter> token, so the value of the
- * letter (char) can be retrived from @QLQ directly 
+ * letter (char) can be retrived from @QLQ directly
  */
                     |   QLQ
                         {
@@ -250,21 +252,21 @@ basic_type          :   INTEGER
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
-period              :   period ',' DIGIT '.' '.' DIGIT
+period              :   period ',' DIGITSDOTDOTDIGITS
                         {
                             $$.dim = $1.dim + 1;
                             period *p = init_period();
-                            p->start = stoi($3);
-                            p->end = stoi($6);
+                            p->start = get_first_digit(*$3);
+                            p->end = get_last_digit(*$3);
                             append_period($1.prd, p);
                             $$.prd = $1.prd;
                         }
-                    |   DIGIT '.' '.' DIGIT
+                    |   DIGITSDOTDOTDIGITS
                         {
                             $$.dim = 1;
                             $$.prd = init_period();
-                            $$.prd->start = stoi($1);
-                            $$.prd->end = stoi($4);
+                            $$.prd->start = get_first_digit(*$1);
+                            $$.prd->end = get_last_digit(*$1);
                         }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
@@ -647,7 +649,12 @@ factor              :   NUM
                     ;
 
 %%
-
+int get_first_digit(const string &s){
+    return stoi(s.substr(0,s.find(".")));
+}
+int get_last_digit(const string &s){
+    return stoi(s.substr(s.rfind(".") + 1));
+}
 /*
  * insert_symbol:
  * when we know a symbol's name and all its information, we create this
@@ -918,7 +925,7 @@ int main(int argc, char* argv[]){
     static struct option long_options[] = {
         {"file", required_argument, NULL, 'f'},
         {"help",  no_argument,       NULL, 'h'},
-        {0, 0, 0, 0}  
+        {0, 0, 0, 0}
     };
     while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
         if (opt == 'f') {
