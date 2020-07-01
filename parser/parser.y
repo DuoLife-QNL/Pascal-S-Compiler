@@ -904,22 +904,44 @@ string convert_type_printf(TYPE t)
 }
 // target code generation end
 
-int main(){
-    char* FileName = new char[100];
-    scanf("%s",FileName);
-    FILE* fp = fopen(FileName,"r");
-    if (fp == NULL){
-        printf("cannot open %s\n",FileName);
-        return -1;
+int main(int argc, char* argv[]){
+    const char *optstring = "f:h";
+    int opt;
+    int option_index = 0;
+    static struct option long_options[] = {
+        {"file", required_argument, NULL, 'f'},
+        {"help",  no_argument,       NULL, 'h'},
+        {0, 0, 0, 0}  
+    };
+    while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
+        printf("opt = %c\n", opt); // 命令参数，亦即 -a -b -n -r
+        printf("optarg = %s\n", optarg); // 参数内容
+        printf("optind = %d\n", optind); // 下一个被处理的下标值
+        printf("argv[optind - 1] = %s\n",  argv[optind - 1]); // 参数内容
+        printf("option_index = %d\n", option_index);  
+        printf("\n");
+        if (opt == 'f') {
+            FILE* fp = fopen(optarg,"r");
+            if (fp == NULL){
+                printf("Cannot open %s\n",optarg);
+                return -1;
+            }
+            extern FILE* yyin;
+            extern FILE* yyout;
+            yyin = fp;
+            yyout = fopen("out.c", "w");
+            yyparse();
+            if (success == 1)
+                printf("Parsing doneee.\n");
+            return 0;
+        } else if (opt == 'h' || opt == '?'){
+            printf("\nUsage ./Pascal_S_Complier [options] [target]...\n");
+            printf("Options:\n");
+            printf("  -f FILE, --file FILE      Read file as input\n");
+            printf("  -h, --help                Print the message and exit\n\n");
+            return -1;
+        }
     }
-    extern FILE* yyin;
-    extern FILE* yyout;
-    yyin = fp;
-    yyout = fopen("out.c", "w");
-    yyparse();
-    if (success == 1)
-        printf("Parsing doneee.\n");
-    return 0;
 }
 
 int yyerror(const char *msg)
