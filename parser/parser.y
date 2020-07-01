@@ -59,6 +59,8 @@
     void insert_function(string name, parameter *par, TYPE rt);
     void par_append(parameter *p, string name, bool is_var = false);
 
+    int get_first_digit(const string &s);
+    int get_last_digit(const string &s);
 #if DEBUG
     void print_par_list(parameter *p);
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
@@ -105,9 +107,9 @@
 %token _BEGIN END ASSIGNOP IF THEN ELSE FOR TO DO NOT
 %token READ WRITE ARRAY OF
 
-%token <name> ID MULOP ADDOP PLUS UMINUS RELOP
+%token <name> ID MULOP ADDOP PLUS UMINUS RELOP DIGITSDOTDOTDIGITS
 %token INTEGER REAL BOOLEAN CHAR
-%token <num> NUM DIGIT
+%token <num> NUM
 %token <letter> LETTER
 
 %type <symbol_info> L period type basic_type const_value
@@ -242,21 +244,21 @@ basic_type          :   INTEGER
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
-period              :   period ',' DIGIT '.' '.' DIGIT
+period              :   period ',' DIGITSDOTDOTDIGITS
                         {
                             $$.dim = $1.dim + 1;
                             period *p = init_period();
-                            p->start = stoi($3);
-                            p->end = stoi($6);
+                            p->start = get_first_digit(*$3);
+                            p->end = get_last_digit(*$3);
                             append_period($1.prd, p);
                             $$.prd = $1.prd;
                         }
-                    |   DIGIT '.' '.' DIGIT
+                    |   DIGITSDOTDOTDIGITS
                         {
                             $$.dim = 1;
                             $$.prd = init_period();
-                            $$.prd->start = stoi($1);
-                            $$.prd->end = stoi($4);
+                            $$.prd->start = get_first_digit(*$1);
+                            $$.prd->end = get_last_digit(*$1);
                         }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
@@ -632,7 +634,12 @@ factor              :   NUM
                     ;
 
 %%
-
+int get_first_digit(const string &s){
+    stoi(s.substr(0,s.find(".")));
+}
+int get_last_digit(const string &s){
+    stoi(s.substr(s.rfind(".") + 1));
+}
 /*
  * insert_symbol:
  * when we know a symbol's name and all its information, we create this
