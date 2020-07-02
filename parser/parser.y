@@ -3,7 +3,7 @@
     #include "string.h"
     int success = 1;
     IdTable it;
-    
+
     std::string nowConst = "";
 %}
 
@@ -129,12 +129,12 @@
 
 %%
 
-programstruct       :   program_head ';' program_body '.'
+programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_body '.'
                     ;
 program_head        :   PROGRAM ID '(' idlist ')'
                     |   PROGRAM ID
                     ;
-program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf("\nreturn 0;\n}\n"); }
+program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf(";\nreturn 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
@@ -192,7 +192,7 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = get_type($1);
                             nowConst=$1;
-                           
+
                         }
 /*
  * @QLQ: QUOTE LETTER QUOTE
@@ -241,7 +241,7 @@ var_declaration     :   var_declaration ';' ID L
 L                   :   ':' type
                         {
                                   $$ = $2;
-                            
+
                         }
                     |   ',' ID L
                         {
@@ -416,7 +416,7 @@ statement_list      :   statement_list ';'{wf(";\n");} statement
                     ;
 statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         {
-                            auto is_func = get_fun_type($1->name) != _DEFAULT;
+                            auto is_func = get_id_info($1->name)->type == _FUNCTION;
                             if (is_func) wf("return ", $3->text);
                             else wf($1->name, "=", $3->text);
                         }
@@ -426,12 +426,12 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         }
                     |   { wf("{\n");}
                         compound_statement
-                        { wf("}\n");}
+                        { wf(";}\n");}
                     |   IF expression THEN
                         {
-                            wf("if(", $2->text, "){\n");
+                            wf("if(", $2->text, ")\n");
                         }
-                        statement {wf(";}\n");} else_part
+                        statement {wf(";\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
                             wf("for(int", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
@@ -442,22 +442,21 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         }
                     |   READ '(' variable_list ')'
                         {
-                            /*
                             string s, t;
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                s += convert_type_printf(cur->type);
-                                t += "&" + cur->name;
                                 if (first)
-                                    first = true;
+                                    first = false;
                                 else
                                 {
                                     t += ", ";
                                 }
+                                s += convert_type_printf(cur->type);
+                                t += "&" + cur->name;
+
                             }
-                            wf("scanf(\"", s, "\",", t, ")");
-                            */
+                            wf("scanf(\"", s, "\", ", t, ")");
                         }
                     |   WRITE '(' expression_list ')'
                         {
@@ -519,7 +518,7 @@ procedure_call      :   ID {wf(*$1, "()");}
                             }
                         }
                     ;
-else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf(";\n}\n");}
+else_part           :   ELSE {wf("else\n");cout<<"ELSE"<<endl;} statement {wf(";\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -639,7 +638,8 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             $$ = $1;
-                            $$->text = $1->name;
+                            if ($$->is_var) $$->text = "(*" + $1->name + ")";
+                            else $$->text = $1->name;
                             cout<<"variable "<<$$->name<<" "<<$$->type<<" "<<$$->is_var<<endl;
                         }
                     |   ID '(' expression_list ')'
@@ -949,38 +949,71 @@ string convert_type_printf(TYPE t)
 }
 // target code generation end
 
+void return_help(char *exe_path)
+{
+    printf("\nUsage %s <input_file> [output_file] [options]...\n", exe_path);
+    printf("Options:\n");
+    printf("  -h, --help                Print the message and exit\n\n");
+    exit(-1);
+}
+
 int main(int argc, char* argv[]){
     const char *optstring = "f:h";
     int opt;
     int option_index = 0;
     static struct option long_options[] = {
-        {"file", required_argument, NULL, 'f'},
         {"help",  no_argument,       NULL, 'h'},
         {0, 0, 0, 0}
     };
+    char *input_path = NULL, *output_path = NULL;
+    if (argc == 1) return_help(argv[0]);
     while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
-        if (opt == 'f') {
-            FILE* fp = fopen(optarg,"r");
-            if (fp == NULL){
-                printf("Cannot open %s\n",optarg);
-                return -1;
-            }
-            extern FILE* yyin;
-            extern FILE* yyout;
-            yyin = fp;
-            yyout = fopen("out.c", "w");
-            yyparse();
-            if (success == 1)
-                printf("Parsing doneee.\n");
-            return 0;
-        } else if (opt == 'h' || opt == '?'){
-            printf("\nUsage ./Pascal_S_Complier [options] [target]...\n");
-            printf("Options:\n");
-            printf("  -f FILE, --file FILE      Read file as input\n");
-            printf("  -h, --help                Print the message and exit\n\n");
+        if (opt == 'h' || opt == '?'){
+            return_help(argv[0]);
+        }
+    }
+    input_path = argv[1];
+    int len = strlen(input_path);
+    if (strcmp(argv[1] + len - 4, ".pas") != 0)
+    {
+        printf("Please specify a \"*.pas\" file\n");
+        return -1;
+    }
+    FILE* fp = fopen(input_path,"r");
+    if (fp == NULL){
+        printf("Cannot open %s as input file\n", input_path);
+        return -1;
+    }
+    extern FILE* yyin;
+    extern FILE* yyout;
+    yyin = fp;
+    FILE *fp2 = NULL;
+    if (argc >= 3 && argv[2][0] != '-')
+    {
+        fp2 = fopen(argv[2], "w");
+        if (fp2 == NULL)
+        {
+            printf("Cannot create %s as output file\n", argv[2]);
             return -1;
         }
     }
+    if (fp2 == NULL)
+    {
+        input_path[len - 3] = 'c';
+        input_path[len - 2] = 0;
+        output_path = input_path;
+        fp2 = fopen(output_path, "w");
+        if (fp2 == NULL)
+        {
+            printf("Cannot create %s as output file\n", output_path);
+            return -1;
+        }
+    }
+    yyout = fp2;
+    yyparse();
+    if (success == 1)
+        printf("Parsing doneee.\n");
+    return 0;
 }
 
 int yyerror(const char *msg)
