@@ -49,7 +49,7 @@ IF(FLEX_FOUND)
     )
 ENDIF()
 
-add_executable(Pascal_S_Complier
+add_executable(Pascal_S_Compiler
         ${bison_output}
         ${flex_output}
         parser/IdTable.cpp
