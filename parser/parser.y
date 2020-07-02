@@ -418,7 +418,7 @@ compound_statement  :   _BEGIN statement_list END
 statement_list      :   statement_list ';'{wf(";\n");} statement
                     |   statement
                     ;
-statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
+statement           :   variable ASSIGNOP expression
                         {
                             auto is_func = get_id_info($1->name)->type == _FUNCTION;
                             if (is_func) wf("return ", $3->text);
@@ -499,9 +499,7 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
-                            // TODO 判断ID is_var
                             $$ = get_id_info(*$1);
-                            // cout<<"  variable/:" <<$$->type<<" "<<$$->is_var<<endl;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
@@ -561,7 +559,6 @@ expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
-                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
@@ -658,7 +655,6 @@ factor              :   NUM
                             $$ = new parameter;
                             //$$->is_var = false;
                             $$->type = get_type($1);
-                            cout<<"factor "<<$$->type<<endl;
                             $$->text = $1;
                         }
                     |   variable
