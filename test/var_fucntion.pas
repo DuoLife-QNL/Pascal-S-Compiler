@@ -3,7 +3,7 @@ program example(input, output);
     function gcd(var a, b:integer):integer;
         begin
             if b = 0 then gcd:=a
-            else gcd:=gcd(b, a mod b)
+            else gcd:=gcd(b, a)
         end;
     begin
 

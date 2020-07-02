@@ -57,6 +57,7 @@
 
     typedef struct parameter{
         string name;
+        bool is_lvalue = false;
         bool is_var = false;
         TYPE type = _DEFAULT;
         parameter *next = nullptr;
@@ -80,6 +81,8 @@
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
+
+    void check_function(string func_name, parameter *actual_paras);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -506,6 +509,7 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID {wf(*$1, "()");}
                     |   ID '(' expression_list ')'
                         {
+                            check_function(*$1, $3);
                             wf(*$1, "(");
                             std::vector<Parameter> par_list = get_par_list(*$1);
                             int argc = 0;
@@ -554,12 +558,12 @@ expression          :   simple_expression RELOP simple_expression
                             $$->type = $1->type;
                             cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text;
+                            $$->is_lvalue = $1->is_lvalue;
                         }
                     ;
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + "|" + $3->text;
@@ -567,7 +571,6 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "+" + $3->text;
@@ -575,7 +578,6 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            $$->is_var = $1->is_var | $3->is_var;
                             // Todo: 错误处理
                             $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "-" + $3->text;
@@ -585,6 +587,7 @@ simple_expression   :   simple_expression ADDOP term
                             $$ = new parameter;
                             $$->type = $1->type;
                             $$->text = $1->text;
+                            $$->is_lvalue = $1->is_lvalue;
                         }
                     ;
 term                :   term MULOP factor
@@ -624,6 +627,7 @@ term                :   term MULOP factor
                             $$ = new parameter;
                             $$->type = $1->type;
                             $$->text = $1->text;
+                            $$->is_lvalue = $1->is_lvalue;
                         }
                     ;
 factor              :   NUM
@@ -640,6 +644,7 @@ factor              :   NUM
                             $$ = $1;
                             if ($$->is_var) $$->text = "(*" + $1->name + ")";
                             else $$->text = $1->name;
+                            $$->is_lvalue = true;
                             cout<<"variable "<<$$->name<<" "<<$$->type<<" "<<$$->is_var<<endl;
                         }
                     |   ID '(' expression_list ')'
@@ -648,6 +653,9 @@ factor              :   NUM
                             // 根据ID（函数）确定type
                             $$->type = get_fun_type(*$1);
                             $$->text = *$1 + "(";
+                            // check
+                            check_function(*$1, $3);
+                            // code gen
                             std::vector<Parameter> par_list = get_par_list(*$1);
                             int argc = 0;
                             for (auto *c = $3; c; c = c->next)
@@ -659,11 +667,11 @@ factor              :   NUM
                             }
                             $$->text += ")";
                         }
-                    |   '(' expression_list ')'
+                    |   '(' expression ')'
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
-                            $$->text = "not implement";
+                            $$->text = "(" + $2->text + ")";
                         }
                     |   NOT factor
                         {
@@ -869,7 +877,46 @@ std::vector<Parameter> get_par_list(string id)
     auto f = it.get_id(index);
     return static_cast<Block *>(f)->get_par_list();
 }
-
+/**
+ * to check function parmeters' length, type and lvalue;
+ * @param  {func_name} string        the function's ID
+ * @param  {actual_paras} parameter  the function's actual parameters
+ * @return {void}                    if mismatch, yyerror will occur.
+ */
+void check_function(string func_name, parameter *actual_paras)
+{
+    auto formal_paras = get_par_list(func_name);
+    int actual_count = 0;
+    for (auto *cur = actual_paras; cur; cur = cur->next)
+    {
+        ++actual_count;
+    }
+    char error_buffer[1000];
+    if (formal_paras.size() != actual_count)
+    {
+        sprintf(error_buffer, "function %s length mismatch, require %d parmeters, got %d.",
+            func_name.c_str(), (int)formal_paras.size(), actual_count);
+        yyerror(error_buffer);
+    }
+    int argc = 0;
+    for (auto *cur = actual_paras; cur; cur = cur->next)
+    {
+        if (cur->type != formal_paras[argc].get_type())
+        {
+            sprintf(error_buffer, "arg %d of function %s require type %s, got %s.",
+                argc + 1, func_name.c_str(),
+                convert_type(formal_paras[argc].get_type()).c_str(), convert_type(cur->type).c_str());
+            yyerror(error_buffer);
+        }
+        if (formal_paras[argc].is_var && !cur->is_lvalue)
+        {
+            sprintf(error_buffer, "var arg %d of function %s require lvalue",
+                argc + 1, func_name.c_str());
+            yyerror(error_buffer);
+        }
+        ++argc;
+    }
+}
 
 // target code generation start
 void wf(const char *s)
