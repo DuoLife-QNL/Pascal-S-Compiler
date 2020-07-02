@@ -640,20 +640,41 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             // 根据ID（函数）确定type
-                            $$->type = get_fun_type(*$1);
-                            $$->text = *$1 + "(";
-                            std::vector<Parameter> par_list = get_par_list(*$1);
-                            int argc = 0;
-                            for (auto *c = $3; c; c = c->next)
-                            {
-                                if (argc != 0)
-                                    $$->text += ", ";
-                                $$->text += (par_list[argc].is_var ? "&": "") + c->text;
-                                ++argc;
+                            TYPE type;
+                            type = get_id_info(*$1)->type;
+                            if (type == _DEFAULT) {
+                                ERR("use of undeclared identifier");
+                                $$->type = _INTEGER;
+                                $$->text = "";
+                            } else if (type != _FUNCTION) {
+                                ERR("called object is not a function or function pointer");
+                                $$->type = _INTEGER;
+                                $$->text = "";
+                            } else {
+                                $$->type = get_fun_type(*$1);
+                                $$->text = *$1 + "(";
+                                std::vector<Parameter> par_list = get_par_list(*$1);
+                                int argc = 0;
+                                for (auto *c = $3; c; c = c->next)
+                                {
+                                    if (argc != 0)
+                                        $$->text += ", ";
+                                    if (c->type != par_list[argc].get_type()) {
+                                        cout<<c->type <<" "<<par_list[argc].get_type()<<endl;
+                                        if (c->type ！= par_list[argc].get_type()) {
+                                            ERR("Parameter types do not match");
+                                        }
+                                    }
+                                    $$->text += (par_list[argc].is_var ? "&": "") + c->text;
+                                    ++argc;
+                                }
+                                $$->text += ")";
+                                if (argc != par_list.size()) {
+                                    ERR("The number of parameters does not match！");
+                                }
                             }
-                            $$->text += ")";
                         }
-                    |   '(' expression_list ')'
+                    |   '(' expression ')'
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
@@ -662,6 +683,9 @@ factor              :   NUM
                     |   NOT factor
                         {
                             $$ = new parameter;
+                            if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
+                                ERR("factor -> NOT factor :  The 2nd factor must be bool");
+                            }
                             $$->type = $2->type;
                             $$->text = "!" + $2->text;
                         }
@@ -669,6 +693,7 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
+                            // Todo 类型检查
                             $$->text = "-" + $2->text;
                         }
                     ;
@@ -798,7 +823,7 @@ TYPE get_fun_type(string name) {
     } else {
         Id* id = it.get_id(index);
 //       TODO check if it is an instanceof block
-         return ((Block*)id)->get_ret_type();
+        return ((Block*)id)->get_ret_type();
     }
 }
 
@@ -810,7 +835,8 @@ parameter* get_id_info(string name) {
     index = it.find_id(name);
     parameter* par = new parameter;
     if (index == -1) {
-        par = nullptr;
+        par->name = name;
+        par->type = _DEFAULT;
     } else {
         Id* id = it.get_id(index);
         par->name = name;
