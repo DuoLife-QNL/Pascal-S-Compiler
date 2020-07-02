@@ -967,6 +967,12 @@ int main(int argc, char* argv[]){
         }
     }
     input_path = argv[1];
+    int len = strlen(input_path);
+    if (strcmp(argv[1] + len - 4, ".pas") != 0)
+    {
+        printf("Please specify a \"*.pas\" file\n");
+        return -1;
+    }
     FILE* fp = fopen(input_path,"r");
     if (fp == NULL){
         printf("Cannot open %s as input file\n", input_path);
@@ -987,7 +993,6 @@ int main(int argc, char* argv[]){
     }
     if (fp2 == NULL)
     {
-        int len = strlen(input_path);
         input_path[len - 3] = 'c';
         input_path[len - 2] = 0;
         output_path = input_path;
