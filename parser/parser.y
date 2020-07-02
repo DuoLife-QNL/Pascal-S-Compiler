@@ -6,7 +6,7 @@
     
     std::string nowConst = "";
 %}
-
+%define parse.error verbose
 %code requires {
     /**
      * debug level:
@@ -38,6 +38,7 @@
 
     extern int yylex();
     int yyerror(const char *s);
+    static int err_no = 0;
     using namespace std;
 
     typedef struct info{
@@ -139,10 +140,7 @@ program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-
-#if DEBUG
                             INFO("new id %s", (char *)$3->data());
-#endif
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
@@ -972,6 +970,8 @@ int main(int argc, char* argv[]){
             yyparse();
             if (success == 1)
                 printf("Parsing doneee.\n");
+            else
+            	printf("Parsing failed, total error %d", err_no);
             return 0;
         } else if (opt == 'h' || opt == '?'){
             printf("\nUsage ./Pascal_S_Complier [options] [target]...\n");
@@ -985,9 +985,8 @@ int main(int argc, char* argv[]){
 
 int yyerror(const char *msg)
 {
-	static int err_no = 1;
 	extern int yylineno;
-	printf("Error %d, Line Number: %d %s\n", err_no++, yylineno, msg);
+	printf("Error %d, Line Number: %d %s\n", ++err_no, yylineno, msg);
     success = 0;
 	return 0;
 }
