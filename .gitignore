@@ -82,6 +82,7 @@ parser/*.tab.*
 
 #output C
 out.c
+*.c
 
 #build
 cmake-build-debug
