@@ -106,7 +106,7 @@ quotation_not_match     (\'|\")
                             yylval.text = new string(yytext);
                             return(ID);
                         }
-{digits}[.][.]{digits} {printf("shift digitsdotdotdigits\n");yylval.text = new string(yytext); return(DIGITSDOTDOTDIGITS);}
+{digits}+[.][.]{digits}+ {printf("shift digitsdotdotdigits\n");yylval.text = new string(yytext); return(DIGITSDOTDOTDIGITS);}
 [0-9]+|[0-9]+\.[0-9]+ {printf("num:"); yylval.num = yytext; return(NUM);}
 " "|"\t"              {lex_column_index++;}
 "\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
