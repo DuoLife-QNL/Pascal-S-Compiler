@@ -83,6 +83,7 @@
     parameter* get_id_info(string name);
 
     void check_function(string func_name, parameter *actual_paras);
+    int check_type(string name, TYPE c_type);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -541,15 +542,19 @@ expression_list     :   expression_list ',' expression
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
+                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                                ERR("RELOP operation match error");
+                            }
                             $$->type = _BOOLEAN;
-                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
                         }
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
+                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                                ERR("RELOP operation match error");
+                            }
                             $$->type = _BOOLEAN;
-                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
                         }
                     |   simple_expression
@@ -564,21 +569,27 @@ expression          :   simple_expression RELOP simple_expression
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            // Todo: 错误处理
+                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                                ERR("'or' operation match error");
+                            }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + "|" + $3->text;
                         }
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            // Todo: 错误处理
+                            if (($1->type != _INTEGER || $3->type != _INTEGER) && ($1->type != _REAL || $3->type !=_REAL)) {
+                                ERR("'+' operation match error");
+                            }
                             $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "+" + $3->text;
                         }
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            // Todo: 错误处理
+                            if (($1->type != _INTEGER || $3->type != _INTEGER) && ($1->type != _REAL || $3->type !=_REAL)) {
+                                ERR("'-' operation match error");
+                            }
                             $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "-" + $3->text;
                         }
@@ -594,29 +605,41 @@ term                :   term MULOP factor
                         {
                             $$ = new parameter;
                             $$->is_var = $1->is_var | $3->is_var;
+
                             string* s = $2;
                             int i = get_mulop_type(s);
                             string mulop_s;
-                            switch (i)
-                            {
+                            TYPE type = cmp_type($1->type, $3->type);
+                            switch (i) {
                             case 1: // and
-                                // Todo: 错误处理
+                                if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                                    ERR("'and' operation match error");
+                                }
                                 $$->type = _BOOLEAN;
                                 mulop_s = "&";
                                 break;
                             case 2: // div
-                                // Todo: 错误处理
-                                $$->type = cmp_type($1->type, $3->type);
+                                if (type != _INTEGER) {
+                                    ERR("'div' operation match error");
+                                }
+                                $$->type = _INTEGER;
                                 mulop_s = "/";
                                 break;
                             case 3: // mod
-                                // Todo: 错误处理
-                                $$->type = cmp_type($1->type, $3->type);
+                                if (type != _INTEGER) {
+                                    ERR("'mod' operation match error");
+                                }
+                                $$->type = _INTEGER;
                                 mulop_s = "%";
                                 break;
                             default: // * /
-                                // Todo: 错误处理
-                                $$->type = cmp_type($1->type, $3->type);
+                                if (type == _DEFAULT) {
+                                    char error_msg[100];
+                                    sprintf(error_msg,"'%s'operation match error",$2);
+                                    ERR(error_msg);
+                                } else {
+                                    $$->type = type;
+                                }
                                 mulop_s = *$2;
                                 break;
                             }
@@ -645,60 +668,38 @@ factor              :   NUM
                             if ($$->is_var) $$->text = "(*" + $1->name + ")";
                             else $$->text = $1->name;
                             $$->is_lvalue = true;
-                            cout<<"variable "<<$$->name<<" "<<$$->type<<" "<<$$->is_var<<endl;
                         }
                     |   ID '(' expression_list ')'
                         {
                             $$ = new parameter;
                             // 根据ID（函数）确定type
-<<<<<<< HEAD
-                            TYPE type;
-                            type = get_id_info(*$1)->type;
-                            if (type == _DEFAULT) {
-                                ERR("use of undeclared identifier");
-                                $$->type = _INTEGER;
-                                $$->text = "";
-                            } else if (type != _FUNCTION) {
-                                ERR("called object is not a function or function pointer");
-                                $$->type = _INTEGER;
-                                $$->text = "";
-                            } else {
-                                $$->type = get_fun_type(*$1);
-                                $$->text = *$1 + "(";
-                                std::vector<Parameter> par_list = get_par_list(*$1);
-                                int argc = 0;
-                                for (auto *c = $3; c; c = c->next)
+                            int type_code = check_type(*$1,_FUNCTION);
+                            switch (type_code) {
+                                case 0:  case 1:
                                 {
-                                    if (argc != 0)
-                                        $$->text += ", ";
-                                    if (c->type != par_list[argc].get_type()) {
-                                        cout<<c->type <<" "<<par_list[argc].get_type()<<endl;
-                                        if (c->type ！= par_list[argc].get_type()) {
-                                            ERR("Parameter types do not match");
-                                        }
+                                    $$->type = _INTEGER;
+                                    break;
+                                }
+                                case 2:
+                                {
+                                    $$->type = get_fun_type(*$1);
+                                    $$->text = *$1 + "(";
+                                    // check
+                                    check_function(*$1, $3);
+                                    // code gen
+                                    std::vector<Parameter> par_list = get_par_list(*$1);
+                                    int argc = 0;
+                                    for (auto *c = $3; c; c = c->next)
+                                    {
+                                        if (argc != 0)
+                                            $$->text += ", ";
+                                        $$->text += (par_list[argc].is_var ? "&": "") + c->text;
+                                        ++argc;
                                     }
-                                    $$->text += (par_list[argc].is_var ? "&": "") + c->text;
-                                    ++argc;
+                                    break;
                                 }
-                                $$->text += ")";
-                                if (argc != par_list.size()) {
-                                    ERR("The number of parameters does not match！");
-                                }
-=======
-                            $$->type = get_fun_type(*$1);
-                            $$->text = *$1 + "(";
-                            // check
-                            check_function(*$1, $3);
-                            // code gen
-                            std::vector<Parameter> par_list = get_par_list(*$1);
-                            int argc = 0;
-                            for (auto *c = $3; c; c = c->next)
-                            {
-                                if (argc != 0)
-                                    $$->text += ", ";
-                                $$->text += (par_list[argc].is_var ? "&": "") + c->text;
-                                ++argc;
->>>>>>> eda7e7dd25f1c693d62dd969573dc52f3cd20152
+                                default:
+                                    break;
                             }
                         }
                     |   '(' expression ')'
@@ -711,7 +712,7 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
-                                ERR("factor -> NOT factor :  The 2nd factor must be bool");
+                                ERR("The factor must be bool");
                             }
                             $$->type = $2->type;
                             $$->text = "!" + $2->text;
@@ -818,12 +819,12 @@ TYPE get_type(char *s){
  * find which type return
  */
 TYPE cmp_type(TYPE t1, TYPE t2){
-    if (t1 == _BOOLEAN || t2 == _BOOLEAN) {
-        return _BOOLEAN;
-    } else if (t1 == _REAL || t2 == _REAL) {
+    if (t1 == _REAL || t2 == _REAL) {
         return _REAL;
-    } else {
+    } else if (t1 == _INTEGER || t2 == _INTEGER){
         return _INTEGER;
+    } else {
+        return _DEFAULT;
     }
 }
 
@@ -954,6 +955,36 @@ void check_function(string func_name, parameter *actual_paras)
             yyerror(error_buffer);
         }
         ++argc;
+    }
+}
+
+/**
+ * to check type with the name
+ * @name {name} string        the ID
+ * @param  {c_type} TYPE      the ID actual type
+ * @return {int}              0-undeclared, 1-mismatch, 2-match
+ */
+int check_type(string name, TYPE c_type) {
+
+    TYPE type = get_id_info(name)->type;
+    char error_buffer[1000];
+    if (type == _DEFAULT) {
+        sprintf(error_buffer, "use of undeclared identifier '%s'.",name.c_str());
+        ERR(error_buffer);
+        return 0;
+    } else if (type != c_type){
+        switch (c_type){
+            case _FUNCTION:
+                sprintf(error_buffer, "called object type '%s' is not a function or function pointer.",
+                        convert_type(type).c_str());
+                break;
+            default:
+                break;
+        }
+        ERR(error_buffer);
+        return 1;
+    } else {
+        return 2;
     }
 }
 
