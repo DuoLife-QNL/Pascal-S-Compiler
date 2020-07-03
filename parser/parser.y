@@ -25,6 +25,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <stddef.h>
+    #include <algorithm>
     #include "IdType.h"
     #include "debug.h"
 
@@ -924,6 +925,7 @@ TYPE cmp_type(TYPE t1, TYPE t2){
 }
 
 int get_mulop_type(string* s){
+    transform(s->begin(), s->end(), s->begin(), ::tolower);
     if (*s == "and") {
         return 1;
     } else if (*s == "div") {
