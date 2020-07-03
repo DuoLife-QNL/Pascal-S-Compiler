@@ -884,9 +884,9 @@ void par_append(parameter *p, string name, bool is_var){
 
 #if DEBUG
 void print_par_list(parameter *p){
-    cout << "parameter list is now:" << endl;
+    cout << "    parameter list is now:" << endl;
     while(p){
-        cout << "    [name: "   << p->name
+        cout << "        [name: "   << p->name
              << ", is_var: "    << p->is_var
              << ", type: "      << p->type
              << ", has next: "  << !(p->next == nullptr)
@@ -898,7 +898,7 @@ void print_par_list(parameter *p){
 void print_block_info(bool is_func, TYPE ret_type, parameter *p){
     print_par_list(p);
     if (is_func)
-        cout << "return type: " << ret_type << endl;
+        cout << "    return type: " << ret_type << endl;
 }
 #endif
 
