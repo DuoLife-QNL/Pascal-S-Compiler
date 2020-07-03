@@ -315,6 +315,9 @@ period              :   period ',' DIGITSDOTDOTDIGITS
                             $$.prd = init_period();
                             $$.prd->start = get_first_digit(*$1);
                             $$.prd->end = get_last_digit(*$1);
+                            if ($$.prd->start > $$.prd->end) {
+                                yyerror("Upper bound of range is less than lower bound");
+                            }
                         }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
