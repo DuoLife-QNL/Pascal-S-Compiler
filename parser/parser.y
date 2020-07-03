@@ -143,18 +143,13 @@ program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-
-#if DEBUG
                             INFO("new id %s", (char *)$3->data());
-#endif
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
                     |   ID
                         {
-#if DEBUG
                             INFO("new id %s", (char *)$1->data());
-#endif
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
