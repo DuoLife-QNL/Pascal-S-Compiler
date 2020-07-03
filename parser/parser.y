@@ -719,7 +719,7 @@ term                :   term MULOP factor
                             default: // * /
                                 if (type != _INTEGER && type != _REAL) {
                                     char error_msg[100];
-                                    sprintf(error_msg,"'%s'operation match error",$2);
+                                    sprintf(error_msg,"'%s'operation match error", $2->c_str());
                                     yyerror(error_msg);
                                 } else {
                                     $$->type = type;
