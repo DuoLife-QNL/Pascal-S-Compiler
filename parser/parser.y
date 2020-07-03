@@ -64,6 +64,8 @@
         bool is_lvalue = false;
         bool is_var = false;
         TYPE type = _DEFAULT;
+        /* for array type */
+        TYPE element_type = _DEFAULT;
         parameter *next = nullptr;
         string text = "test";
     }parameter;
@@ -82,7 +84,7 @@
 #endif
 
     TYPE get_type(char *s);
-    TYPE cmp_type(TYPE t1, TYPE t2);
+    TYPE cmp_type(TYPE type1, TYPE type2, TYPE et1, TYPE et2);
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
@@ -511,8 +513,16 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
-                            check_id(*$1);
                             $$ = get_id_info(*$1);
+                            if (check_id(*$1)) {
+                                Id *id = it.get_id(it.find_id(*$1));
+                                TYPE id_type = id->get_type();
+                                if(_ARRAY == id_type) {
+                                    INFO("%s is array type", $1->c_str());
+                                    ArrayId *arrayId = (ArrayId *)id;
+                                    $$->element_type = arrayId->get_element_type();
+                                }
+                            }
                             $2 = $1;
                         }
                     ;
@@ -620,7 +630,9 @@ expression_list     :   expression_list ',' expression
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type, 
+                                                 $1->element_type, 
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("RELOP operation match error");
                             }
@@ -630,7 +642,9 @@ expression          :   simple_expression RELOP simple_expression
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type, 
+                                                 $1->element_type, 
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("RELOP operation match error");
                             }
@@ -648,7 +662,9 @@ expression          :   simple_expression RELOP simple_expression
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type, 
+                                                 $1->element_type, 
+                                                 $3->element_type);
                             if (type != _BOOLEAN) {
                                 yyerror("'or' operation match error");
                             }
@@ -658,7 +674,9 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type, 
+                                                 $1->element_type, 
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("'+' operation match error");
                                 $$->type = _INTEGER;
@@ -670,7 +688,9 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type, 
+                                                 $1->element_type, 
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("'-' operation match error");
                                 $$->type = _INTEGER;
@@ -683,6 +703,7 @@ simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
+                            $$->element_type = $1->element_type;
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
@@ -695,7 +716,9 @@ term                :   term MULOP factor
                             string* s = $2;
                             int i = get_mulop_type(s);
                             string mulop_s;
-                            TYPE type = cmp_type($1->type, $3->type);
+                            TYPE type = cmp_type($1->type, $3->type, 
+                                                 $1->element_type, 
+                                                 $3->element_type);
                             switch (i) {
                             case 1: // and
                                 if (type != _BOOLEAN) {
@@ -735,6 +758,7 @@ term                :   term MULOP factor
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
+                            $$->element_type = $1->element_type;
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
@@ -843,7 +867,7 @@ void insert_symbol(string name, info t){
         BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
         it.enter_id((Id*)id);
     } else if (t.type == _ARRAY){  /* array */
-        ArrayId *id = new ArrayId(name, t.type, t.dim, t.prd);
+        ArrayId *id = new ArrayId(name, t.element_type, t.dim, t.prd);
         it.enter_id((Id*)id);
     }
 }
@@ -913,7 +937,17 @@ TYPE get_type(char *s){
 /*
  * find which type return
  */
-TYPE cmp_type(TYPE t1, TYPE t2){
+TYPE cmp_type(TYPE type1, TYPE type2, TYPE et1, TYPE et2){
+    TYPE t1 = type1;
+    TYPE t2 = type2;
+    if (_ARRAY == type1) {
+        t1 = et1;
+        INFO("element_type: %d", t1);
+    }
+    if (_ARRAY == type2) {
+        t2 = et2;
+        INFO("element_type: %d", t1);
+    }
     if (t1 == _REAL && t2 == _REAL) {
         return _REAL;
     } else if (t1 == _INTEGER && t2 == _INTEGER){
