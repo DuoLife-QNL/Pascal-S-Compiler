@@ -87,7 +87,7 @@
     parameter* get_id_info(string name);
 
     void check_function(string func_name, parameter *actual_paras);
-    int check_type(string name, TYPE c_type);
+    int check_type(string name, TYPE c_type, bool msg = true);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -993,27 +993,30 @@ void check_function(string func_name, parameter *actual_paras)
 /**
  * to check type with the name
  * @name {name} string        the ID
- * @param  {c_type} TYPE      the ID actual type
+ * @param {c_type} TYPE       the ID expected type
+ * @param {msg} bool          output error message or not  
  * @return {int}              0-undeclared, 1-mismatch, 2-match
  */
-int check_type(string name, TYPE c_type) {
-
+int check_type(string name, TYPE c_type, bool msg) {
     TYPE type = get_id_info(name)->type;
-    char error_buffer[1000];
     if (type == _DEFAULT) {
-        sprintf(error_buffer, "use of undeclared identifier '%s'.",name.c_str());
-        yyerror(error_buffer);
         return 0;
     } else if (type != c_type){
-        switch (c_type){
+        if (msg) {
+            switch (c_type){
             case _FUNCTION:
-                sprintf(error_buffer, "called object type '%s' is not a function or function pointer.",
-                        convert_type(type).c_str());
+            case _PROCEDURE:
+                sprintf(error_buffer, "'%s' is '%s', function or procudure expected",
+                        name.c_str(), convert_type(type).c_str());
                 break;
             default:
+                sprintf(error_buffer, "'%s' is '%s', '%s' expected",
+                        name.c_str(), convert_type(type).c_str(), 
+                        convert_type(c_type).c_str());
                 break;
+            }
+            yyerror(error_buffer);
         }
-        yyerror(error_buffer);
         return 1;
     } else {
         return 2;
