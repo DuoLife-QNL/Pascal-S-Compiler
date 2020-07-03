@@ -59,6 +59,7 @@
 
     typedef struct parameter{
         string name;
+        int count_follow_pars;
         bool is_lvalue = false;
         bool is_var = false;
         TYPE type = _DEFAULT;
@@ -86,6 +87,7 @@
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
 
+    bool check_id(string name);
     void check_function(string func_name, parameter *actual_paras);
     int check_type(string name, TYPE c_type, bool msg = true);
 
@@ -133,7 +135,8 @@
 %type <par> idlist formal_parameter parameter_list
 %type <par> parameter var_parameter value_parameter
 %type <par> expression_list variable_list
-%type <par> expression simple_expression term factor variable id_varpart
+%type <par> expression simple_expression term factor variable 
+%type <text> id_varpart
 
 %%
 
@@ -444,6 +447,7 @@ statement           :   variable ASSIGNOP expression
                         statement {wf(";\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
+                            check_id(*$2);
                             wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
                         }
                         statement
@@ -505,11 +509,47 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
+                            /* the id check here is done in next production */
                             $$ = get_id_info(*$1);
+                            $2 = $1;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
-                    |
+                        {
+                            /* check if id exists */
+                            if (check_id(*$$)) {
+                                int index = it.find_id(*$$);
+                                TYPE type = it.get_id(index)->get_type();
+                                /* check if the id of type array */
+                                if (_ARRAY != type) {
+                                    sprintf(error_buffer, "'%s' is '%s', array id expected",
+                                            $$->c_str(), convert_type(type).c_str());
+                                    yyerror(error_buffer);
+                                }else {
+                                    /* check if dimension matches */
+                                    ArrayId *id = (ArrayId *)it.get_id(index);
+                                    int dim = id->get_dim();
+                                    if (dim != $2->count_follow_pars) {
+                                        sprintf(error_buffer, "number of array dimensions not match");
+                                        yyerror(error_buffer);
+                                    }
+
+                                    /* the array period shoulb be integer */
+                                    parameter *tmp = $2;
+                                    while (tmp != NULL) {
+                                        if (_INTEGER != tmp->type) {
+                                            sprintf(error_buffer, "all dimensions of array '%s' should be integer", 
+                                                    $$->c_str());
+                                            yyerror(error_buffer);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    |   {
+                            check_id(*$$);
+                        }
                     ;
 procedure_call      :   ID 
                         {
@@ -567,10 +607,12 @@ expression_list     :   expression_list ',' expression
                             }
                             tmp->next = $3;
                             $$ = $1;
+                            $$->count_follow_pars ++;
                         }
                     |   expression
                         {
                             $$ = $1;
+                            $$->count_follow_pars = 1;
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
@@ -964,6 +1006,20 @@ std::vector<Parameter> get_par_list(string id)
     auto f = it.get_id(index);
     return static_cast<Block *>(f)->get_par_list();
 }
+
+/**
+ * Check whether an id exists in the id table and  
+ * report error if id undeclared 
+ */ 
+bool check_id(string name) {
+    if (it.find_id(name) == -1) {
+        sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
+        yyerror(error_buffer);
+        return false;
+    }
+    return true;
+}
+
 /**
  * to check function parmeters' length, type and lvalue;
  * @param  {func_name} string        the function's ID
