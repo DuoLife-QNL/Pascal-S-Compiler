@@ -136,7 +136,7 @@
 %type <par> idlist formal_parameter parameter_list
 %type <par> parameter var_parameter value_parameter
 %type <par> expression_list variable_list
-%type <par> expression simple_expression term factor variable 
+%type <par> expression simple_expression term factor variable
 %type <text> id_varpart
 
 %%
@@ -480,8 +480,6 @@ statement           :   variable ASSIGNOP expression
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                s += convert_type_printf(cur->type);
-                                t += cur->text;
                                 if (first)
                                     first = false;
                                 else
@@ -489,9 +487,11 @@ statement           :   variable ASSIGNOP expression
                                     s += " ";
                                     t += ", ";
                                 }
+                                s += convert_type_printf(cur->type);
+                                t += cur->text;
                             }
                             s += "\\n";
-                            wf("printf(\"", s, "\",", t, ")");
+                            wf("printf(\"", s, "\", ", t, ")");
                         }
                     |
                     ;
@@ -540,7 +540,7 @@ id_varpart          :   '[' expression_list ']'
                                     parameter *tmp = $2;
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
-                                            sprintf(error_buffer, "all dimensions of array '%s' should be integer", 
+                                            sprintf(error_buffer, "all dimensions of array '%s' should be integer",
                                                     $$->c_str());
                                             yyerror(error_buffer);
                                             break;
@@ -550,9 +550,9 @@ id_varpart          :   '[' expression_list ']'
                                 }
                             }
                         }
-                    |   
+                    |
                     ;
-procedure_call      :   ID 
+procedure_call      :   ID
                         {
                             if (check_id(*$1)) {
                                 if (2 != check_type(*$1, _PROCEDURE, false)) {
@@ -1017,10 +1017,10 @@ std::vector<Parameter> get_par_list(string id)
 }
 
 /**
- * Check whether an id exists in the id table and  
- * report error if id undeclared 
+ * Check whether an id exists in the id table and
+ * report error if id undeclared
  * @param msg: show error message if true
- */ 
+ */
 bool check_id(string name, bool msg) {
     if (it.find_id(name) == -1) {
         ERR("Id '%s' not in id table", name.c_str());
@@ -1075,7 +1075,7 @@ void check_function(string func_name, parameter *actual_paras)
  * to check type with the name
  * @name {name} string        the ID
  * @param {c_type} TYPE       the ID expected type
- * @param {msg} bool          output error message or not  
+ * @param {msg} bool          output error message or not
  * @return {int}              0-undeclared, 1-mismatch, 2-match
  */
 int check_type(string name, TYPE c_type, bool msg) {
@@ -1092,7 +1092,7 @@ int check_type(string name, TYPE c_type, bool msg) {
                 break;
             default:
                 sprintf(error_buffer, "'%s' is '%s', '%s' expected",
-                        name.c_str(), convert_type(type).c_str(), 
+                        name.c_str(), convert_type(type).c_str(),
                         convert_type(c_type).c_str());
                 break;
             }
