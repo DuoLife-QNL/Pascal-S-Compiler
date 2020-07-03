@@ -262,7 +262,7 @@ L                   :   ':' type
 type                :   basic_type
                         {
                             $$ = $1;
-                       wf($$.type," ");
+                            wf($$.type," ");
                         }
                     |   ARRAY '[' period ']' OF basic_type
                         {
@@ -321,8 +321,7 @@ subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
 #if DEBUG
-                            sprintf(log_msg, "inserting procedure '%s'", $2->c_str());
-                            INFO(log_msg);
+                            INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
@@ -343,8 +342,7 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
-                            sprintf(log_msg, "inserting function '%s'", $2->c_str());
-                            INFO(log_msg);
+                            INFO("inserting function '%s'", $2->c_str());
                             print_block_info(true, $5.type, $3);
 
 #endif
