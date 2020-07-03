@@ -60,6 +60,7 @@
 
     typedef struct parameter{
         string name;
+        int count_follow_pars;
         bool is_lvalue = false;
         bool is_var = false;
         TYPE type = _DEFAULT;
@@ -87,8 +88,9 @@
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
 
+    bool check_id(string name, bool msg = true);
     void check_function(string func_name, parameter *actual_paras);
-    int check_type(string name, TYPE c_type);
+    int check_type(string name, TYPE c_type, bool msg = true);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -134,7 +136,8 @@
 %type <par> idlist formal_parameter parameter_list
 %type <par> parameter var_parameter value_parameter
 %type <par> expression_list variable_list
-%type <par> expression simple_expression term factor variable id_varpart
+%type <par> expression simple_expression term factor variable 
+%type <text> id_varpart
 
 %%
 
@@ -468,6 +471,7 @@ statement           :   variable ASSIGNOP expression
                         statement {wf(";\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
+                            check_id(*$2);
                             wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
                         }
                         statement
@@ -533,17 +537,66 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
+                            check_id(*$1);
                             $$ = get_id_info(*$1);
+                            $2 = $1;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
-                    |
+                        {
+                            /* check if id exists */
+                            if (check_id(*$$, false)) {
+                                int index = it.find_id(*$$);
+                                TYPE type = it.get_id(index)->get_type();
+                                /* check if the id of type array */
+                                if (_ARRAY != type) {
+                                    sprintf(error_buffer, "'%s' is '%s', array id expected",
+                                            $$->c_str(), convert_type(type).c_str());
+                                    yyerror(error_buffer);
+                                }else {
+                                    /* check if dimension matches */
+                                    ArrayId *id = (ArrayId *)it.get_id(index);
+                                    int dim = id->get_dim();
+                                    if (dim != $2->count_follow_pars) {
+                                        sprintf(error_buffer, "number of array dimensions not match");
+                                        yyerror(error_buffer);
+                                    }
+
+                                    /* the array period shoulb be integer */
+                                    parameter *tmp = $2;
+                                    while (tmp != NULL) {
+                                        if (_INTEGER != tmp->type) {
+                                            sprintf(error_buffer, "all dimensions of array '%s' should be integer", 
+                                                    $$->c_str());
+                                            yyerror(error_buffer);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    |   
                     ;
-procedure_call      :   ID {wf(*$1, "()");}
+procedure_call      :   ID 
+                        {
+                            if (check_id(*$1)) {
+                                if (2 != check_type(*$1, _PROCEDURE, false)) {
+                                    check_type(*$1, _FUNCTION);
+                                }
+                            }
+                            wf(*$1, "()");
+                        }
                     |   ID '(' expression_list ')'
                         {
                             // 根据ID（函数）确定type
-                            int type_code = check_type(*$1,_PROCEDURE);
+                            int type_code = 0;
+                            if (check_id(*$1)) {
+                                if (2 == check_type(*$1, _PROCEDURE, false)) {
+                                    type_code =2;
+                                }else {
+                                    type_code = check_type(*$1, _FUNCTION);
+                                }
+                            }
                             switch (type_code) {
                                 case 0:  case 1:
                                 {
@@ -584,10 +637,12 @@ expression_list     :   expression_list ',' expression
                             }
                             tmp->next = $3;
                             $$ = $1;
+                            $$->count_follow_pars ++;
                         }
                     |   expression
                         {
                             $$ = $1;
+                            $$->count_follow_pars = 1;
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
@@ -694,7 +749,7 @@ term                :   term MULOP factor
                             default: // * /
                                 if (type != _INTEGER && type != _REAL) {
                                     char error_msg[100];
-                                    sprintf(error_msg,"'%s'operation match error",$2);
+                                    sprintf(error_msg,"'%s'operation match error", $2->c_str());
                                     yyerror(error_msg);
                                 } else {
                                     $$->type = type;
@@ -731,7 +786,14 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             // 根据ID（函数）确定type
-                            int type_code = check_type(*$1,_FUNCTION);
+                            int type_code = 0;
+                            if (check_id(*$1)) {
+                                if (2 == check_type(*$1, _PROCEDURE, false)) {
+                                    type_code =2;
+                                }else {
+                                    type_code = check_type(*$1, _FUNCTION);
+                                }
+                            }
                             switch (type_code) {
                                 case 0:  case 1:
                                 {
@@ -921,7 +983,7 @@ TYPE get_fun_type(string name) {
 }
 
 /*
- * return id type and is_var by name
+ * return name, id type and is_var by name
  */
 parameter* get_id_info(string name) {
     int index;
@@ -972,7 +1034,7 @@ void print_par_list(parameter *p){
 void print_block_info(bool is_func, TYPE ret_type, parameter *p){
     print_par_list(p);
     if (is_func)
-        cout << "    return type: " << ret_type << endl;
+        cout << "    return type: " << convert_type(ret_type) << endl;
 }
 #endif
 
@@ -982,6 +1044,21 @@ std::vector<Parameter> get_par_list(string id)
     auto f = it.get_id(index);
     return static_cast<Block *>(f)->get_par_list();
 }
+
+/**
+ * Check whether an id exists in the id table and  
+ * report error if id undeclared 
+ * @param msg: show error message if true
+ */ 
+bool check_id(string name, bool msg) {
+    if (it.find_id(name) == -1) {
+        sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
+        yyerror(error_buffer);
+        return false;
+    }
+    return true;
+}
+
 /**
  * to check function parmeters' length, type and lvalue;
  * @param  {func_name} string        the function's ID
@@ -996,7 +1073,6 @@ void check_function(string func_name, parameter *actual_paras)
     {
         ++actual_count;
     }
-    char error_buffer[1000];
     if (formal_paras.size() != actual_count)
     {
         sprintf(error_buffer, "function %s length mismatch, require %d parmeters, got %d.",
@@ -1026,27 +1102,30 @@ void check_function(string func_name, parameter *actual_paras)
 /**
  * to check type with the name
  * @name {name} string        the ID
- * @param  {c_type} TYPE      the ID actual type
+ * @param {c_type} TYPE       the ID expected type
+ * @param {msg} bool          output error message or not  
  * @return {int}              0-undeclared, 1-mismatch, 2-match
  */
-int check_type(string name, TYPE c_type) {
-
+int check_type(string name, TYPE c_type, bool msg) {
     TYPE type = get_id_info(name)->type;
-    char error_buffer[1000];
     if (type == _DEFAULT) {
-        sprintf(error_buffer, "use of undeclared identifier '%s'.",name.c_str());
-        yyerror(error_buffer);
         return 0;
     } else if (type != c_type){
-        switch (c_type){
+        if (msg) {
+            switch (c_type){
             case _FUNCTION:
-                sprintf(error_buffer, "called object type '%s' is not a function or function pointer.",
-                        convert_type(type).c_str());
+            case _PROCEDURE:
+                sprintf(error_buffer, "'%s' is '%s', function or procudure expected",
+                        name.c_str(), convert_type(type).c_str());
                 break;
             default:
+                sprintf(error_buffer, "'%s' is '%s', '%s' expected",
+                        name.c_str(), convert_type(type).c_str(), 
+                        convert_type(c_type).c_str());
                 break;
+            }
+            yyerror(error_buffer);
         }
-        yyerror(error_buffer);
         return 1;
     } else {
         return 2;
