@@ -168,13 +168,17 @@ const_declarations  :   CONST const_declaration ';'
                     |
                     ;
 
-const_declaration   :   ID EQUAL const_value{
+const_declaration   :   ID EQUAL const_value
+                        {
                             insert_symbol(*$1, $3);
+                            INFO("Insert const id '%s' into id table.", $1->c_str());
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
-                |         const_declaration ';' ID EQUAL const_value{
-                          insert_symbol(*$3, $5);
-                          wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                |         const_declaration ';' ID EQUAL const_value
+                        {
+                            insert_symbol(*$3, $5);
+                            INFO("Insert const id '%s' into id table.", $3->c_str());
+                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
                     ;
 const_value         :   PLUS NUM
@@ -224,6 +228,7 @@ var_declarations    :   VAR var_declaration ';'
 var_declaration     :   var_declaration ';' ID L
                         {
                             insert_symbol(*$3, $4);
+                            INFO("Insert new id '%s' into id table.", $3->c_str());
                             if ($4.dim==0) wf(*$3,";\n");
                             else{
                                 wf(*$3);
@@ -238,6 +243,7 @@ var_declaration     :   var_declaration ';' ID L
                     |   ID L
                         {
                             insert_symbol(*$1, $2);
+                            INFO("Insert new id '%s' into id table.", $1->c_str());
                             if ($2.dim==0)wf(*$1,";\n");
                         }
                     ;
@@ -249,7 +255,8 @@ L                   :   ':' type
                     |   ',' ID L
                         {
                             insert_symbol(*$2, $3);
-                                  $$ = $3;
+                            INFO("Insert new id '%s' into id table.", $2->c_str());
+                            $$ = $3;
                             if ($3.dim==0)wf(*$2,", ");
                         }
 type                :   basic_type
@@ -261,7 +268,7 @@ type                :   basic_type
                         {
                             $$ = $3;
                             $$.element_type = $6.type;
-                       wf($$.element_type," ");
+                            wf($$.element_type," ");
                         }
                     ;
 basic_type          :   INTEGER
