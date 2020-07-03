@@ -1020,6 +1020,7 @@ std::vector<Parameter> get_par_list(string id)
  */ 
 bool check_id(string name, bool msg) {
     if (it.find_id(name) == -1) {
+        ERR("Id '%s' not in id table", name.c_str());
         sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
         yyerror(error_buffer);
         return false;
