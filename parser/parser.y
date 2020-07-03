@@ -3,7 +3,9 @@
     #include "string.h"
     int success = 1;
     IdTable it;
-    
+    char log_msg[1024];
+    char error_buffer[1024];
+
     std::string nowConst = "";
 %}
 %define parse.error verbose
@@ -58,6 +60,7 @@
 
     typedef struct parameter{
         string name;
+        bool is_lvalue = false;
         bool is_var = false;
         TYPE type = _DEFAULT;
         parameter *next = nullptr;
@@ -71,16 +74,21 @@
 
     int get_first_digit(const string &s);
     int get_last_digit(const string &s);
+
 #if DEBUG
     void print_par_list(parameter *p);
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
+
     TYPE get_type(char *s);
     TYPE cmp_type(TYPE t1, TYPE t2);
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
+
+    void check_function(string func_name, parameter *actual_paras);
+    int check_type(string name, TYPE c_type);
 
 // target code generation funciton start
     void wf(const char *s);
@@ -130,23 +138,23 @@
 
 %%
 
-programstruct       :   program_head ';' program_body '.'
+programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_body '.'
                     ;
 program_head        :   PROGRAM ID '(' idlist ')'
                     |   PROGRAM ID
                     ;
-program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf("\nreturn 0;\n}\n"); }
+program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf(";\nreturn 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-                            INFO("new id %s", (char *)$3->data());
+                            INFO("new id '%s'", $3->c_str());
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
                     |   ID
                         {
-                            INFO("new id %s", (char *)$1->data());
+                            INFO("new id '%s'", $1->c_str());
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
@@ -171,13 +179,16 @@ const_declarations  :   CONST const_declaration ';'
                     ;
 
 const_declaration   :   ID EQUAL const_value
-		        {
+                        {
                             insert_symbol(*$1, $3);
+                            INFO("Insert const id '%s' into id table.", $1->c_str());
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
-                    |   const_declaration ';' ID EQUAL const_value{
-                          insert_symbol(*$3, $5);
-                          wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                    |   const_declaration ';' ID EQUAL const_value
+                        {
+                            insert_symbol(*$3, $5);
+                            INFO("Insert const id '%s' into id table.", $3->c_str());
+                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
                     ;
 const_value         :   PLUS NUM
@@ -198,7 +209,7 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = get_type($1);
                             nowConst=$1;
-                           
+
                         }
 /*
  * @QLQ: QUOTE LETTER QUOTE
@@ -238,6 +249,7 @@ var_declarations    :   VAR var_declaration ';'
 var_declaration     :   var_declaration ';' ID L
                         {
                             insert_symbol(*$3, $4);
+                            INFO("Insert new id '%s' into id table.", $3->c_str());
                             if ($4.dim==0) wf(*$3,";\n");
                             else{
                                 wf(*$3);
@@ -252,24 +264,26 @@ var_declaration     :   var_declaration ';' ID L
                     |   ID L
                         {
                             insert_symbol(*$1, $2);
+                            INFO("Insert new id '%s' into id table.", $1->c_str());
                             if ($2.dim==0)wf(*$1,";\n");
                         }
                     ;
 L                   :   ':' type
                         {
                                   $$ = $2;
-                            
+
                         }
                     |   ',' ID L
                         {
                             insert_symbol(*$2, $3);
-                                  $$ = $3;
+                            INFO("Insert new id '%s' into id table.", $2->c_str());
+                            $$ = $3;
                             if ($3.dim==0)wf(*$2,", ");
                         }
 type                :   basic_type
                         {
                             $$ = $1;
-                       	    wf($$.type," ");
+                            wf($$.type," ");
                         }
                     |   ARRAY '[' period ']' OF basic_type
                         {
@@ -330,8 +344,8 @@ subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
 #if DEBUG
-                           cout << "inserting procedure " << *$2 << ":" << endl;
-                           print_block_info(false, _VOID , $3);
+                            INFO("inserting procedure '%s'", $2->c_str());
+                            print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
 			                cout << "insert done" << endl;
@@ -351,12 +365,12 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
-                            cout << "inserting function " << *$2 << ":" << endl;
+                            INFO("inserting function '%s'", $2->c_str());
                             print_block_info(true, $5.type, $3);
 
 #endif
                             insert_function(*$2, $3, $5.type);
-                            cout << "insert done" << endl;
+                            INFO("Insert done.");
 
                             wf($5.type, " ", *$2, "(");
                             bool first = true;
@@ -392,7 +406,7 @@ parameter_list      :   parameter_list ';' parameter
                         {
                             $$ = $1;
 #if DEBUG
-                            INFO("append %s to parameter list\n", $1->is_var ? "var" : "non-var");
+                            INFO("append %s to parameter list", $1->is_var ? "var" : "non-var");
                             print_par_list($$);
 #endif
                         }
@@ -435,9 +449,9 @@ statement_list      :   statement_list ';'{ yyerrok; wf(";\n");} statement
                     	{
                     	}
                     ;
-statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
+statement           :   variable ASSIGNOP expression
                         {
-                            auto is_func = get_fun_type($1->name) != _DEFAULT;
+                            auto is_func = get_id_info($1->name)->type == _FUNCTION;
                             if (is_func) wf("return ", $3->text);
                             else wf($1->name, "=", $3->text);
                         }
@@ -446,15 +460,15 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         }
                     |   { wf("{\n");}
                         compound_statement
-                        { wf("}\n");}
+                        { wf(";}\n");}
                     |   IF expression THEN
                         {
-                            wf("if(", $2->text, "){\n");
+                            wf("if(", $2->text, ")\n");
                         }
-                        statement {wf(";}\n");} else_part
+                        statement {wf(";\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            wf("for(int", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
+                            wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
                         }
                         statement
                         {
@@ -462,22 +476,21 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         }
                     |   READ '(' variable_list ')'
                         {
-                            /*
                             string s, t;
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                s += convert_type_printf(cur->type);
-                                t += "&" + cur->name;
                                 if (first)
-                                    first = true;
+                                    first = false;
                                 else
                                 {
                                     t += ", ";
                                 }
+                                s += convert_type_printf(cur->type);
+                                t += "&" + cur->name;
+
                             }
-                            wf("scanf(\"", s, "\",", t, ")");
-                            */
+                            wf("scanf(\"", s, "\", ", t, ")");
                         }
                     |   WRITE '(' expression_list ')'
                         {
@@ -520,9 +533,7 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
-                            // TODO 判断ID is_var
                             $$ = get_id_info(*$1);
-                            // cout<<"  variable/:" <<$$->type<<" "<<$$->is_var<<endl;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
@@ -531,15 +542,30 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID {wf(*$1, "()");}
                     |   ID '(' expression_list ')'
                         {
-                            wf(*$1, "(");
-                            std::vector<Parameter> par_list = get_par_list(*$1);
-                            int argc = 0;
-                            for (auto *c = $3; c; c = c->next)
-                            {
-                                if (argc != 0)
-                                    wf(", ");
-                                wf((par_list[argc].is_var ? "&": "") + c->text);
-                                ++argc;
+                            // 根据ID（函数）确定type
+                            int type_code = check_type(*$1,_PROCEDURE);
+                            switch (type_code) {
+                                case 0:  case 1:
+                                {
+                                    break;
+                                }
+                                case 2:
+                                {
+                                    check_function(*$1, $3);
+                                    wf(*$1, "(");
+                                    std::vector<Parameter> par_list = get_par_list(*$1);
+                                    int argc = 0;
+                                    for (auto *c = $3; c; c = c->next)
+                                    {
+                                        if (argc != 0)
+                                            wf(", ");
+                                        wf((par_list[argc].is_var ? "&": "") + c->text);
+                                        ++argc;
+                                    }
+                                    break;
+                                }
+                                default:
+                                    break;
                             }
                         }
                     |	ID '(' error ')'
@@ -547,7 +573,7 @@ procedure_call      :   ID {wf(*$1, "()");}
                     	    ERR("error when calling procedure()");
                     	}
                     ;
-else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf(";\n}\n");}
+else_part           :   ELSE {wf("else\n");cout<<"ELSE"<<endl;} statement {wf(";\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -561,52 +587,69 @@ expression_list     :   expression_list ',' expression
                         }
                     |   expression
                         {
+                            $$ = $1;
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("RELOP operation match error");
+                            }
                             $$->type = _BOOLEAN;
-                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
                         }
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("RELOP operation match error");
+                            }
                             $$->type = _BOOLEAN;
-                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
                         }
                     |   simple_expression
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
-                            cout<<"\nexpression "<<$$->type<<endl<<endl;
                             $$->text = $1->text;
+                            $$->is_lvalue = $1->is_lvalue;
                         }
                     ;
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            $$->is_var = $1->is_var | $3->is_var;
-                            // Todo: 错误处理
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _BOOLEAN) {
+                                yyerror("'or' operation match error");
+                            }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + "|" + $3->text;
                         }
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            $$->is_var = $1->is_var | $3->is_var;
-                            // Todo: 错误处理
-                            $$->type = cmp_type($1->type, $3->type);
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("'+' operation match error");
+                                $$->type = _INTEGER;
+                            } else {
+                                $$->type = type;
+                            }
                             $$->text = $1->text + "+" + $3->text;
                         }
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            $$->is_var = $1->is_var | $3->is_var;
-                            // Todo: 错误处理
-                            $$->type = cmp_type($1->type, $3->type);
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("'-' operation match error");
+                                $$->type = _INTEGER;
+                            } else {
+                                $$->type = type;
+                            }
                             $$->text = $1->text + "-" + $3->text;
                         }
                     |   term
@@ -614,35 +657,48 @@ simple_expression   :   simple_expression ADDOP term
                             $$ = new parameter;
                             $$->type = $1->type;
                             $$->text = $1->text;
+                            $$->is_lvalue = $1->is_lvalue;
                         }
                     ;
 term                :   term MULOP factor
                         {
                             $$ = new parameter;
                             $$->is_var = $1->is_var | $3->is_var;
+
                             string* s = $2;
                             int i = get_mulop_type(s);
                             string mulop_s;
-                            switch (i)
-                            {
+                            TYPE type = cmp_type($1->type, $3->type);
+                            switch (i) {
                             case 1: // and
-                                // Todo: 错误处理
+                                if (type != _BOOLEAN) {
+                                    yyerror("'and' operation match error");
+                                }
                                 $$->type = _BOOLEAN;
                                 mulop_s = "&";
                                 break;
                             case 2: // div
-                                // Todo: 错误处理
-                                $$->type = cmp_type($1->type, $3->type);
+                                if (type != _INTEGER) {
+                                    yyerror("'div' operation match error");
+                                }
+                                $$->type = _INTEGER;
                                 mulop_s = "/";
                                 break;
                             case 3: // mod
-                                // Todo: 错误处理
-                                $$->type = cmp_type($1->type, $3->type);
+                                if (type != _INTEGER) {
+                                    yyerror("'mod' operation match error");
+                                }
+                                $$->type = _INTEGER;
                                 mulop_s = "%";
                                 break;
                             default: // * /
-                                // Todo: 错误处理
-                                $$->type = cmp_type($1->type, $3->type);
+                                if (type != _INTEGER && type != _REAL) {
+                                    char error_msg[100];
+                                    sprintf(error_msg,"'%s'operation match error",$2);
+                                    yyerror(error_msg);
+                                } else {
+                                    $$->type = type;
+                                }
                                 mulop_s = *$2;
                                 break;
                             }
@@ -653,6 +709,7 @@ term                :   term MULOP factor
                             $$ = new parameter;
                             $$->type = $1->type;
                             $$->text = $1->text;
+                            $$->is_lvalue = $1->is_lvalue;
                         }
                     ;
 factor              :   NUM
@@ -660,48 +717,73 @@ factor              :   NUM
                             $$ = new parameter;
                             //$$->is_var = false;
                             $$->type = get_type($1);
-                            cout<<"factor "<<$$->type<<endl;
                             $$->text = $1;
                         }
                     |   variable
                         {
                             $$ = new parameter;
                             $$ = $1;
-                            $$->text = $1->name;
-                            cout<<"variable "<<$$->name<<" "<<$$->type<<" "<<$$->is_var<<endl;
+                            if ($$->is_var) $$->text = "(*" + $1->name + ")";
+                            else $$->text = $1->name;
+                            $$->is_lvalue = true;
                         }
                     |   ID '(' expression_list ')'
                         {
                             $$ = new parameter;
                             // 根据ID（函数）确定type
-                            $$->type = get_fun_type(*$1);
-                            $$->text = *$1 + "(";
-                            std::vector<Parameter> par_list = get_par_list(*$1);
-                            int argc = 0;
-                            for (auto *c = $3; c; c = c->next)
-                            {
-                                if (argc != 0)
-                                    $$->text += ", ";
-                                $$->text += (par_list[argc].is_var ? "&": "") + c->text;
-                                ++argc;
+                            int type_code = check_type(*$1,_FUNCTION);
+                            switch (type_code) {
+                                case 0:  case 1:
+                                {
+                                    $$->type = _INTEGER;
+                                    break;
+                                }
+                                case 2:
+                                {
+                                    $$->type = get_fun_type(*$1);
+                                    $$->text = *$1 + "(";
+                                    // check
+                                    check_function(*$1, $3);
+                                    // code gen
+                                    std::vector<Parameter> par_list = get_par_list(*$1);
+                                    int argc = 0;
+                                    for (auto *c = $3; c; c = c->next)
+                                    {
+                                        if (argc != 0)
+                                            $$->text += ", ";
+                                        $$->text += (par_list[argc].is_var ? "&": "") + c->text;
+                                        ++argc;
+                                    }
+                                    $$->text += ")";
+                                    break;
+                                }
+                                default:
+                                    break;
                             }
-                            $$->text += ")";
                         }
-                    |   '(' expression_list ')'
+                    |   '(' expression ')'
                         {
                             $$ = new parameter;
                             $$->type = $2->type;
-                            $$->text = "not implement";
+                            $$->text = "(" + $2->text + ")";
                         }
                     |   NOT factor
                         {
                             $$ = new parameter;
+                            if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
+                                yyerror("The factor must be bool");
+                            }
                             $$->type = $2->type;
                             $$->text = "!" + $2->text;
                         }
                     |   UMINUS factor
                         {
                             $$ = new parameter;
+                            if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
+                                char error_msg[100];
+                                sprintf(error_msg,"'%s'''is not real or integer",$2->text.c_str());
+                                yyerror(error_msg);
+                            }
                             $$->type = $2->type;
                             $$->text = "-" + $2->text;
                         }
@@ -800,12 +882,14 @@ TYPE get_type(char *s){
  * find which type return
  */
 TYPE cmp_type(TYPE t1, TYPE t2){
-    if (t1 == _BOOLEAN || t2 == _BOOLEAN) {
-        return _BOOLEAN;
-    } else if (t1 == _REAL || t2 == _REAL) {
+    if (t1 == _REAL && t2 == _REAL) {
         return _REAL;
-    } else {
+    } else if (t1 == _INTEGER && t2 == _INTEGER){
         return _INTEGER;
+    } else if (t1 == _BOOLEAN && t2 == _BOOLEAN){
+        return _BOOLEAN;
+    } else {
+        return _DEFAULT;
     }
 }
 
@@ -844,7 +928,8 @@ parameter* get_id_info(string name) {
     index = it.find_id(name);
     parameter* par = new parameter;
     if (index == -1) {
-        par = nullptr;
+        par->name = name;
+        par->type = _DEFAULT;
     } else {
         Id* id = it.get_id(index);
         par->name = name;
@@ -873,9 +958,9 @@ void par_append(parameter *p, string name, bool is_var){
 
 #if DEBUG
 void print_par_list(parameter *p){
-    cout << "parameter list is now:" << endl;
+    cout << "    parameter list is now:" << endl;
     while(p){
-        cout << "    [name: "   << p->name
+        cout << "        [name: "   << p->name
              << ", is_var: "    << p->is_var
              << ", type: "      << p->type
              << ", has next: "  << !(p->next == nullptr)
@@ -887,7 +972,7 @@ void print_par_list(parameter *p){
 void print_block_info(bool is_func, TYPE ret_type, parameter *p){
     print_par_list(p);
     if (is_func)
-        cout << "return type: " << ret_type << endl;
+        cout << "    return type: " << ret_type << endl;
 }
 #endif
 
@@ -897,7 +982,76 @@ std::vector<Parameter> get_par_list(string id)
     auto f = it.get_id(index);
     return static_cast<Block *>(f)->get_par_list();
 }
+/**
+ * to check function parmeters' length, type and lvalue;
+ * @param  {func_name} string        the function's ID
+ * @param  {actual_paras} parameter  the function's actual parameters
+ * @return {void}                    if mismatch, yyerror will occur.
+ */
+void check_function(string func_name, parameter *actual_paras)
+{
+    auto formal_paras = get_par_list(func_name);
+    int actual_count = 0;
+    for (auto *cur = actual_paras; cur; cur = cur->next)
+    {
+        ++actual_count;
+    }
+    char error_buffer[1000];
+    if (formal_paras.size() != actual_count)
+    {
+        sprintf(error_buffer, "function %s length mismatch, require %d parmeters, got %d.",
+            func_name.c_str(), (int)formal_paras.size(), actual_count);
+        yyerror(error_buffer);
+    }
+    int argc = 0;
+    for (auto *cur = actual_paras; cur; cur = cur->next)
+    {
+        if (cur->type != formal_paras[argc].get_type())
+        {
+            sprintf(error_buffer, "arg %d of function %s require type %s, got %s.",
+                argc + 1, func_name.c_str(),
+                convert_type(formal_paras[argc].get_type()).c_str(), convert_type(cur->type).c_str());
+            yyerror(error_buffer);
+        }
+        if (formal_paras[argc].is_var && !cur->is_lvalue)
+        {
+            sprintf(error_buffer, "var arg %d of function %s require lvalue",
+                argc + 1, func_name.c_str());
+            yyerror(error_buffer);
+        }
+        ++argc;
+    }
+}
 
+/**
+ * to check type with the name
+ * @name {name} string        the ID
+ * @param  {c_type} TYPE      the ID actual type
+ * @return {int}              0-undeclared, 1-mismatch, 2-match
+ */
+int check_type(string name, TYPE c_type) {
+
+    TYPE type = get_id_info(name)->type;
+    char error_buffer[1000];
+    if (type == _DEFAULT) {
+        sprintf(error_buffer, "use of undeclared identifier '%s'.",name.c_str());
+        yyerror(error_buffer);
+        return 0;
+    } else if (type != c_type){
+        switch (c_type){
+            case _FUNCTION:
+                sprintf(error_buffer, "called object type '%s' is not a function or function pointer.",
+                        convert_type(type).c_str());
+                break;
+            default:
+                break;
+        }
+        yyerror(error_buffer);
+        return 1;
+    } else {
+        return 2;
+    }
+}
 
 // target code generation start
 void wf(const char *s)
@@ -978,46 +1132,79 @@ string convert_type_printf(TYPE t)
 }
 // target code generation end
 
+void return_help(char *exe_path)
+{
+    printf("\nUsage %s <input_file> [output_file] [options]...\n", exe_path);
+    printf("Options:\n");
+    printf("  -h, --help                Print the message and exit\n\n");
+    exit(-1);
+}
+
 int main(int argc, char* argv[]){
     const char *optstring = "f:h";
     int opt;
     int option_index = 0;
     static struct option long_options[] = {
-        {"file", required_argument, NULL, 'f'},
         {"help",  no_argument,       NULL, 'h'},
         {0, 0, 0, 0}
     };
+    char *input_path = NULL, *output_path = NULL;
+    if (argc == 1) return_help(argv[0]);
     while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
-        if (opt == 'f') {
-            FILE* fp = fopen(optarg,"r");
-            if (fp == NULL){
-                printf("Cannot open %s\n",optarg);
-                return -1;
-            }
-            extern FILE* yyin;
-            extern FILE* yyout;
-            yyin = fp;
-            yyout = fopen("out.c", "w");
-            yyparse();
-            if (success == 1)
-                printf("Parsing doneee.\n");
-            else
-            	printf("Parsing failed, total error %d", err_no);
-            return 0;
-        } else if (opt == 'h' || opt == '?'){
-            printf("\nUsage ./Pascal_S_Complier [options] [target]...\n");
-            printf("Options:\n");
-            printf("  -f FILE, --file FILE      Read file as input\n");
-            printf("  -h, --help                Print the message and exit\n\n");
+        if (opt == 'h' || opt == '?'){
+            return_help(argv[0]);
+        }
+    }
+    input_path = argv[1];
+    int len = strlen(input_path);
+    if (strcmp(argv[1] + len - 4, ".pas") != 0)
+    {
+        printf("Please specify a \"*.pas\" file\n");
+        return -1;
+    }
+    FILE* fp = fopen(input_path,"r");
+    if (fp == NULL){
+        printf("Cannot open %s as input file\n", input_path);
+        return -1;
+    }
+    extern FILE* yyin;
+    extern FILE* yyout;
+    yyin = fp;
+    FILE *fp2 = NULL;
+    if (argc >= 3 && argv[2][0] != '-')
+    {
+        fp2 = fopen(argv[2], "w");
+        if (fp2 == NULL)
+        {
+            printf("Cannot create %s as output file\n", argv[2]);
             return -1;
         }
     }
+    if (fp2 == NULL)
+    {
+        input_path[len - 3] = 'c';
+        input_path[len - 2] = 0;
+        output_path = input_path;
+        fp2 = fopen(output_path, "w");
+        if (fp2 == NULL)
+        {
+            printf("Cannot create %s as output file\n", output_path);
+            return -1;
+        }
+    }
+    yyout = fp2;
+    yyparse();
+    if (success == 1)
+        printf("Parsing doneee.\n");
+    else
+        printf("Parsing failed, total error %d", err_no);
+    return 0;
 }
 
 int yyerror(const char *msg)
 {
 	extern int yylineno;
-	printf("Error %d, Line Number: %d %s\n", ++err_no, yylineno, msg);
+	printf("\033[31mError\033[0m  %d, Line Number: %d %s\n", ++err_no, yylineno, msg);
     success = 0;
 	return 0;
 }

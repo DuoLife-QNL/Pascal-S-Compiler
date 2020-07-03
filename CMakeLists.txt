@@ -1,5 +1,5 @@
 #cmake_minimum_required(VERSION 3.14)
-project(Pascal_S_Complier)
+project(Pascal_S_Compiler)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -49,7 +49,7 @@ IF(FLEX_FOUND)
     )
 ENDIF()
 
-add_executable(Pascal_S_Complier
+add_executable(Pascal_S_Compiler
         ${bison_output}
         ${flex_output}
         parser/IdTable.cpp

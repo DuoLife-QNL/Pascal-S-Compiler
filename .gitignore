@@ -82,11 +82,12 @@ parser/*.tab.*
 
 #output C
 out.c
+*.c
 
 #build
 cmake-build-debug
 CMakeFiles/
 Makefile
-Pascal_S_Complier
+Pascal_S_Compiler
 cmake_install.cmake
 CMakeCache.txt
