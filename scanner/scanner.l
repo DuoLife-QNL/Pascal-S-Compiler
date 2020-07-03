@@ -13,7 +13,7 @@
 #define COMMENT 100ß
 
 // Todo: comment this line to change into Release Mode.
-#define DEBUG
+// #define DEBUG_SCANNER
 
 
 // #define YYSTYPE char*;
@@ -48,272 +48,272 @@ quotation_not_match     (\'|\")
 %%
 
 [Pp][Rr][Oo][Gg][Rr][Aa][Mm]                              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift PROGRAM \n"); 
     #endif
     lex_column_index += yyleng; return(PROGRAM);
 }
 [Cc][Oo][Nn][Ss][Tt]                                      {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift CONST \n");
     #endif   
     lex_column_index += yyleng; return(CONST);
 }
 [Vv][Aa][Rr]                                              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift VAR \n");
     #endif
     lex_column_index += yyleng; return(VAR);
 }
 [Ii][Nn][Tt][Ee][Gg][Ee][Rr]                              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift INTEGER \n"); 
     #endif
     lex_column_index += yyleng; return(INTEGER);
 }
 [Bb][Oo][Oo][Ll][Ee][Aa][Nn]                              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift BOOLEAN \n"); 
     #endif
     lex_column_index += yyleng; return(BOOLEAN);
 }
 [Rr][Ee][Aa][Ll]                                          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift REAL \n"); 
     #endif   
     lex_column_index += yyleng; return(REAL);
 }
 [Cc][Hh][Aa][Rr]                                          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift CHAR \n");    
     #endif
     lex_column_index += yyleng; return(CHAR);
 }
 [Aa][Rr][Rr][Aa][Yy]                                      {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift ARRAY \n");   
     #endif
     lex_column_index += yyleng; return(ARRAY);
 }
 [Pp][Rr][Oo][Cc][Ee][Dd][Uu][Rr][Ee]                      {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift PROCEDURE \n");
     #endif
     lex_column_index += yyleng;return(PROCEDURE);
 }
 [Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn]                          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift FUNCTION \n");
     #endif
     lex_column_index += yyleng; return(FUNCTION);
 }
 [Bb][Ee][Gg][Ii][Nn]                                      {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift BEGIN \n");   
     #endif
     lex_column_index += yyleng; return(_BEGIN);
 }
 [Ee][Nn][Dd]                                              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift END \n");   
     #endif 
     lex_column_index += yyleng; return(END);
 }
 [Oo][Ff]                                                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift OF \n");    
     #endif 
     lex_column_index += yyleng;  return(OF);
 }
 [Ii][Ff]                                                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift IF \n");   
     #endif   
     lex_column_index += yyleng; return(IF);
 }
 [Tt][Hh][Ee][Nn]                                          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift THEN \n"); 
     #endif   
     lex_column_index += yyleng;   return(THEN);
 }
 [Ee][Ll][Ss][Ee]                                          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift ELSE \n");   
     #endif 
     lex_column_index += yyleng;  return(ELSE);
 }
     /* [Ww][Hh][Ii][Ll][Ee]                                      {
-        #ifdef DEBUG
+        #ifdef DEBUG_SCANNER
         printf("shift WHILE \n");
         #endif
         lex_column_index += yyleng;  return(WHILE);
         } */
 [Ff][Oo][Rr]                                              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift FOR \n");    
     #endif 
     lex_column_index += yyleng;  return(FOR);
 }
 [Tt][Oo]                                                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift TO \n");   
     #endif   
     lex_column_index += yyleng; return(TO);
 }
 [Dd][Oo]                                                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift DO \n");      
     #endif
     lex_column_index += yyleng; return(DO);
 }
 
 ":="                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift := \n");
     #endif 
     lex_column_index += 2; return(ASSIGNOP);
 }
 "("                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift ( \n");
     #endif
     lex_column_index += 1; return('(');
 }
 ")"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift ) \n");
     #endif
     lex_column_index += 1; return(')');
 }
 "["                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift [ \n");
     #endif 
     lex_column_index += 1; return('[');
 }
 "]"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift ] \n");
     #endif 
     lex_column_index += 1; return(']');
 }
 "+"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift + \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(PLUS);   
 }
 "-"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift - \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(UMINUS);      
 }
 "*"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift * \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(MULOP);      
 }
 "/"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift / \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(MULOP);      
 }
 [Mm][Oo][Dd]          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift mod \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 3;  return(MULOP);     
  }
 [Aa][Nn][Dd]          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift and \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 3;  return(MULOP);      
 }
 [Dd][Ii][Vv]          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift div \n");
     #endif 
     yylval.text = new string(yytext); lex_column_index += 3;  return(MULOP);      
 }
 [Oo][Rr]              {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift or \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 2; return(ADDOP);       
 }
 [Nn][Oo][Tt]          {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift not \n");
     #endif
     lex_column_index += 3;  return(NOT);      
 }
 ">"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift > \n"); 
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(RELOP);      
 }
 "<"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift < \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(RELOP);      
 }
 "="                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift = \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 1;return(EQUAL);      
 }
 "<>"                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift <> \n");
     #endif 
     yylval.text = new string(yytext); lex_column_index += 2; return(RELOP);      
 }
 ">="                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift >= \n");
     #endif 
     yylval.text = new string(yytext); lex_column_index += 2; return(RELOP);      
 }
 "<="                  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift <= \n");
     #endif
     yylval.text = new string(yytext); lex_column_index += 2;return(RELOP);      
 }
 ";"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift ; \n");
     #endif 
     lex_column_index += 1;return(';');
 }
 ":"                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift : \n");
     #endif  
     lex_column_index += 1;  return(':');
 }
 "."                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift . \n");
     #endif   
     lex_column_index += 1;   return('.');
 }
 ","                   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift , \n");
     #endif   
     lex_column_index += 1;return(',');
 }
 {charac}                {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift '.' \n");
     #endif 
     yylval.letter = *(yytext + 1); lex_column_index += 3; return(QLQ);
@@ -324,20 +324,20 @@ quotation_not_match     (\'|\")
 
 
 [Rr][Ee][Aa][Dd]      {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift READ \n");
     #endif 
     return READ;
 }
 [Ww][Rr][Ii][Tt][Ee]  {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift WRITE \n");
     #endif
     return WRITE;
 }
 
 [A-Za-z][A-Za-z0-9_]*   {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("Shift [ID] %s (line %d)\n", yytext, yylineno);
     #endif
     // char *text = (char *)malloc(sizeof(char) * yyleng);
@@ -347,13 +347,13 @@ quotation_not_match     (\'|\")
     return(ID);
 }
 {digits}+[.][.]{digits}+ {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("shift digitsdotdotdigits\n");
     #endif
     yylval.text = new string(yytext); return(DIGITSDOTDOTDIGITS);
 }
 [0-9]+|[0-9]+\.[0-9]+ {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf("Shift NUM\n"); 
     #endif
     yylval.num = yytext; return(NUM);
@@ -371,7 +371,7 @@ quotation_not_match     (\'|\")
 %%
 
 void SolveComment () {
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf(" line %d \tcolumn %d: \t<Comment, %s> \n",
         lex_row_index, lex_column_index, yytext);
     #endif
@@ -380,12 +380,12 @@ void SolveComment () {
 
 void SolveMultiLineComment () {
     register int c;
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf(" line %d \tcolumn %d: \t<Comment, %s", lex_row_index, lex_column_index, yytext);
     #endif
     while ((c = getchar())) {
         lex_column_index++;
-        #ifdef DEBUG
+        #ifdef DEBUG_SCANNER
         printf("%c", c);
         #endif
         if (c == '}')
@@ -395,12 +395,12 @@ void SolveMultiLineComment () {
             lex_column_index = 0;
         }
         else if (c == 0){
-            #ifdef DEBUG
+            #ifdef DEBUG_SCANNER
             printf ("Unexpected EOF inside comment at line %d\n", lex_column_index);
             #endif
         }
     }
-    #ifdef DEBUG
+    #ifdef DEBUG_SCANNER
     printf(">\n");
     #endif
 }
