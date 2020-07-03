@@ -590,6 +590,7 @@ procedure_call      :   ID
                                         wf((par_list[argc].is_var ? "&": "") + c->text);
                                         ++argc;
                                     }
+                                    wf(")");
                                     break;
                                 }
                                 default:
