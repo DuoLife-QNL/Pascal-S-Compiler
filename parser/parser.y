@@ -996,7 +996,7 @@ void print_par_list(parameter *p){
 void print_block_info(bool is_func, TYPE ret_type, parameter *p){
     print_par_list(p);
     if (is_func)
-        cout << "    return type: " << ret_type << endl;
+        cout << "    return type: " << convert_type(ret_type) << endl;
 }
 #endif
 
