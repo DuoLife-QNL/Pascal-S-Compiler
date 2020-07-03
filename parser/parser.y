@@ -540,8 +540,9 @@ expression_list     :   expression_list ',' expression
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
-                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
-                                ERR("RELOP operation match error");
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("RELOP operation match error");
                             }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
@@ -549,12 +550,13 @@ expression          :   simple_expression RELOP simple_expression
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
-                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
-                                ERR("RELOP operation match error");
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("RELOP operation match error");
                             }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
-                        }
+                        } 
                     |   simple_expression
                         {
                             $$ = new parameter;
@@ -566,8 +568,9 @@ expression          :   simple_expression RELOP simple_expression
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
-                                ERR("'or' operation match error");
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _BOOLEAN) {
+                                yyerror("'or' operation match error");
                             }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + "|" + $3->text;
@@ -575,19 +578,25 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            if (($1->type != _INTEGER || $3->type != _INTEGER) && ($1->type != _REAL || $3->type !=_REAL)) {
-                                ERR("'+' operation match error");
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("'+' operation match error");
+                                $$->type = _INTEGER;
+                            } else {
+                                $$->type = type;
                             }
-                            $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "+" + $3->text;
                         }
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            if (($1->type != _INTEGER || $3->type != _INTEGER) && ($1->type != _REAL || $3->type !=_REAL)) {
-                                ERR("'-' operation match error");
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
+                                yyerror("'-' operation match error");
+                                $$->type = _INTEGER;
+                            } else {
+                                $$->type = type;
                             }
-                            $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "-" + $3->text;
                         }
                     |   term
@@ -609,31 +618,31 @@ term                :   term MULOP factor
                             TYPE type = cmp_type($1->type, $3->type);
                             switch (i) {
                             case 1: // and
-                                if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
-                                    ERR("'and' operation match error");
+                                if (type != _BOOLEAN) {
+                                    yyerror("'and' operation match error");
                                 }
                                 $$->type = _BOOLEAN;
                                 mulop_s = "&";
                                 break;
                             case 2: // div
                                 if (type != _INTEGER) {
-                                    ERR("'div' operation match error");
+                                    yyerror("'div' operation match error");
                                 }
                                 $$->type = _INTEGER;
                                 mulop_s = "/";
                                 break;
                             case 3: // mod
                                 if (type != _INTEGER) {
-                                    ERR("'mod' operation match error");
+                                    yyerror("'mod' operation match error");
                                 }
                                 $$->type = _INTEGER;
                                 mulop_s = "%";
                                 break;
                             default: // * /
-                                if (type == _DEFAULT) {
+                                if (type != _INTEGER && type != _REAL) {
                                     char error_msg[100];
                                     sprintf(error_msg,"'%s'operation match error",$2);
-                                    ERR(error_msg);
+                                    yyerror(error_msg);
                                 } else {
                                     $$->type = type;
                                 }
@@ -708,7 +717,7 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
-                                ERR("The factor must be bool");
+                                yyerror("The factor must be bool");
                             }
                             $$->type = $2->type;
                             $$->text = "!" + $2->text;
@@ -716,8 +725,12 @@ factor              :   NUM
                     |   UMINUS factor
                         {
                             $$ = new parameter;
+                            if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
+                                char error_msg[100];
+                                sprintf(error_msg,"'%s'''is not real or integer",$2->text.c_str());
+                                yyerror(error_msg);
+                            }
                             $$->type = $2->type;
-                            // Todo 类型检查
                             $$->text = "-" + $2->text;
                         }
                     ;
@@ -815,10 +828,12 @@ TYPE get_type(char *s){
  * find which type return
  */
 TYPE cmp_type(TYPE t1, TYPE t2){
-    if (t1 == _REAL || t2 == _REAL) {
+    if (t1 == _REAL && t2 == _REAL) {
         return _REAL;
-    } else if (t1 == _INTEGER || t2 == _INTEGER){
+    } else if (t1 == _INTEGER && t2 == _INTEGER){
         return _INTEGER;
+    } else if (t1 == _BOOLEAN && t2 == _BOOLEAN){
+        return _BOOLEAN;
     } else {
         return _DEFAULT;
     }
@@ -1133,7 +1148,7 @@ int yyerror(const char *msg)
 {
 	static int err_no = 1;
 	extern int yylineno;
-	printf("Error %d, Line Number: %d %s\n", err_no++, yylineno, msg);
+	printf("\033[31mError\033[0m  %d, Line Number: %d %s\n", err_no++, yylineno, msg);
     success = 0;
 	return 0;
 }
