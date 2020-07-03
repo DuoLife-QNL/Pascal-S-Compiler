@@ -4,6 +4,7 @@
     int success = 1;
     IdTable it;
     char log_msg[1024];
+    char error_buffer[1024];
 
     std::string nowConst = "";
 %}
@@ -146,13 +147,13 @@ program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-                            INFO("new id '%s'", (char *)$3->data());
+                            INFO("new id '%s'", $3->c_str());
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
                     |   ID
                         {
-                            INFO("new id '%s'", (char *)$1->data());
+                            INFO("new id '%s'", $1->c_str());
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
@@ -167,13 +168,17 @@ const_declarations  :   CONST const_declaration ';'
                     |
                     ;
 
-const_declaration   :     ID EQUAL const_value{
+const_declaration   :   ID EQUAL const_value
+                        {
                             insert_symbol(*$1, $3);
+                            INFO("Insert const id '%s' into id table.", $1->c_str());
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
-                |         const_declaration ';' ID EQUAL const_value{
-                          insert_symbol(*$3, $5);
-                          wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                |         const_declaration ';' ID EQUAL const_value
+                        {
+                            insert_symbol(*$3, $5);
+                            INFO("Insert const id '%s' into id table.", $3->c_str());
+                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
                     ;
 const_value         :   PLUS NUM
@@ -223,6 +228,7 @@ var_declarations    :   VAR var_declaration ';'
 var_declaration     :   var_declaration ';' ID L
                         {
                             insert_symbol(*$3, $4);
+                            INFO("Insert new id '%s' into id table.", $3->c_str());
                             if ($4.dim==0) wf(*$3,";\n");
                             else{
                                 wf(*$3);
@@ -237,6 +243,7 @@ var_declaration     :   var_declaration ';' ID L
                     |   ID L
                         {
                             insert_symbol(*$1, $2);
+                            INFO("Insert new id '%s' into id table.", $1->c_str());
                             if ($2.dim==0)wf(*$1,";\n");
                         }
                     ;
@@ -248,19 +255,20 @@ L                   :   ':' type
                     |   ',' ID L
                         {
                             insert_symbol(*$2, $3);
-                                  $$ = $3;
+                            INFO("Insert new id '%s' into id table.", $2->c_str());
+                            $$ = $3;
                             if ($3.dim==0)wf(*$2,", ");
                         }
 type                :   basic_type
                         {
                             $$ = $1;
-                       wf($$.type," ");
+                            wf($$.type," ");
                         }
                     |   ARRAY '[' period ']' OF basic_type
                         {
                             $$ = $3;
                             $$.element_type = $6.type;
-                       wf($$.element_type," ");
+                            wf($$.element_type," ");
                         }
                     ;
 basic_type          :   INTEGER
@@ -313,8 +321,7 @@ subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
 #if DEBUG
-                            sprintf(log_msg, "inserting procedure '%s'", $2->c_str());
-                            INFO(log_msg);
+                            INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
@@ -335,8 +342,7 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
-                            sprintf(log_msg, "inserting function '%s'", $2->c_str());
-                            INFO(log_msg);
+                            INFO("inserting function '%s'", $2->c_str());
                             print_block_info(true, $5.type, $3);
 
 #endif
@@ -438,7 +444,7 @@ statement           :   variable ASSIGNOP expression
                         statement {wf(";\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            wf("for(int ", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
+                            wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
                         }
                         statement
                         {
@@ -997,7 +1003,7 @@ int check_type(string name, TYPE c_type) {
     char error_buffer[1000];
     if (type == _DEFAULT) {
         sprintf(error_buffer, "use of undeclared identifier '%s'.",name.c_str());
-        ERR(error_buffer);
+        yyerror(error_buffer);
         return 0;
     } else if (type != c_type){
         switch (c_type){
@@ -1008,7 +1014,7 @@ int check_type(string name, TYPE c_type) {
             default:
                 break;
         }
-        ERR(error_buffer);
+        yyerror(error_buffer);
         return 1;
     } else {
         return 2;
