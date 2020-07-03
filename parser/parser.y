@@ -511,11 +511,26 @@ variable            :   ID id_varpart
 id_varpart          :   '[' expression_list ']'
                     |
                     ;
-procedure_call      :   ID {wf(*$1, "()");}
+procedure_call      :   ID 
+                        {
+                            if (check_id(*$1)) {
+                                if (2 != check_type(*$1, _PROCEDURE, false)) {
+                                    check_type(*$1, _FUNCTION);
+                                }
+                            }
+                            wf(*$1, "()");
+                        }
                     |   ID '(' expression_list ')'
                         {
                             // 根据ID（函数）确定type
-                            int type_code = check_type(*$1,_PROCEDURE);
+                            int type_code = 0;
+                            if (check_id(*$1)) {
+                                if (2 == check_type(*$1, _PROCEDURE, false)) {
+                                    type_code =2;
+                                }else {
+                                    type_code = check_type(*$1, _FUNCTION);
+                                }
+                            }
                             switch (type_code) {
                                 case 0:  case 1:
                                 {
