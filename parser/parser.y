@@ -271,6 +271,7 @@ type                :   basic_type
                         {
                             $$ = $3;
                             $$.element_type = $6.type;
+                            $$.type = _ARRAY;
                             wf($$.element_type," ");
                         }
                     ;
@@ -543,6 +544,7 @@ id_varpart          :   '[' expression_list ']'
                                             yyerror(error_buffer);
                                             break;
                                         }
+                                        tmp = tmp->next;
                                     }
                                 }
                             }
