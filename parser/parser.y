@@ -167,7 +167,7 @@ const_declarations  :   CONST const_declaration ';'
                     |
                     ;
 
-const_declaration   :     ID EQUAL const_value{
+const_declaration   :   ID EQUAL const_value{
                             insert_symbol(*$1, $3);
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
