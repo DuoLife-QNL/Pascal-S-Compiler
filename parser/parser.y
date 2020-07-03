@@ -535,7 +535,8 @@ expression_list     :   expression_list ',' expression
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
-                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
                                 ERR("RELOP operation match error");
                             }
                             $$->type = _BOOLEAN;
@@ -544,12 +545,13 @@ expression          :   simple_expression RELOP simple_expression
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
-                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
                                 ERR("RELOP operation match error");
                             }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
-                        }
+                        } 
                     |   simple_expression
                         {
                             $$ = new parameter;
@@ -561,7 +563,8 @@ expression          :   simple_expression RELOP simple_expression
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _BOOLEAN) {
                                 ERR("'or' operation match error");
                             }
                             $$->type = _BOOLEAN;
@@ -570,19 +573,25 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            if (($1->type != _INTEGER || $3->type != _INTEGER) && ($1->type != _REAL || $3->type !=_REAL)) {
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
                                 ERR("'+' operation match error");
+                                $$->type = _INTEGER;
+                            } else {
+                                $$->type = type;
                             }
-                            $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "+" + $3->text;
                         }
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            if (($1->type != _INTEGER || $3->type != _INTEGER) && ($1->type != _REAL || $3->type !=_REAL)) {
+                            TYPE type = cmp_type($1->type,$3->type);
+                            if (type != _REAL && type != _INTEGER) {
                                 ERR("'-' operation match error");
+                                $$->type = _INTEGER;
+                            } else {
+                                $$->type = type;
                             }
-                            $$->type = cmp_type($1->type, $3->type);
                             $$->text = $1->text + "-" + $3->text;
                         }
                     |   term
@@ -604,7 +613,7 @@ term                :   term MULOP factor
                             TYPE type = cmp_type($1->type, $3->type);
                             switch (i) {
                             case 1: // and
-                                if ($1->type != _BOOLEAN || $3->type != _BOOLEAN) {
+                                if (type != _BOOLEAN) {
                                     ERR("'and' operation match error");
                                 }
                                 $$->type = _BOOLEAN;
@@ -810,10 +819,12 @@ TYPE get_type(char *s){
  * find which type return
  */
 TYPE cmp_type(TYPE t1, TYPE t2){
-    if (t1 == _REAL || t2 == _REAL) {
+    if (t1 == _REAL && t2 == _REAL) {
         return _REAL;
-    } else if (t1 == _INTEGER || t2 == _INTEGER){
+    } else if (t1 == _INTEGER && t2 == _INTEGER){
         return _INTEGER;
+    } else if (t1 == _BOOLEAN && t2 == _BOOLEAN){
+        return _BOOLEAN;
     } else {
         return _DEFAULT;
     }
