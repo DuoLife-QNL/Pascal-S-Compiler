@@ -503,16 +503,31 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID {wf(*$1, "()");}
                     |   ID '(' expression_list ')'
                         {
-                            check_function(*$1, $3);
-                            wf(*$1, "(");
-                            std::vector<Parameter> par_list = get_par_list(*$1);
-                            int argc = 0;
-                            for (auto *c = $3; c; c = c->next)
-                            {
-                                if (argc != 0)
-                                    wf(", ");
-                                wf((par_list[argc].is_var ? "&": "") + c->text);
-                                ++argc;
+                            $$ = new parameter;
+                            // 根据ID（函数）确定type
+                            int type_code = check_type(*$1,_PROCEDURE);
+                            switch (type_code) {
+                                case 0:  case 1:
+                                {
+                                    break;
+                                }
+                                case 2:
+                                {
+                                    check_function(*$1, $3);
+                                    wf(*$1, "(");
+                                    std::vector<Parameter> par_list = get_par_list(*$1);
+                                    int argc = 0;
+                                    for (auto *c = $3; c; c = c->next)
+                                    {
+                                        if (argc != 0)
+                                            wf(", ");
+                                        wf((par_list[argc].is_var ? "&": "") + c->text);
+                                        ++argc;
+                                    }
+                                    break;
+                                }
+                                default:
+                                    break;
                             }
                         }
                     ;
@@ -530,6 +545,7 @@ expression_list     :   expression_list ',' expression
                         }
                     |   expression
                         {
+                            $$ = $1;
                         }
                     ;
 expression          :   simple_expression RELOP simple_expression
