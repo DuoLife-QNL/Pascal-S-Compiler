@@ -754,7 +754,14 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             // 根据ID（函数）确定type
-                            int type_code = check_type(*$1,_FUNCTION);
+                            int type_code = 0;
+                            if (check_id(*$1)) {
+                                if (2 == check_type(*$1, _PROCEDURE, false)) {
+                                    type_code =2;
+                                }else {
+                                    type_code = check_type(*$1, _FUNCTION);
+                                }
+                            }
                             switch (type_code) {
                                 case 0:  case 1:
                                 {
