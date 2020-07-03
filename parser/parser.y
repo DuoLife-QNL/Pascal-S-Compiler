@@ -71,10 +71,12 @@
 
     int get_first_digit(const string &s);
     int get_last_digit(const string &s);
+
 #if DEBUG
     void print_par_list(parameter *p);
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
+
     TYPE get_type(char *s);
     TYPE cmp_type(TYPE t1, TYPE t2);
     int get_mulop_type(string *s);
