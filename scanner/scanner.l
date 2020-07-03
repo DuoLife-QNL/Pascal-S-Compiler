@@ -113,7 +113,6 @@ quotation_not_match     (\'|\")
 
 
 {quotation_not_match}   {fprintf (stderr, "\033[01;31m Lexical Error: quotation not match %s at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
-{wrong_identifier}      {fprintf (stderr, "\033[01;31m Lexical Error: unexpected Identifier '%s' at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
 .                       {fprintf (stderr, "\033[01;31m Lexical Error: unexpected character '%c' at line: %d colum: %d \033[0m \n", *yytext, lex_row_index, lex_column_index);}
 
 

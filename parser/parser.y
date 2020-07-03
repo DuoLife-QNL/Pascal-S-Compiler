@@ -146,28 +146,36 @@ idlist              :   idlist ',' ID
                         }
                     |   ID
                         {
-#if DEBUG
                             INFO("new id %s", (char *)$1->data());
-#endif
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
                             $$->next = nullptr;
                         }
-                    |	error
+                    |	error ID
                     	{
+                    	    yyerrok;
+                    	    $$ = new parameter;
+                            $$->name = *$2;
+                            $$->is_var = false;
+                            $$->next = nullptr;
                     	    ERR("err id");
                     	}
                     ;
 const_declarations  :   CONST const_declaration ';'
+		    |	CONST error ';'
+		        {
+		            ERR("error after const ");
+		        }
                     |
                     ;
 
-const_declaration   :     ID EQUAL const_value{
+const_declaration   :   ID EQUAL const_value
+		        {
                             insert_symbol(*$1, $3);
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
-                |         const_declaration ';' ID EQUAL const_value{
+                    |   const_declaration ';' ID EQUAL const_value{
                           insert_symbol(*$3, $5);
                           wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
@@ -206,9 +214,20 @@ const_value         :   PLUS NUM
                             $$.type = _CHAR;
                             nowConst=$1;
                         }
+                    |	error
+                    	{
+                    	    $$.is_const = true;
+                    	    ERR("const error");
+                    	}
                     ;
 var_declarations    :   VAR var_declaration ';'
+                    |	error
+                    	{
+//                    	    abort all
+                    	    ERR("var_declaration");
+                    	}
                     |
+
                     ;
                         /*
                          * L is type <info>, storing all the information of ID.
@@ -250,15 +269,16 @@ L                   :   ':' type
 type                :   basic_type
                         {
                             $$ = $1;
-                       wf($$.type," ");
+                       	    wf($$.type," ");
                         }
                     |   ARRAY '[' period ']' OF basic_type
                         {
                             $$ = $3;
                             $$.element_type = $6.type;
-                       wf($$.element_type," ");
+                            wf($$.element_type," ");
                         }
                     ;
+
 basic_type          :   INTEGER
                         {
                             $$.type = _INTEGER;
@@ -277,6 +297,7 @@ basic_type          :   INTEGER
                         }
                     |	error
                     	{
+                    	    $$.type = _INTEGER;
                     	    ERR("unknown type");
                     	}
                     ;
@@ -409,8 +430,10 @@ subprogram_body     :   const_declarations var_declarations compound_statement {
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
-statement_list      :   statement_list ';'{wf(";\n");} statement
+statement_list      :   statement_list ';'{ yyerrok; wf(";\n");} statement
                     |   statement
+                    	{
+                    	}
                     ;
 statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         {
@@ -420,7 +443,6 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                         }
                     |   procedure_call
                         {
-
                         }
                     |   { wf("{\n");}
                         compound_statement
@@ -476,6 +498,10 @@ statement           :   variable ASSIGNOP expression{cout<<"ASSIGNOP"<<endl; }
                             s += "\\n";
                             wf("printf(\"", s, "\",", t, ")");
                         }
+                    |	error
+                        {
+                            ERR("error statement");
+                        }
                     |
                     ;
 variable_list       :   variable_list ',' variable
@@ -516,6 +542,10 @@ procedure_call      :   ID {wf(*$1, "()");}
                                 ++argc;
                             }
                         }
+                    |	ID '(' error ')'
+                    	{
+                    	    ERR("error when calling procedure()");
+                    	}
                     ;
 else_part           :   ELSE {wf("else{\n");cout<<"ELSE"<<endl;} statement {wf(";\n}\n");}
                     |
@@ -918,7 +948,8 @@ string convert_type(TYPE t)
         ret = "char";
         break;
     default:
-        yyerror("Unsupport Type");
+    	break;
+//        yyerror("Unsupport Type");
     }
     return ret;
 }

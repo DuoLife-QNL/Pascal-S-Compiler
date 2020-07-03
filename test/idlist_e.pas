@@ -1,7 +1,7 @@
-program idTest(input, output);
+program idlist_e(input, output);
 const
   name = 'a';
-var
+  va
   x, y;
 procedure out(2a: real; b: boolean; c: char);
 begin

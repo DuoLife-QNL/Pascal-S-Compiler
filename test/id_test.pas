@@ -1,12 +1,14 @@
-program idTest(input, output);
+program id_test(input, output);
     var x, y: integer;
     a: real;
     b: boolean;
     c: char;
     d: array [1..2] of char;
     procedure out(a: real; b: boolean; c: char);
-        begin
-        end;
+    var
+        d: array [1..10] of char;
+    begin
+    end;
 //
 //    function gcd(a, b:integer):integer;
 //        begin
