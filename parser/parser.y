@@ -1184,7 +1184,7 @@ string convert_type(TYPE t)
         ret = "double";
         break;
     case _BOOLEAN:
-        ret = "int";
+        ret = "boolean";
         break;
     case _CHAR:
         ret = "char";
