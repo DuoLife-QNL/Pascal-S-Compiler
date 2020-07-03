@@ -834,8 +834,6 @@ int get_last_digit(const string &s){
  * symbol and insert it into the id table
  * @t: a info struct, stores all the information of the id
  * NOTE that it(id table) should be a global object
- * TODO: is there a way not to declare it as a global ofject? Can it be
- * declared in the main function?
  */
 void insert_symbol(string name, info t){
     /* basic type */
