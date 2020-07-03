@@ -4,6 +4,7 @@
     int success = 1;
     IdTable it;
     char log_msg[1024];
+    char error_buffer[1024];
 
     std::string nowConst = "";
 %}
