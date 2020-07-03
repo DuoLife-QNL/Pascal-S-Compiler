@@ -422,7 +422,7 @@ value_parameter     :   idlist ':' basic_type
                             $$ = $1;
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations compound_statement {wf("}\n");}
+subprogram_body     :   const_declarations var_declarations compound_statement {wf(";\n}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
