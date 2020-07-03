@@ -3,6 +3,7 @@
     #include "string.h"
     int success = 1;
     IdTable it;
+    char log_msg[1024];
 
     std::string nowConst = "";
 %}
@@ -312,8 +313,9 @@ subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
 #if DEBUG
-                           cout << "inserting procedure " << *$2 << ":" << endl;
-                           print_block_info(false, _VOID , $3);
+                            sprintf(log_msg, "inserting procedure '%s'", $2->c_str());
+                            INFO(log_msg);
+                            print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
 			                cout << "insert done" << endl;
@@ -333,12 +335,13 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
-                            cout << "inserting function " << *$2 << ":" << endl;
+                            sprintf(log_msg, "inserting function '%s'", $2->c_str());
+                            INFO(log_msg);
                             print_block_info(true, $5.type, $3);
 
 #endif
                             insert_function(*$2, $3, $5.type);
-                            cout << "insert done" << endl;
+                            INFO("Insert done.");
 
                             wf($5.type, " ", *$2, "(");
                             bool first = true;
