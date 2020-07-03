@@ -996,7 +996,7 @@ int check_type(string name, TYPE c_type) {
     char error_buffer[1000];
     if (type == _DEFAULT) {
         sprintf(error_buffer, "use of undeclared identifier '%s'.",name.c_str());
-        ERR(error_buffer);
+        yyerror(error_buffer);
         return 0;
     } else if (type != c_type){
         switch (c_type){
@@ -1007,7 +1007,7 @@ int check_type(string name, TYPE c_type) {
             default:
                 break;
         }
-        ERR(error_buffer);
+        yyerror(error_buffer);
         return 1;
     } else {
         return 2;
