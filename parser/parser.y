@@ -25,6 +25,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <stddef.h>
+    #include <algorithm>
     #include "IdType.h"
     #include "debug.h"
 
@@ -64,6 +65,8 @@
         bool is_lvalue = false;
         bool is_var = false;
         TYPE type = _DEFAULT;
+        /* for array type */
+        TYPE element_type = _DEFAULT;
         parameter *next = nullptr;
         string text = "test";
     }parameter;
@@ -82,7 +85,7 @@
 #endif
 
     TYPE get_type(char *s);
-    TYPE cmp_type(TYPE t1, TYPE t2);
+    TYPE cmp_type(TYPE type1, TYPE type2, TYPE et1, TYPE et2);
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
@@ -136,7 +139,7 @@
 %type <par> idlist formal_parameter parameter_list
 %type <par> parameter var_parameter value_parameter
 %type <par> expression_list variable_list
-%type <par> expression simple_expression term factor variable 
+%type <par> expression simple_expression term factor variable
 %type <text> id_varpart
 
 %%
@@ -292,6 +295,7 @@ type                :   basic_type
                         {
                             $$ = $3;
                             $$.element_type = $6.type;
+                            $$.type = _ARRAY;
                             wf($$.element_type," ");
                         }
                     ;
@@ -334,6 +338,9 @@ period              :   period ',' DIGITSDOTDOTDIGITS
                             $$.prd = init_period();
                             $$.prd->start = get_first_digit(*$1);
                             $$.prd->end = get_last_digit(*$1);
+                            if ($$.prd->start > $$.prd->end) {
+                                yyerror("Upper bound of range is less than lower bound");
+                            }
                         }
                     ;
 subprogram_declarations :   subprogram_declarations subprogram ';'
@@ -443,7 +450,7 @@ value_parameter     :   idlist ':' basic_type
                             $$ = $1;
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations compound_statement {wf("}\n");}
+subprogram_body     :   const_declarations var_declarations compound_statement {wf(";\n}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
@@ -502,8 +509,6 @@ statement           :   variable ASSIGNOP expression
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                s += convert_type_printf(cur->type);
-                                t += cur->text;
                                 if (first)
                                     first = false;
                                 else
@@ -511,9 +516,11 @@ statement           :   variable ASSIGNOP expression
                                     s += " ";
                                     t += ", ";
                                 }
+                                s += convert_type_printf(cur->type);
+                                t += cur->text;
                             }
                             s += "\\n";
-                            wf("printf(\"", s, "\",", t, ")");
+                            wf("printf(\"", s, "\", ", t, ")");
                         }
                     |	error
                         {
@@ -537,8 +544,16 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
-                            check_id(*$1);
                             $$ = get_id_info(*$1);
+                            if (check_id(*$1)) {
+                                Id *id = it.get_id(it.find_id(*$1));
+                                TYPE id_type = id->get_type();
+                                if(_ARRAY == id_type) {
+                                    INFO("%s is array type", $1->c_str());
+                                    ArrayId *arrayId = (ArrayId *)id;
+                                    $$->element_type = arrayId->get_element_type();
+                                }
+                            }
                             $2 = $1;
                         }
                     ;
@@ -566,18 +581,19 @@ id_varpart          :   '[' expression_list ']'
                                     parameter *tmp = $2;
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
-                                            sprintf(error_buffer, "all dimensions of array '%s' should be integer", 
+                                            sprintf(error_buffer, "all dimensions of array '%s' should be integer",
                                                     $$->c_str());
                                             yyerror(error_buffer);
                                             break;
                                         }
+                                        tmp = tmp->next;
                                     }
                                 }
                             }
                         }
-                    |   
+                    |
                     ;
-procedure_call      :   ID 
+procedure_call      :   ID
                         {
                             if (check_id(*$1)) {
                                 if (2 != check_type(*$1, _PROCEDURE, false)) {
@@ -615,6 +631,7 @@ procedure_call      :   ID
                                         wf((par_list[argc].is_var ? "&": "") + c->text);
                                         ++argc;
                                     }
+                                    wf(")");
                                     break;
                                 }
                                 default:
@@ -648,7 +665,9 @@ expression_list     :   expression_list ',' expression
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("RELOP operation match error");
                             }
@@ -658,7 +677,9 @@ expression          :   simple_expression RELOP simple_expression
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("RELOP operation match error");
                             }
@@ -676,7 +697,9 @@ expression          :   simple_expression RELOP simple_expression
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
+                                                 $3->element_type);
                             if (type != _BOOLEAN) {
                                 yyerror("'or' operation match error");
                             }
@@ -686,7 +709,9 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("'+' operation match error");
                                 $$->type = _INTEGER;
@@ -698,7 +723,9 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type,$3->type);
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
+                                                 $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("'-' operation match error");
                                 $$->type = _INTEGER;
@@ -711,6 +738,7 @@ simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
+                            $$->element_type = $1->element_type;
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
@@ -723,7 +751,9 @@ term                :   term MULOP factor
                             string* s = $2;
                             int i = get_mulop_type(s);
                             string mulop_s;
-                            TYPE type = cmp_type($1->type, $3->type);
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
+                                                 $3->element_type);
                             switch (i) {
                             case 1: // and
                                 if (type != _BOOLEAN) {
@@ -763,6 +793,7 @@ term                :   term MULOP factor
                         {
                             $$ = new parameter;
                             $$->type = $1->type;
+                            $$->element_type = $1->element_type;
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
@@ -864,8 +895,6 @@ int get_last_digit(const string &s){
  * symbol and insert it into the id table
  * @t: a info struct, stores all the information of the id
  * NOTE that it(id table) should be a global object
- * TODO: is there a way not to declare it as a global ofject? Can it be
- * declared in the main function?
  */
 void insert_symbol(string name, info t){
     /* basic type */
@@ -873,7 +902,7 @@ void insert_symbol(string name, info t){
         BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
         it.enter_id((Id*)id);
     } else if (t.type == _ARRAY){  /* array */
-        ArrayId *id = new ArrayId(name, t.type, t.dim, t.prd);
+        ArrayId *id = new ArrayId(name, t.element_type, t.dim, t.prd);
         it.enter_id((Id*)id);
     }
 }
@@ -943,7 +972,17 @@ TYPE get_type(char *s){
 /*
  * find which type return
  */
-TYPE cmp_type(TYPE t1, TYPE t2){
+TYPE cmp_type(TYPE type1, TYPE type2, TYPE et1, TYPE et2){
+    TYPE t1 = type1;
+    TYPE t2 = type2;
+    if (_ARRAY == type1) {
+        t1 = et1;
+        INFO("element_type: %d", t1);
+    }
+    if (_ARRAY == type2) {
+        t2 = et2;
+        INFO("element_type: %d", t1);
+    }
     if (t1 == _REAL && t2 == _REAL) {
         return _REAL;
     } else if (t1 == _INTEGER && t2 == _INTEGER){
@@ -956,6 +995,7 @@ TYPE cmp_type(TYPE t1, TYPE t2){
 }
 
 int get_mulop_type(string* s){
+    transform(s->begin(), s->end(), s->begin(), ::tolower);
     if (*s == "and") {
         return 1;
     } else if (*s == "div") {
@@ -1046,12 +1086,13 @@ std::vector<Parameter> get_par_list(string id)
 }
 
 /**
- * Check whether an id exists in the id table and  
- * report error if id undeclared 
+ * Check whether an id exists in the id table and
+ * report error if id undeclared
  * @param msg: show error message if true
- */ 
+ */
 bool check_id(string name, bool msg) {
     if (it.find_id(name) == -1) {
+        ERR("Id '%s' not in id table", name.c_str());
         sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
         yyerror(error_buffer);
         return false;
@@ -1103,7 +1144,7 @@ void check_function(string func_name, parameter *actual_paras)
  * to check type with the name
  * @name {name} string        the ID
  * @param {c_type} TYPE       the ID expected type
- * @param {msg} bool          output error message or not  
+ * @param {msg} bool          output error message or not
  * @return {int}              0-undeclared, 1-mismatch, 2-match
  */
 int check_type(string name, TYPE c_type, bool msg) {
@@ -1120,7 +1161,7 @@ int check_type(string name, TYPE c_type, bool msg) {
                 break;
             default:
                 sprintf(error_buffer, "'%s' is '%s', '%s' expected",
-                        name.c_str(), convert_type(type).c_str(), 
+                        name.c_str(), convert_type(type).c_str(),
                         convert_type(c_type).c_str());
                 break;
             }
@@ -1175,14 +1216,14 @@ string convert_type(TYPE t)
         ret = "double";
         break;
     case _BOOLEAN:
-        ret = "int";
+        ret = "boolean";
         break;
     case _CHAR:
         ret = "char";
         break;
     default:
-    	break;
-//        yyerror("Unsupport Type");
+        ERR("Unsupport Type");
+        break;
     }
     return ret;
 }

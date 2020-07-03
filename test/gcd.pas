@@ -8,5 +8,5 @@ program example(input, output);
     begin
 
         read(x, y);
-        write(gcd(x, y))
+        write(x, y)
     end.

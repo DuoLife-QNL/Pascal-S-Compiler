@@ -72,6 +72,7 @@ class ArrayId : public Id {
   ArrayId(std::string name, TYPE et, int dim, period *prd);
   ~ArrayId();
   int get_dim();
+  TYPE get_element_type();
   period get_period(int dim);
 };
 

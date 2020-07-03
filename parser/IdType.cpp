@@ -1,17 +1,5 @@
 #include <utility>
 
-#include <utility>
-
-#include <utility>
-
-#include <utility>
-
-#include <utility>
-
-#include <utility>
-
-#include <utility>
-
 #include "IdType.h"
 #include <cstdlib>
 #include <iostream>
@@ -53,6 +41,10 @@ int ArrayId::get_dim() {
     return dim;
 }
 
+TYPE ArrayId::get_element_type() {
+    return element_type;
+}
+ 
 period ArrayId::get_period(int dim) {
     return *(prd + dim);
 }
