@@ -577,7 +577,7 @@ expression          :   simple_expression RELOP simple_expression
                             }
                             $$->type = _BOOLEAN;
                             $$->text = $1->text + convert_relop(*$2) + $3->text;
-                        } 
+                        }
                     |   simple_expression
                         {
                             $$ = new parameter;
@@ -722,6 +722,7 @@ factor              :   NUM
                                         $$->text += (par_list[argc].is_var ? "&": "") + c->text;
                                         ++argc;
                                     }
+                                    $$->text += ")";
                                     break;
                                 }
                                 default:
