@@ -3,6 +3,7 @@
     #include "string.h"
     int success = 1;
     IdTable it;
+    char log_msg[1024];
 
     std::string nowConst = "";
 %}
@@ -71,10 +72,12 @@
 
     int get_first_digit(const string &s);
     int get_last_digit(const string &s);
+
 #if DEBUG
     void print_par_list(parameter *p);
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
+
     TYPE get_type(char *s);
     TYPE cmp_type(TYPE t1, TYPE t2);
     int get_mulop_type(string *s);
@@ -143,13 +146,13 @@ program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
                         {
-                            INFO("new id %s", (char *)$3->data());
+                            INFO("new id '%s'", (char *)$3->data());
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
                     |   ID
                         {
-                            INFO("new id %s", (char *)$1->data());
+                            INFO("new id '%s'", (char *)$1->data());
                             $$ = new parameter;
                             $$->name = *$1;
                             $$->is_var = false;
@@ -310,8 +313,9 @@ subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
 subprogram_head     :   PROCEDURE ID formal_parameter
                         {
 #if DEBUG
-                           cout << "inserting procedure " << *$2 << ":" << endl;
-                           print_block_info(false, _VOID , $3);
+                            sprintf(log_msg, "inserting procedure '%s'", $2->c_str());
+                            INFO(log_msg);
+                            print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
 			                cout << "insert done" << endl;
@@ -331,12 +335,13 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                     |   FUNCTION ID formal_parameter ':' basic_type
                         {
 #if DEBUG
-                            cout << "inserting function " << *$2 << ":" << endl;
+                            sprintf(log_msg, "inserting function '%s'", $2->c_str());
+                            INFO(log_msg);
                             print_block_info(true, $5.type, $3);
 
 #endif
                             insert_function(*$2, $3, $5.type);
-                            cout << "insert done" << endl;
+                            INFO("Insert done.");
 
                             wf($5.type, " ", *$2, "(");
                             bool first = true;
@@ -372,7 +377,7 @@ parameter_list      :   parameter_list ';' parameter
                         {
                             $$ = $1;
 #if DEBUG
-                            INFO("append %s to parameter list\n", $1->is_var ? "var" : "non-var");
+                            INFO("append %s to parameter list", $1->is_var ? "var" : "non-var");
                             print_par_list($$);
 #endif
                         }
@@ -914,9 +919,9 @@ void par_append(parameter *p, string name, bool is_var){
 
 #if DEBUG
 void print_par_list(parameter *p){
-    cout << "parameter list is now:" << endl;
+    cout << "    parameter list is now:" << endl;
     while(p){
-        cout << "    [name: "   << p->name
+        cout << "        [name: "   << p->name
              << ", is_var: "    << p->is_var
              << ", type: "      << p->type
              << ", has next: "  << !(p->next == nullptr)
@@ -928,7 +933,7 @@ void print_par_list(parameter *p){
 void print_block_info(bool is_func, TYPE ret_type, parameter *p){
     print_par_list(p);
     if (is_func)
-        cout << "return type: " << ret_type << endl;
+        cout << "    return type: " << ret_type << endl;
 }
 #endif
 
