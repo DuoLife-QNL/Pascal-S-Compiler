@@ -1012,8 +1012,6 @@ std::vector<Parameter> get_par_list(string id)
  * @param msg: show error message if true
  */ 
 bool check_id(string name, bool msg) {
-    cout << "******************" << endl;
-    cout << "index: " << it.find_id(name) << endl;
     if (it.find_id(name) == -1) {
         sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
         yyerror(error_buffer);
