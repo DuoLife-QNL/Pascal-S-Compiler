@@ -503,7 +503,6 @@ id_varpart          :   '[' expression_list ']'
 procedure_call      :   ID {wf(*$1, "()");}
                     |   ID '(' expression_list ')'
                         {
-                            $$ = new parameter;
                             // 根据ID（函数）确定type
                             int type_code = check_type(*$1,_PROCEDURE);
                             switch (type_code) {
