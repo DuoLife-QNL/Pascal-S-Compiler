@@ -377,7 +377,7 @@ parameter_list      :   parameter_list ';' parameter
                         {
                             $$ = $1;
 #if DEBUG
-                            INFO("append %s to parameter list\n", $1->is_var ? "var" : "non-var");
+                            INFO("append %s to parameter list", $1->is_var ? "var" : "non-var");
                             print_par_list($$);
 #endif
                         }
