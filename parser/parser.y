@@ -1187,7 +1187,7 @@ string convert_type(TYPE t)
         ret = "char";
         break;
     default:
-        yyerror("Unsupport Type");
+        ERR("Unsupport Type");
     }
     return ret;
 }
