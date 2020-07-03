@@ -87,7 +87,7 @@
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
 
-    bool check_id(string name);
+    bool check_id(string name, bool msg = true);
     void check_function(string func_name, parameter *actual_paras);
     int check_type(string name, TYPE c_type, bool msg = true);
 
@@ -509,7 +509,7 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
-                            /* the id check here is done in next production */
+                            check_id(*$1);
                             $$ = get_id_info(*$1);
                             $2 = $1;
                         }
@@ -517,7 +517,7 @@ variable            :   ID id_varpart
 id_varpart          :   '[' expression_list ']'
                         {
                             /* check if id exists */
-                            if (check_id(*$$)) {
+                            if (check_id(*$$, false)) {
                                 int index = it.find_id(*$$);
                                 TYPE type = it.get_id(index)->get_type();
                                 /* check if the id of type array */
@@ -547,9 +547,7 @@ id_varpart          :   '[' expression_list ']'
                                 }
                             }
                         }
-                    |   {
-                            check_id(*$$);
-                        }
+                    |   
                     ;
 procedure_call      :   ID 
                         {
@@ -1010,8 +1008,11 @@ std::vector<Parameter> get_par_list(string id)
 /**
  * Check whether an id exists in the id table and  
  * report error if id undeclared 
+ * @param msg: show error message if true
  */ 
-bool check_id(string name) {
+bool check_id(string name, bool msg) {
+    cout << "******************" << endl;
+    cout << "index: " << it.find_id(name) << endl;
     if (it.find_id(name) == -1) {
         sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
         yyerror(error_buffer);
