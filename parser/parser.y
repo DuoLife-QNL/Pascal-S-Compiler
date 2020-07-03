@@ -945,7 +945,7 @@ TYPE get_fun_type(string name) {
 }
 
 /*
- * return id type and is_var by name
+ * return name, id type and is_var by name
  */
 parameter* get_id_info(string name) {
     int index;
