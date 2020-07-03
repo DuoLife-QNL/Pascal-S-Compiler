@@ -438,7 +438,7 @@ statement           :   variable ASSIGNOP expression
                         statement {wf(";\n");} else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            wf("for(int", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
+                            wf("for(int ", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
                         }
                         statement
                         {
@@ -716,6 +716,7 @@ factor              :   NUM
                                         $$->text += (par_list[argc].is_var ? "&": "") + c->text;
                                         ++argc;
                                     }
+                                    $$->text += ")";   
                                     break;
                                 }
                                 default:
