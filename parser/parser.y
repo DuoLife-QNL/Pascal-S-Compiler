@@ -282,7 +282,6 @@ const_value         :   PLUS NUM
 var_declarations    :   VAR var_declaration ';'
 		    |	VAR error ';'
 		    	{
-//		    	discard until ';';
 		    	   ERR("error after var, expect var_declaration : discard until ';'");
 		    	}
                     |
@@ -855,6 +854,13 @@ expression          :   simple_expression RELOP simple_expression
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing expression");
+                    	}
                     ;
 simple_expression   :   simple_expression ADDOP term
                         {
@@ -904,6 +910,13 @@ simple_expression   :   simple_expression ADDOP term
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing simple_expression");
+                    	}
                     ;
 term                :   term MULOP factor
                         {
@@ -959,6 +972,13 @@ term                :   term MULOP factor
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing operator");
+                    	}
                     ;
 factor              :   NUM
                         {
@@ -1055,6 +1075,13 @@ factor              :   NUM
                             $$->type = $2->type;
                             $$->text = "-" + $2->text;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing operator");
+                    	}
                     ;
 
 %%
@@ -1579,8 +1606,8 @@ int main(int argc, char* argv[]){
 int yyerror(const char *msg)
 {
 
-	extern int yylineno;
-	printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
+    extern int yylineno;
+    printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
     success = 0;
-	return 0;
+    return 0;
 }
