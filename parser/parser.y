@@ -145,11 +145,17 @@
 %%
 
 programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_body '.'
+			{
+			    INFO("Reach the end.");
+			}
                     ;
 program_head        :   PROGRAM ID '(' idlist ')'
                     |   PROGRAM ID
                     ;
-program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf(";\nreturn 0;\n}\n"); }
+program_body        :   const_declarations{ wf("\n"); }
+			var_declarations{ wf("\n"); }
+			subprogram_declarations{ wf("\nint main(){\n"); }
+			compound_statement{ wf(";\nreturn 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
@@ -168,6 +174,7 @@ idlist              :   idlist ',' ID
                         }
                     |	error ID
                     	{
+//                    	    recovery with legal part
                     	    yyerrok;
                     	    $$ = new parameter;
                             $$->name = *$2;
@@ -176,12 +183,20 @@ idlist              :   idlist ',' ID
                     	    ERR("err id @%d:%d : discard error part and accept as %s", @1.first_line, @1.first_column, $$);
                     	    INFO("new id '%s'", $2->c_str());
                     	}
+                    |
+                    	{
+			    yyerror("missing idlist: ignore");
+                    	}
                     ;
 const_declarations  :   CONST const_declaration ';'
 		    |	CONST error ';'
 		        {
-		            ERR("error after const ");
+		            ERR("error after const, need const_declaration : discard until ';'");
 		        }
+                    |	error ';'
+                    	{
+                    	    ERR("do you mean 'const'? : discard until ';'");
+                    	}
                     |
                     ;
 
@@ -239,10 +254,15 @@ const_value         :   PLUS NUM
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
-                    |	error
+		    |	VAR error ';'
+		    	{
+//		    	discard until ';';
+		    	   ERR("");
+		    	}
+                    |	error ';'
                     	{
 //                    	    abort all
-                    	    ERR("var_declaration");
+                    	    ERR("do you mean 'var'? ");
                     	}
                     |
 
@@ -320,7 +340,7 @@ basic_type          :   INTEGER
                     |	error
                     	{
                     	    $$.type = _INTEGER;
-                    	    ERR("unknown type");
+                    	    ERR("unknown type : guess INTEGER");
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
@@ -400,6 +420,11 @@ formal_parameter    :   '(' parameter_list ')'
                         {
                             $$ = $2;
                         }
+                    |	'(' error ')'
+                    	{
+                    	    $$ = nullptr;
+                    	    ERR("empty parameter: omit'()'");
+                    	}
                     |
                         {
                             $$ = nullptr;
@@ -451,7 +476,9 @@ value_parameter     :   idlist ':' basic_type
                             $$ = $1;
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations compound_statement {wf(";\n}\n");}
+subprogram_body     :   const_declarations
+			var_declarations
+			compound_statement {wf(";\n}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
@@ -593,6 +620,8 @@ id_varpart          :   '[' expression_list ']'
                             }
                         }
                     |
+                    	{
+                    	}
                     ;
 procedure_call      :   ID
                         {

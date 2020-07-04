@@ -1,13 +1,12 @@
-program idlist_e(input, output);
-const
-  name = 'a';
-  va
-  x, y;
-procedure out(2a: real; b: boolean; c: char);
+program idlist_e();
+procedure wrongId(222aaa: real; b: boolean; c: char);
 begin
 end;
 
+procedure emptyId();
 begin
-  //        read(x, y);
-  //        write(gcd(x, y))
+end;
+begin
+  read;
+  write();
 end.
