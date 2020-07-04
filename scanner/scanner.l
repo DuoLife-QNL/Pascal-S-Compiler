@@ -23,17 +23,18 @@ void SolveMultiLineComment ();
 
 // extern unsigned long yyleng;
 
-unsigned int lex_column_index = 0;
+unsigned int lex_column_index = 1;
 unsigned int lex_row_index = 1;
 
 #define YY_USER_ACTION      \
-  yylloc.first_line = yylloc.last_line = lex_row_index;                   \
+  yylloc.first_line = yylloc.last_line = yylineno;                   \
   yylloc.first_column = lex_column_index; \
-  for (int i = 0; i < yyleng; ++yylloc.last_column, i++) { \
-    if(yytext[i]=='\n'){ \
-        yylloc.last_line ++ ; \
-        yylloc.last_column = 0; \
-    } \
+  yylloc.last_column = yylloc.first_column + yyleng - 1; \
+//  for (int i = 0; i < yyleng; ++yylloc.last_column, i++) { \
+//    if(yytext[i]=='\n'){ \
+//        yylloc.last_line ++ ; \
+//        yylloc.last_column = 0; \
+//    } \
   }\
 
 
@@ -327,7 +328,8 @@ quotation_not_match     (\'|\")
 {charac}                {
     #ifdef DEBUG_SCANNER
     printf("shift '.' \n");
-    #endif 
+    #endif
+    lex_column_index += yyleng;
     yylval.letter = *(yytext + 1); lex_column_index += 3; return(QLQ);
 }
 
@@ -338,13 +340,15 @@ quotation_not_match     (\'|\")
 [Rr][Ee][Aa][Dd]      {
     #ifdef DEBUG_SCANNER
     printf("shift READ \n");
-    #endif 
+    #endif
+    lex_column_index += yyleng;
     return READ;
 }
 [Ww][Rr][Ii][Tt][Ee]  {
     #ifdef DEBUG_SCANNER
     printf("shift WRITE \n");
     #endif
+    lex_column_index += yyleng;
     return WRITE;
 }
 
@@ -354,7 +358,7 @@ quotation_not_match     (\'|\")
     #endif
     // char *text = (char *)malloc(sizeof(char) * yyleng);
     // memcpy(text, yytext, yyleng);
-
+    lex_column_index += yyleng;
     yylval.text = new string(yytext);
     return(ID);
 }
@@ -362,6 +366,7 @@ quotation_not_match     (\'|\")
     #ifdef DEBUG_SCANNER
     printf("shift digitsdotdotdigits\n");
     #endif
+    lex_column_index += yyleng;
     yylval.text = new string(yytext); return(DIGITSDOTDOTDIGITS);
 }
 [0-9]+|[0-9]+\.[0-9]+ {
@@ -371,7 +376,7 @@ quotation_not_match     (\'|\")
     yylval.num = yytext; return(NUM);
 }
 " "|"\t"              {lex_column_index++;}
-"\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 0;}
+"\n"|"\r"|[\r][\n]|[\n][\r]       {lex_row_index++; lex_column_index = 1;}
 
 
 {quotation_not_match}   {fprintf (stderr, "\033[01;31m Lexical Error: quotation not match %s at line: %d colum: %d \033[0m \n", yytext, lex_row_index, lex_column_index);}
@@ -386,7 +391,7 @@ void SolveComment () {
     printf(" line %d \tcolumn %d: \t<Comment, %s> \n",
         lex_row_index, lex_column_index, yytext);
     #endif
-    lex_column_index = 0;
+    lex_column_index = 1;
 }
 
 void SolveMultiLineComment () {
@@ -403,7 +408,7 @@ void SolveMultiLineComment () {
             break;
         else if (c == '\n') {
             lex_row_index++;
-            lex_column_index = 0;
+            lex_column_index = 1;
         }
         else if (c == 0){
             #ifdef DEBUG_SCANNER
