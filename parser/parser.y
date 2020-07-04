@@ -3,6 +3,7 @@
     #include "string.h"
     int success = 1;
     IdTable it;
+    int error_no = 0;
     char log_msg[1024];
     char error_buffer[1024];
     std::string nowConst = "";
@@ -1457,14 +1458,16 @@ int main(int argc, char* argv[]){
     yyparse();
     if (success == 1)
         printf("\033[32mParsing doneee.\033[0m\n");
+    else {
+        printf("\n\033[31mParse failed. %d errors detected.\033[0m\n", error_no);
+    }
     return 0;
 }
 
 int yyerror(const char *msg)
 {
-	static int err_no = 1;
 	extern int yylineno;
-	printf("\033[31mError\033[0m  %d, Line Number: %d %s\n", err_no++, yylineno, msg);
+	printf("\033[31mError\033[0m  %d, Line Number: %d %s\n", error_no++, yylineno, msg);
     success = 0;
 	return 0;
 }
