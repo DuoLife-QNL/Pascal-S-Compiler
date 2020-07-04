@@ -1096,11 +1096,17 @@ int get_last_digit(const string &s){
  */
 void insert_symbol(string name, info t){
     /* basic type */
+    Id *id; 
     if (t.type >= _INTEGER and t.type <= _CHAR){
-        BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
-        it.enter_id((Id*)id);
+        id = new BasicTypeId(name, t.type, t.is_const);
     } else if (t.type == _ARRAY){  /* array */
-        ArrayId *id = new ArrayId(name, t.element_type, t.dim, t.prd);
+        id = new ArrayId(name, t.element_type, t.dim, t.prd);
+    }
+    int index = it.find_id(id->get_name());
+    if (it.in_cur_scope(index)) {
+        sprintf(error_buffer,"duplicate identifier '%s'",id->get_name().c_str());
+        yyerror(error_buffer);
+    } else {
         it.enter_id((Id*)id);
     }
 }
