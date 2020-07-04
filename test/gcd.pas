@@ -7,6 +7,6 @@ program example(input, output);
         end;
     begin
 
-        read(x, y);
+        read(x, r);
         write(x, y)
     end.

@@ -450,7 +450,7 @@ statement_list      :   statement_list ';' statement
                     ;
 statement           :   variable ASSIGNOP expression
                         {
-                            if (check_id($1->name))
+                            if (check_id($1->name, false))
                             {
                                 auto is_func = $1->type == _FUNCTION;
                                 if (is_func)
@@ -509,7 +509,7 @@ statement           :   variable ASSIGNOP expression
                         statement else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            if (check_id(*$2) && check_type(*$2, _INTEGER) == 2)
+                            if (check_id(*$2, false) && check_type(*$2, _INTEGER) == 2)
                             {
                                 if ($4->type != _INTEGER || $6->type != _INTEGER)
                                 {
@@ -530,7 +530,7 @@ statement           :   variable ASSIGNOP expression
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                if (check_id(cur->name))
+                                if (check_id(cur->name, false))
                                 {
                                     if (first)
                                         first = false;
@@ -1192,9 +1192,12 @@ Id *get_id(string name)
  */
 bool check_id(string name, bool msg) {
     if (it.find_id(name) == -1) {
-        ERR("Id '%s' not in id table", name.c_str());
-        sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
-        yyerror(error_buffer);
+        if (msg)
+        {
+            ERR("Id '%s' not in id table", name.c_str());
+            sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
+            yyerror(error_buffer);
+        }
         return false;
     }
     return true;
