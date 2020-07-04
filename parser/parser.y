@@ -1065,7 +1065,7 @@ factor              :   NUM
                             $$ = new parameter;
                             if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
                                 char error_msg[100];
-                                sprintf(error_msg,"'%s'''is not real or integer",$2->text.c_str());
+                                sprintf(error_msg,"'%s'is not real or integer",$2->text.c_str());
                                 yyerror(error_msg);
                             }
                             $$->type = $2->type;
