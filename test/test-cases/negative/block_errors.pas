@@ -1,4 +1,5 @@
-Program id_errors(input, output);
+
+Program block_errors(input, output);
 
 Var 
   x : integer;
@@ -8,11 +9,11 @@ Begin
   fun := 0;
 End;
 
-procedure emptyId();
-begin
-end;
+Procedure emptyId();
+Begin
+End;
 
-begin
+Begin
   emptyId(-);
   fun(x)
 End.

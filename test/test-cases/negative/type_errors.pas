@@ -1,5 +1,5 @@
 
-Program test(input, output);
+Program type_errors(input, output);
 
 Var int: integer;
   bool : boolean;

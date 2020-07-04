@@ -1,5 +1,5 @@
 
-Program test(input, output);
+Program lexical_errors(input, output);
 
 Var 3x,y: integer;
 Begin

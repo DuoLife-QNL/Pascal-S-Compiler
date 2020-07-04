@@ -1,5 +1,5 @@
 
-Program test(input, output);
+Program operation_errors(input, output);
 
 Var x,y,z: integer;
 Begin
