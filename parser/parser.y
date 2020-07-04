@@ -153,7 +153,7 @@ programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_bod
 program_head        :   PROGRAM ID '(' idlist ')'
                     |   PROGRAM ID
                     ;
-program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf(";\nreturn 0;\n}\n"); }
+program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf("return 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
 idlist              :   idlist ',' ID
@@ -442,20 +442,20 @@ value_parameter     :   idlist ':' basic_type
                             $$ = $1;
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations compound_statement {wf(";\n}\n");}
+subprogram_body     :   const_declarations var_declarations compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
                     ;
-statement_list      :   statement_list ';'{wf(";\n");} statement
+statement_list      :   statement_list ';' statement
                     |   statement
                     ;
 statement           :   variable ASSIGNOP expression
                         {
-                            auto is_func = get_id_info($1->name)->type == _FUNCTION;
+                            auto is_func = $1->type == _FUNCTION;
                             if (is_func) wf("return ", $3->text);
                             else
                             {
-                                if (get_type($1->name.c_str()) != _ARRAY)
+                                if ($1->type != _ARRAY)
                                     wf($1->name, "=", $3->text);
                                 else
                                 {
@@ -464,6 +464,7 @@ statement           :   variable ASSIGNOP expression
                                     wf($1->name, convert_array($1), "=", $3->text);
                                 }
                             }
+                            wf(";\n");
                         }
                     |   procedure_call
                         {
@@ -471,21 +472,18 @@ statement           :   variable ASSIGNOP expression
                         }
                     |   { wf("{\n");}
                         compound_statement
-                        { wf(";}\n");}
+                        { wf("}\n");}
                     |   IF expression THEN
                         {
                             wf("if(", $2->text, ")\n");
                         }
-                        statement {wf(";\n");} else_part
+                        statement else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
                             check_id(*$2);
                             wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n");
                         }
                         statement
-                        {
-                            wf(";\n");
-                        }
                     |   READ '(' variable_list ')'
                         {
                             string s, t;
@@ -506,11 +504,11 @@ statement           :   variable ASSIGNOP expression
                                 else
                                 {
                                     s += convert_type_printf(cur->element_type);
-                                    t += "&" + cur->name;
+                                    t += "&" + cur->name + convert_array(cur->exps);
                                 }
 
                             }
-                            wf("scanf(\"", s, "\", ", t, ")");
+                            wf("scanf(\"", s, "\", ", t, ");\n");
                         }
                     |   WRITE '(' expression_list ')'
                         {
@@ -525,19 +523,11 @@ statement           :   variable ASSIGNOP expression
                                     s += " ";
                                     t += ", ";
                                 }
-                                if (get_type(cur->name.c_str()) != _ARRAY)
-                                {
-                                    s += convert_type_printf(cur->type);
-                                    t += "&" + cur->name;
-                                }
-                                else
-                                {
-                                    s += convert_type_printf(cur->element_type);
-                                    t += "&" + cur->name;
-                                }
+                                s += convert_type_printf(cur->type);
+                                t += cur->text;
                             }
                             s += "\\n";
-                            wf("printf(\"", s, "\", ", t, ")");
+                            wf("printf(\"", s, "\", ", t, ");\n");
                         }
                     |
                     ;
@@ -557,33 +547,20 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
-                            $2 = new parameter;
-                            $2->name = *$1;
                             $$ = get_id_info(*$1);
                             if (check_id(*$1)) {
-                                Id *id = it.get_id(it.find_id(*$1));
-                                TYPE id_type = id->get_type();
-                                if(_ARRAY == id_type) {
-                                    INFO("%s is array type", $1->c_str());
-                                    ArrayId *arrayId = (ArrayId *)id;
-                                    $$->element_type = arrayId->get_element_type();
-                                }
-                                $$->exps = $2->exps;
-                            }
-                        }
-                    ;
-id_varpart          :   '[' expression_list ']'
-                        {
-                            /* check if id exists */
-                            if (check_id($$->name, false)) {
-                                int index = it.find_id($$->name);
-                                TYPE type = it.get_id(index)->get_type();
-                                /* check if the id of type array */
-                                if (_ARRAY != type) {
+                                int index = it.find_id(*$1);
+                                Id *id = it.get_id(index);
+                                TYPE type = id->get_type();
+                                if (_ARRAY != type && $2 != nullptr)
+                                {
                                     sprintf(error_buffer, "'%s' is '%s', array id expected",
                                             $$->name.c_str(), convert_type(type).c_str());
                                     yyerror(error_buffer);
-                                }else {
+                                }
+                                if(_ARRAY == type) {
+                                    INFO("%s is array type", $1->c_str());
+                                    ArrayId *arrayId = (ArrayId *)id;
                                     /* check if dimension matches */
                                     ArrayId *id = (ArrayId *)it.get_id(index);
                                     int dim = id->get_dim();
@@ -593,7 +570,7 @@ id_varpart          :   '[' expression_list ']'
                                     }
 
                                     /* the array period should be integer */
-                                    parameter *tmp = $2;
+                                    parameter *tmp = $2->exps;
                                     int dim_count = 0;
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
@@ -616,13 +593,23 @@ id_varpart          :   '[' expression_list ']'
                                             }
                                         }
                                         tmp = tmp->next;
-                                        dim_count ++;
                                     }
-                                    $$->exps = $2;
+                                    $$->element_type = arrayId->get_element_type();
+                                    $$->exps = $2->exps;
+                                    /* INFO("var %s : %p %p", $$->name.c_str(), $$->exps, $2->exps); */
                                 }
                             }
                         }
-                    |
+                    ;
+id_varpart          :   '[' expression_list ']'
+                        {
+                            $$ = new parameter;
+                            $$->type = _ARRAY;
+                            $$->exps = $2;
+                            $$->count_follow_pars = $2->count_follow_pars;
+                            /* INFO("varpart %s : %p", $$->name.c_str(), $$->exps); */
+                        }
+                    | {$$ = nullptr;}
                     ;
 procedure_call      :   ID
                         {
@@ -631,7 +618,7 @@ procedure_call      :   ID
                                     check_type(*$1, _FUNCTION);
                                 }
                             }
-                            wf(*$1, "()");
+                            wf(*$1, "();\n");
                         }
                     |   ID '(' expression_list ')'
                         {
@@ -668,9 +655,10 @@ procedure_call      :   ID
                                 default:
                                     break;
                             }
+                            wf(";\n");
                         }
                     ;
-else_part           :   ELSE {wf("else\n");} statement {wf(";\n");}
+else_part           :   ELSE {wf(";\nelse\n");} statement
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -1346,14 +1334,20 @@ string convert_array(parameter *array)
     s += "[";
     auto Aid = static_cast<ArrayId *>(get_id(array->name));
     int count = 0;
+    bool first = true;
     for (auto *cur = array->exps; cur; cur = cur->next)
     {
+        if (first)
+            first = false;
+        else
+            s += "][";
         auto p = Aid->get_period(count);
         ++count;
         s += cur->text + "-" + to_string(p.start);
-        s += "][";
+        /* INFO("text %s", cur->text.c_str()); */
     }
     s += "]";
+    return s;
 }
 
 // target code generation end
