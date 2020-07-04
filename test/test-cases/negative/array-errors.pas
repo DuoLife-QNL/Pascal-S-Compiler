@@ -1,8 +1,13 @@
-
-Program test(input, output);
+Program id-errors(input, output);
 
 Var x,y: integer;
   z,z1,z2,z3,z4: array[9..1] Of integer;
+  a: array[1...10] of integer;
+  b: array[] of integer;
+  c: array[1..10] of cccc;
+  d: char
+[10];
+
 Function gcd(a,b: integer): integer;
 
 Var f: integer;
@@ -12,5 +17,5 @@ Begin
 End;
 Begin
   read(x, y);
-  writ e(gcd(x, y))
+  write(gcd(x, y))
 End.

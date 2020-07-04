@@ -355,8 +355,8 @@ type                :   basic_type
                             $$.dim = 1;
                             $$.prd = init_period();
                             $$.prd->start = 1;
-                            $$.prd->end = 10;
-                            ERR("period error : guess [1..10]");
+                            $$.prd->end = 3;
+                            ERR("period error : guess [1..3]");
                             $$.element_type = $6.type;
                             $$.type = _ARRAY;
                             wf($$.element_type," ");
