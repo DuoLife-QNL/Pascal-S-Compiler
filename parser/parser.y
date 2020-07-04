@@ -590,16 +590,31 @@ id_varpart          :   '[' expression_list ']'
                                         yyerror(error_buffer);
                                     }
 
-                                    /* the array period shoulb be integer */
+                                    /* the array period should be integer */
                                     parameter *tmp = $2;
+                                    int dim_count = 0;
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
                                             sprintf(error_buffer, "all dimensions of array '%s' should be integer",
                                                     $$->name.c_str());
                                             yyerror(error_buffer);
                                             break;
+                                        }else {
+                                            /* check if index of array out of range */
+                                            if (_INTEGER == get_type(const_cast<char*>(tmp->text.c_str()))) {
+                                                int index = atoi(tmp->text.c_str());
+                                                period dim_period = id->get_period(dim_count);
+                                                int low_bound = dim_period.start;
+                                                int high_bound = dim_period.end;
+                                                if (!(low_bound <= index && index <= high_bound)) {
+                                                    sprintf(error_buffer, "Array '%s' index %d out of range!",
+                                                            $$->c_str(), dim_count);
+                                                    yyerror(error_buffer);
+                                                } 
+                                            }
                                         }
                                         tmp = tmp->next;
+                                        dim_count ++;
                                     }
                                     $$->exps = $2;
                                 }
@@ -653,7 +668,7 @@ procedure_call      :   ID
                             }
                         }
                     ;
-else_part           :   ELSE {wf("else\n");cout<<"ELSE"<<endl;} statement {wf(";\n");}
+else_part           :   ELSE {wf("else\n");} statement {wf(";\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -977,17 +992,37 @@ void insert_function(string name, parameter *par, TYPE rt){
     }
 }
 
-/*
- * find what type(integer / real) is the num
- * TODO: add boolean (true / false) here
+/**
+ * find if a cstring is pure integer or real,
+ * which means it is [digits] or [digits.digits].
+ * @return {TYPE} _INTEGER if pure integer
+ *         {TYPE} _REAL if pure real
+ *         {TYPE} _DEFAULT for other cases
  */
 TYPE get_type(const char *s){
     string ss = s;
     string::size_type idx;
     idx = ss.find(".");
     if (idx == string::npos){
+        while (*s) {
+            if (!(('0' <= *s) && (*s <= '9'))) {
+                return _DEFAULT;
+            }
+            s++;
+        }
         return _INTEGER;
     } else {
+        int count_dot = 0;
+        while (*s) {
+            if (!(('0' <= *s) && (*s <= '9'))) {
+                if (('.' == *s) && (0 == count_dot)) {
+                    count_dot ++;
+                    continue;
+                }
+                return _DEFAULT;
+            }
+            s++;
+        }
         return _REAL;
     }
 }
@@ -1385,7 +1420,7 @@ int main(int argc, char* argv[]){
     yyout = fp2;
     yyparse();
     if (success == 1)
-        printf("Parsing doneee.\n");
+        printf("\033[32mParsing doneee.\033[0m\n");
     return 0;
 }
 

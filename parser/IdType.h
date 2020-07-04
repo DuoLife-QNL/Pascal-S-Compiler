@@ -3,9 +3,20 @@
 
 #include <iostream>
 #include <stack>
+#include "debug.h"
 #include <string>
 #include <vector>
 #include <getopt.h>
+
+#if DEBUG
+    #define INFO(args...) do {char msg[1024]; sprintf(msg, ##args); info(__FILE__, __LINE__, msg);} while(0)
+    #define WARN(args...) do {char msg[1024]; sprintf(msg, ##args); warn(__FILE__, __LINE__, msg);} while(0)
+    #define ERR(args...) do {char msg[1024]; sprintf(msg, ##args); err(__FILE__, __LINE__, msg);} while(0)
+#else
+    #define INFO(args...) do {}while(0);
+    #define WARN(args...) do {}while(0);
+    #define ERR(args...) do {}while(0);
+#endif
 
 /*
  * We add '_' before each type because they have
