@@ -46,7 +46,20 @@ TYPE ArrayId::get_element_type() {
 }
  
 period ArrayId::get_period(int dim) {
-    return *(prd + dim);
+    period *tmp = prd;
+    if (dim < 0) {
+        ERR("period dim invalid");
+        return *init_period();
+    }
+    while (dim > 0) {
+        dim --;
+        tmp = tmp->next;
+        if (tmp == nullptr) {
+            ERR("period dim invalid");
+            return *init_period();
+        }
+    }
+    return *tmp;
 }
 
 Parameter::Parameter(std::string name, TYPE type, bool is_var)
