@@ -7,5 +7,5 @@ x:= 0;
 y:= 1;
   z := x + ;
   z := x y;
-  read(r, y)
+  read(x, y)
 End.

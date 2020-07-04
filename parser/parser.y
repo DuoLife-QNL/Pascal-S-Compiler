@@ -412,11 +412,8 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
-			    printf("~~~1~~~");
                             insert_procedure(*$2, $3);
-                            printf("~~~2~~~");
-			    INFO("Insert done");
-			    printf("~~~3~~~");
+                            INFO("Insert done");
                             wf("void ", *$2, "(");
                             bool first = true;
                             if($3 != nullptr){
