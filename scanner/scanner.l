@@ -26,6 +26,18 @@ void SolveMultiLineComment ();
 unsigned int lex_column_index = 0;
 unsigned int lex_row_index = 1;
 
+#define YY_USER_ACTION      \
+  yylloc.first_line = yylloc.last_line = lex_row_index;                   \
+  yylloc.first_column = lex_column_index; \
+  for (int i = 0; i < yyleng; ++yylloc.last_column, i++) { \
+    if(yytext[i]=='\n'){ \
+        yylloc.last_line ++ ; \
+        yylloc.last_column = 0; \
+    } \
+  }\
+
+
+
 // Todo1 : begin from line 64 需要填 return 的 Token
 // Todo2 : Integer ,Boolean, String, Float 需要吧 yylval 的值添上
 // Todo3 : RELOP ADDOP MULOP 需要有相应的属性来知道到底是那种运算。

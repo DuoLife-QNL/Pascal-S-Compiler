@@ -173,7 +173,8 @@ idlist              :   idlist ',' ID
                             $$->name = *$2;
                             $$->is_var = false;
                             $$->next = nullptr;
-                    	    ERR("err id");
+                    	    ERR("err id @%d:%d : discard error part and accept as %s", @1.first_line, @1.first_column, $$);
+                    	    INFO("new id '%s'", $2->c_str());
                     	}
                     ;
 const_declarations  :   CONST const_declaration ';'
@@ -1259,7 +1260,8 @@ void return_help(char *exe_path)
     printf("  -h, --help                Print the message and exit\n\n");
     exit(-1);
 }
-
+char *input_path;
+char *output_path;
 int main(int argc, char* argv[]){
     const char *optstring = "f:h";
     int opt;
@@ -1268,13 +1270,15 @@ int main(int argc, char* argv[]){
         {"help",  no_argument,       NULL, 'h'},
         {0, 0, 0, 0}
     };
-    char *input_path = NULL, *output_path = NULL;
+    input_path = NULL;
+    output_path = NULL;
     if (argc == 1) return_help(argv[0]);
     while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
         if (opt == 'h' || opt == '?'){
             return_help(argv[0]);
         }
     }
+
     input_path = argv[1];
     int len = strlen(input_path);
     if (strcmp(argv[1] + len - 4, ".pas") != 0)
@@ -1302,9 +1306,10 @@ int main(int argc, char* argv[]){
     }
     if (fp2 == NULL)
     {
-        input_path[len - 3] = 'c';
-        input_path[len - 2] = 0;
-        output_path = input_path;
+    	output_path = new char[1024];
+        strcpy(output_path,input_path);
+        output_path[len - 3] = 'c';
+        output_path[len - 2] = 0;
         fp2 = fopen(output_path, "w");
         if (fp2 == NULL)
         {
@@ -1313,18 +1318,19 @@ int main(int argc, char* argv[]){
         }
     }
     yyout = fp2;
+    printf("start parsing %s to %s\n",input_path, output_path);
     yyparse();
     if (success == 1)
         printf("Parsing doneee.\n");
     else
-        printf("Parsing failed, total error %d", err_no);
+        printf("Parsing failed, total error %d", yynerrs + 1);
     return 0;
 }
 
 int yyerror(const char *msg)
 {
 	extern int yylineno;
-	printf("\033[31mError\033[0m  %d, Line Number: %d %s\n", ++err_no, yylineno, msg);
+	printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", yynerrs + 1, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
     success = 0;
 	return 0;
 }
