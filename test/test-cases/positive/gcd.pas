@@ -8,6 +8,6 @@ program example(input, output);
         end;
     begin
 
-        read(x, r);
+        read(x, y);
         write(x, y)
     end.
