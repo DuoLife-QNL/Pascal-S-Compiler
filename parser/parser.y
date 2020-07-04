@@ -455,6 +455,7 @@ statement           :   variable ASSIGNOP expression
                             if (is_func) wf("return ", $3->text);
                             else
                             {
+                                if ($1->is_var) wf("*");
                                 if ($1->type != _ARRAY)
                                     wf($1->name, "=", $3->text);
                                 else
