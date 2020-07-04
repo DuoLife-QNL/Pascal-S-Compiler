@@ -608,9 +608,9 @@ id_varpart          :   '[' expression_list ']'
                                                 int high_bound = dim_period.end;
                                                 if (!(low_bound <= index && index <= high_bound)) {
                                                     sprintf(error_buffer, "Array '%s' index %d out of range!",
-                                                            $$->c_str(), dim_count);
+                                                            $$->name.c_str(), dim_count);
                                                     yyerror(error_buffer);
-                                                } 
+                                                }
                                             }
                                         }
                                         tmp = tmp->next;
@@ -1347,7 +1347,6 @@ string convert_array(parameter *array)
     for (auto *cur = array->exps; cur; cur = cur->next)
     {
         auto p = Aid->get_period(count);
-        INFO("p: %p", p);
         ++count;
         s += cur->text + "-" + to_string(p.start);
         s += "][";
