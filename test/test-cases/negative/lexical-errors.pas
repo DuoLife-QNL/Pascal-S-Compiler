@@ -1,7 +1,7 @@
 
 Program test(input, output);
 
-Var x,y: integer;
+Var 3x,y: integer;
 Begin
   z := 3;
   read(r, y)
