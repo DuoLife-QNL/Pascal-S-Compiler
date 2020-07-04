@@ -14,7 +14,7 @@
 
 // Todo: comment this line to change into Release Mode.
 // #define DEBUG_SCANNER
-
+#define DEBUG_COMMENT
 
 // #define YYSTYPE char*;
 // YYSTYPE yylval;
@@ -387,7 +387,7 @@ quotation_not_match     (\'|\")
 %%
 
 void SolveComment () {
-    #ifdef DEBUG_SCANNER
+    #ifdef DEBUG_COMMENT
     printf(" line %d \tcolumn %d: \t<Comment, %s> \n",
         lex_row_index, lex_column_index, yytext);
     #endif
@@ -396,7 +396,7 @@ void SolveComment () {
 
 void SolveMultiLineComment () {
     register int c;
-    #ifdef DEBUG_SCANNER
+    #ifdef DEBUG_COMMENT
     printf(" line %d \tcolumn %d: \t<Comment, %s", lex_row_index, lex_column_index, yytext);
     #endif
     while ((c = getchar())) {

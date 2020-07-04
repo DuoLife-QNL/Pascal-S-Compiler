@@ -4,6 +4,8 @@
     int success = 1;
     IdTable it;
     int error_no = 0;
+//    to generate __ERROR__N name for error id like "12abc"
+    int error_id_cnt = 0;
     char log_msg[1024];
     char error_buffer[1024];
     char *input_path;
@@ -201,11 +203,12 @@ idlist              :	idlist ',' ID
                     	{
 //                    	    recovery with legal part
                     	    $$ = new parameter;
-                            $$->name = "__ERROR__";
+                            $$->name = "__ERROR__" + to_string(++error_id_cnt);
                             $$->is_var = false;
                             $$->next = nullptr;
                     	    ERR("err id : discard error part and accept as %s", $$->name.c_str());
                     	    INFO("new id '%s'", $$->name.c_str());
+                    	    yyclearin;
                     	    yyerrok;
                     	}
                     |
@@ -425,10 +428,11 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                             {
                                 it.end_block();
                             }
-//                        |   error END ';'
-//                            {
-//                            	ERR("subprogram_declarations error: discard until 'end ;'");
-//                            }
+                        |   error END ';'
+                            {
+                            	ERR("subprogram_declarations error: discard until 'end ;'");
+                            	yyerrok;
+                            }
                         |
                         ;
 subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
@@ -545,10 +549,6 @@ subprogram_body     :   const_declarations
 			compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
-		    |	_BEGIN error ';' statement_list END
-		    	{
-		    	    ERR("statement error: discard and continue");
-		    	}
 		    |	_BEGIN error END
 		    	{
 		    	    ERR("last statement error: discard");

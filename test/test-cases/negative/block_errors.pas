@@ -1,19 +1,24 @@
-
 Program block_errors(input, output);
 
-Var 
+Var
   x : integer;
   y : real;
-Function fun(a: bean, 123: char): integer;
+  bool: boolean;
+  c: char;
+Function foo1(a: bean; 123: char): integer;
 Begin
-  fun := 0;
+  a := 0;
 End;
 
-Procedure emptyId();
+Procedure foo2(a, b: integer; Var c: integer);
+Begin
+End;
+
+Procedure foo3(a: integer)
 Begin
 End;
 
 Begin
-  emptyId(-);
-  fun(x)
+  x := foo3(x);
+  foo3(c)
 End.
