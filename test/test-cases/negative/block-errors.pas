@@ -5,6 +5,7 @@ Var
   y : real;
 Function fun(a: bean, 123: char): integer;
 Begin
+  fun := 0;
 End;
 
 procedure emptyId();

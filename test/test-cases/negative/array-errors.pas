@@ -1,12 +1,13 @@
-Program id-errors(input, output);
+
+Program test(input, output);
 
 Var x,y: integer;
-  z,z1,z2,z3,z4: array[9..1] Of integer;
+  z1: array[9..1] Of integer;
+  z2: array[1..9, 2..10] of integer;
   a: array[1...10] of integer;
   b: array[] of integer;
   c: array[1..10] of cccc;
-  d: char
-[10];
+  d: char [10];
 
 Function gcd(a,b: integer): integer;
 
@@ -16,6 +17,8 @@ Begin
   Else gcd := gcd(b, a Mod b)
 End;
 Begin
+  z2[10, 2.3] := 1;
+  z2[1, 2, 3] := 1;
   read(x, y);
   write(gcd(x, y))
 End.

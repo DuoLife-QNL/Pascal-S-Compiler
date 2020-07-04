@@ -1,9 +1,11 @@
-program test(input, output);
-var int: integer;
-bol : boolean;
-begin
-if bol = int then
-int := 1
-else
-int := 2
-end.
+
+Program test(input, output);
+
+Var int: integer;
+  bol : boolean;
+Begin
+  If bol = int Then
+    int := 1
+  Else
+    int := 2
+End.

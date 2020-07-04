@@ -717,7 +717,7 @@ variable            :   ID id_varpart
                                                 int low_bound = dim_period.start;
                                                 int high_bound = dim_period.end;
                                                 if (!(low_bound <= index && index <= high_bound)) {
-                                                    sprintf(error_buffer, "Array '%s' index %d out of range!",
+                                                    sprintf(error_buffer, "Array '%s' dimension %d out of range!",
                                                             $$->name.c_str(), dim_count);
                                                     yyerror(error_buffer);
                                                 }
