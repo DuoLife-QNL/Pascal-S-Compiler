@@ -435,7 +435,6 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(true, $5.type, $3);
 
 #endif
-			    printf("~~~~~~");
                             insert_function(*$2, $3, $5.type);
                             INFO("Insert done.");
 
