@@ -350,7 +350,7 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
-			                cout << "insert done" << endl;
+			                INFO("Insert done");
 
                             wf("void ", *$2, "(");
                             bool first = true;
