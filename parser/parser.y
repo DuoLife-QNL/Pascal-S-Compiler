@@ -557,6 +557,8 @@ variable_list       :   variable_list ',' variable
                     ;
 variable            :   ID id_varpart
                         {
+                            $2 = new parameter;
+                            $2->name = *$1;
                             $$ = get_id_info(*$1);
                             if (check_id(*$1)) {
                                 Id *id = it.get_id(it.find_id(*$1));
@@ -566,9 +568,8 @@ variable            :   ID id_varpart
                                     ArrayId *arrayId = (ArrayId *)id;
                                     $$->element_type = arrayId->get_element_type();
                                 }
-                                $$->exps = $2;
+                                $$->exps = $2->exps;
                             }
-                            $2->name = *$1;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
