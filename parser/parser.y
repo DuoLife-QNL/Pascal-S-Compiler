@@ -160,7 +160,9 @@ program_head        :   PROGRAM ID
 			{
 			   int len = strlen(input_path);
 			   int i;
-                           if (strncmp(input_path, $2->c_str(), len - 4) != 0){
+			   for(i = len - 1; input_path[i] != '/' && i > 0; i--);
+			   i += (input_path[i] == '/'? 1 : 0);
+                           if (strncmp(input_path + i, $2->c_str(), len - 4) != 0){
                            	yyerror("Unit and file name do not match");
                            }
 			}
@@ -1603,7 +1605,7 @@ int yyerror(const char *msg)
 {
 
     extern int yylineno;
-    printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
+    printf("\033[31mError\033[0m  %d in File %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, msg);
     success = 0;
     return 0;
 }
