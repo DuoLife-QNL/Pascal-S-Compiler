@@ -1462,7 +1462,7 @@ int main(int argc, char* argv[]){
     if (success == 1)
         printf("\033[32mParsing doneee.\033[0m\n");
     else {
-        printf("\n\033[31mParse failed. %d errors detected.\033[0m\n", error_no);
+        printf("\n\033[31mParse failed. %d errors detected.\033[0m\n", (error_no - 1));
     }
     return 0;
 }
