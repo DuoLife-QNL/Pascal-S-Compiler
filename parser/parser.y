@@ -4,8 +4,6 @@
     int success = 1;
     IdTable it;
     int error_no = 0;
-//    to generate __ERROR__N name for error id like "12abc"
-    int error_id_cnt = 0;
     char log_msg[1024];
     char error_buffer[1024];
     char *input_path;
@@ -97,7 +95,7 @@
     parameter* get_id_info(string name);
     Id *get_id(string name);
 
-    bool check_id(string name, bool msg = true);
+    bool check_id(string name, bool msg = true, bool check_const = false);
     void check_function(string func_name, parameter *actual_paras);
     int check_type(string name, TYPE c_type, bool msg = true);
     bool check_dim(string name, parameter *exps, bool msg = true);
@@ -162,9 +160,7 @@ program_head        :   PROGRAM ID
 			{
 			   int len = strlen(input_path);
 			   int i;
-			   for(i = len - 1; input_path[i] != '/' && i > 0; i--);
-			   i += (input_path[i] == '/'? 1 : 0);
-                           if (strncmp(input_path + i, $2->c_str(), len - 4 -i) != 0){
+                           if (strncmp(input_path, $2->c_str(), len - 4) != 0){
                            	yyerror("Unit and file name do not match");
                            }
 			}
@@ -199,17 +195,15 @@ idlist              :	idlist ',' ID
                             $$->is_var = false;
                             $$->next = nullptr;
                         }
-                    |	error
+                    |	NUM ID
                     	{
 //                    	    recovery with legal part
                     	    $$ = new parameter;
-                            $$->name = "__ERROR__" + to_string(++error_id_cnt);
+                            $$->name = *$2;
                             $$->is_var = false;
                             $$->next = nullptr;
                     	    ERR("err id : discard error part and accept as %s", $$->name.c_str());
                     	    INFO("new id '%s'", $$->name.c_str());
-                    	    yyclearin;
-                    	    yyerrok;
                     	}
                     |
                     	{
@@ -222,9 +216,8 @@ const_declarations  :   CONST const_declaration ';'
 
 const_declaration   :   ID EQUAL const_value
                         {
-			    if(check_id(*$1, false)){
-			    	INFO("check id: %s", $1->c_str());
-                    	    	yyerror("duplicate id : discard");
+							if(check_id(*$1, false)){
+                    	    	yyerror("duplicate id : discard this");
                     	    }
                             insert_symbol(*$1, $3);
                             INFO("Insert const id '%s' into id table.", $1->c_str());
@@ -233,8 +226,7 @@ const_declaration   :   ID EQUAL const_value
                     |   const_declaration ';' ID EQUAL const_value
                         {
                     	    if(check_id(*$3, false)){
-                    	        INFO("check id: %s", $3->c_str());
-                    	    	yyerror("duplicate id : discard");
+                    	    	yyerror("duplicate id : discard this");
                     	    }
                             insert_symbol(*$3, $5);
                             INFO("Insert const id '%s' into id table.", $3->c_str());
@@ -254,7 +246,7 @@ const_value         :   PLUS NUM
                             nowConst=$2;
                             nowConst="-"+nowConst;
                         }
-                    |   NUM
+                    |  NUM
                         {
                             $$.is_const = true;
                             $$.type = get_type($1);
@@ -281,16 +273,9 @@ const_value         :   PLUS NUM
                     	    $$.type = _INTEGER;
                     	    nowConst = "0";
                     	    ERR("const_value error: guess 0");
-
-                    	    yyclearin;
-                    	    yyerrok;
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
-	     	    |	VAR error ';'
-	     	    	{
-	     	    	    ERR("var error");
-	     	    	}
                     |
 
                     ;
@@ -302,31 +287,22 @@ var_declarations    :   VAR var_declaration ';'
                          */
 var_declaration     :   var_declaration ';' ID L
                         {
-                            if(check_id(*$3,false)){
-                                INFO("check id: %s", $3->c_str());
-                            	yyerror("duplicate id : discard ");
-                            }else{
-				    insert_symbol(*$3, $4);
-				    INFO("Insert new id '%s' into id table.", $3->c_str());
-				    if ($4.type != _ARRAY) wf(*$3,";\n");
-				    else
-				    {
-					wf(*$3);
-					period *nowPrd=$4.prd;
-					while(nowPrd!=nullptr){
-					    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
-					    nowPrd=nowPrd->next;
-					       }
-					wf(";\n");
-				    }
+                            insert_symbol(*$3, $4);
+                            INFO("Insert new id '%s' into id table.", $3->c_str());
+                            if ($4.type != _ARRAY) wf(*$3,";\n");
+                            else
+                            {
+                                wf(*$3);
+                                period *nowPrd=$4.prd;
+                                while(nowPrd!=nullptr){
+                                    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
+                                    nowPrd=nowPrd->next;
+                                       }
+                                wf(";\n");
                             }
                         }
                     |   ID L
                         {
-			    if(check_id(*$1, false)){
-			        INFO("check id: %s", $1->c_str());
-                            	yyerror("duplicate id : discard ");
-                            }else{
                             insert_symbol(*$1, $2);
                             INFO("Insert new id '%s' into id table.", $1->c_str());
                             if ($2.type != _ARRAY)wf(*$1,";\n");
@@ -339,7 +315,6 @@ var_declaration     :   var_declaration ';' ID L
                                     nowPrd=nowPrd->next;
                                        }
                                 wf(";\n");
-                            }
                             }
                         }
                     ;
@@ -399,8 +374,6 @@ basic_type          :   INTEGER
                     	{
                     	    $$.type = _INTEGER;
                     	    ERR("unknown type : guess INTEGER");
-                    	    yyclearin;
-                    	    yyerrok;
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
@@ -431,7 +404,6 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                         |   error END ';'
                             {
                             	ERR("subprogram_declarations error: discard until 'end ;'");
-                            	yyerrok;
                             }
                         |
                         ;
@@ -443,8 +415,11 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
+			    printf("~~~1~~~");
                             insert_procedure(*$2, $3);
-                            INFO("Insert done");
+                            printf("~~~2~~~");
+			    INFO("Insert done");
+			    printf("~~~3~~~");
                             wf("void ", *$2, "(");
                             bool first = true;
                             if($3 != nullptr){
@@ -466,6 +441,7 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(true, $5.type, $3);
 
 #endif
+			    printf("~~~~~~");
                             insert_function(*$2, $3, $5.type);
                             INFO("Insert done.");
 
@@ -549,6 +525,10 @@ subprogram_body     :   const_declarations
 			compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
+		    |	_BEGIN error ';' statement_list END
+		    	{
+		    	    ERR("statement error: discard and continue");
+		    	}
 		    |	_BEGIN error END
 		    	{
 		    	    ERR("last statement error: discard");
@@ -559,7 +539,7 @@ statement_list      :   statement_list ';' statement
                     ;
 statement           :   variable ASSIGNOP expression
                         {
-                            if (check_id($1->name, false))
+                            if (check_id($1->name, false, true))
                             {
                                 auto is_func = $1->type == _FUNCTION;
                                 if (is_func)
@@ -617,7 +597,7 @@ statement           :   variable ASSIGNOP expression
                         statement else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            if (check_id(*$2, false) && check_type(*$2, _INTEGER) == 2)
+                            if (check_id(*$2, false, true) && check_type(*$2, _INTEGER) == 2)
                             {
                                 if ($4->type != _INTEGER || $6->type != _INTEGER)
                                 {
@@ -638,7 +618,7 @@ statement           :   variable ASSIGNOP expression
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                if (check_id(cur->name, false))
+                                if (check_id(cur->name, false, true))
                                 {
                                     if (first)
                                         first = false;
@@ -817,11 +797,9 @@ procedure_call      :   ID
                     |	ID '(' error ')'
                     	{
                     	    ERR("error when calling %s : discard until ')'", $1->c_str());
-                    	    yyerrok;
                     	}
                     |	ID '(' ')'
                     	{
-                    	    yyerror("empty expression_list: ignore'()'");
                     	    ERR("empty expression_list: ignore'()'");
                     	}
                     ;
@@ -875,13 +853,12 @@ expression          :   simple_expression RELOP simple_expression
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |	error
+                    |
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                    	    ERR("missing expression");
-                    	    yyerrok;
+                    	    yyerror("missing expression");
                     	}
                     ;
 simple_expression   :   simple_expression ADDOP term
@@ -932,13 +909,12 @@ simple_expression   :   simple_expression ADDOP term
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |   error
+                    |
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                    	    ERR("missing simple_expression");
-                    	    yyerrok;
+                    	    yyerror("missing simple_expression");
                     	}
                     ;
 term                :   term MULOP factor
@@ -995,13 +971,12 @@ term                :   term MULOP factor
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |   error
+                    |
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-			    ERR("missing term");
-                    	    yyerrok;
+                    	    yyerror("missing operator");
                     	}
                     ;
 factor              :   NUM
@@ -1093,19 +1068,18 @@ factor              :   NUM
                             $$ = new parameter;
                             if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
                                 char error_msg[100];
-                                sprintf(error_msg,"'%s'is not real or integer",$2->text.c_str());
+                                sprintf(error_msg,"'%s'''is not real or integer",$2->text.c_str());
                                 yyerror(error_msg);
                             }
                             $$->type = $2->type;
                             $$->text = "-" + $2->text;
                         }
-                    |	error
+                    |
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                   	    ERR("missing factor");
-			    yyerrok;
+                    	    yyerror("missing operator");
                     	}
                     ;
 
@@ -1125,17 +1099,11 @@ int get_last_digit(const string &s){
  */
 void insert_symbol(string name, info t){
     /* basic type */
-    Id *id; 
     if (t.type >= _INTEGER and t.type <= _CHAR){
-        id = new BasicTypeId(name, t.type, t.is_const);
+        BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
+        it.enter_id((Id*)id);
     } else if (t.type == _ARRAY){  /* array */
-        id = new ArrayId(name, t.element_type, t.dim, t.prd);
-    }
-    int index = it.find_id(id->get_name());
-    if (it.in_cur_scope(index)) {
-        sprintf(error_buffer,"duplicate identifier '%s'",id->get_name().c_str());
-        yyerror(error_buffer);
-    } else {
+        ArrayId *id = new ArrayId(name, t.element_type, t.dim, t.prd);
         it.enter_id((Id*)id);
     }
 }
@@ -1354,8 +1322,9 @@ Id *get_id(string name)
  * report error if id undeclared
  * @param msg: show error message if true
  */
-bool check_id(string name, bool msg) {
+bool check_id(string name, bool msg, bool check_const) {
     if (it.find_id(name) == -1) {
+
         if (msg)
         {
             ERR("Id '%s' not in id table", name.c_str());
@@ -1364,6 +1333,21 @@ bool check_id(string name, bool msg) {
         }
         return false;
     }
+	else if (check_const)
+	{
+		INFO("checking const %s", name.c_str());
+		auto id = get_id(name);
+		if (id->get_type() >= _INTEGER && id->get_type() <= _CHAR)
+		{
+			auto bid = static_cast<BasicTypeId *>(id);
+			if (bid->is_const)
+			{
+				sprintf(error_buffer, "could not modify the const variable %s\n", name.c_str());
+				yyerror(error_buffer);
+				return false;
+			}
+		}
+	}
     return true;
 }
 
@@ -1492,7 +1476,7 @@ string convert_relop(const string s)
 
 string convert_type(TYPE t)
 {
-    string ret = "void";
+    string ret;
     switch (t)
     {
     case _INTEGER:
@@ -1506,11 +1490,6 @@ string convert_type(TYPE t)
         break;
     case _CHAR:
         ret = "char";
-        break;
-    case _DEFAULT:
-    case _VOID:
-        ret = "void";
-        ERR("Procedure does not have return value");
         break;
     default:
         ERR("Unsupport Type in c-like type");
@@ -1646,7 +1625,7 @@ int yyerror(const char *msg)
 {
 
     extern int yylineno;
-    printf("\033[31mError\033[0m  %d in File %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, msg);
+    printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
     success = 0;
     return 0;
 }
