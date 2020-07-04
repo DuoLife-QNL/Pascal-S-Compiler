@@ -5,10 +5,12 @@
     IdTable it;
     char log_msg[1024];
     char error_buffer[1024];
-
+    char *input_path;
+    char *output_path;
     std::string nowConst = "";
 %}
 %define parse.error verbose
+%locations
 %code requires {
     /**
      * debug level:
@@ -149,7 +151,14 @@ programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_bod
 			    INFO("Reach the end.");
 			}
                     ;
-program_head        :   PROGRAM ID '(' idlist ')'
+program_head        :   PROGRAM ID
+			{
+			   int len = strlen(input_path);
+                           if (strncmp(input_path, $2->c_str(), len - 4) != 0){
+                           	yyerror("Unit and file name do not match");
+                           }
+			}
+			'(' idlist ')'
                     |   PROGRAM ID
                     ;
 program_body        :   const_declarations{ wf("\n"); }
@@ -158,12 +167,21 @@ program_body        :   const_declarations{ wf("\n"); }
 			compound_statement{ wf(";\nreturn 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
-idlist              :   idlist ',' ID
+idlist              :	idlist ',' ID
                         {
+
                             INFO("new id '%s'", $3->c_str());
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
+                    |	idlist ',' error ',' ID
+                    	{
+                    	    ERR("idlist error");
+                    	    INFO("new id '%s'", $5->c_str());
+                            par_append($1, *$5, false);
+                            $$ = $1;
+
+                    	}
                     |   ID
                         {
                             INFO("new id '%s'", $1->c_str());
@@ -172,16 +190,15 @@ idlist              :   idlist ',' ID
                             $$->is_var = false;
                             $$->next = nullptr;
                         }
-                    |	error ID
+                    |	NUM ID
                     	{
 //                    	    recovery with legal part
-                    	    yyerrok;
                     	    $$ = new parameter;
                             $$->name = *$2;
                             $$->is_var = false;
                             $$->next = nullptr;
-                    	    ERR("err id @%d:%d : discard error part and accept as %s", @1.first_line, @1.first_column, $$);
-                    	    INFO("new id '%s'", $2->c_str());
+                    	    ERR("err id : discard error part and accept as %s", $$->name.c_str());
+                    	    INFO("new id '%s'", $$->name.c_str());
                     	}
                     |
                     	{
@@ -208,6 +225,9 @@ const_declaration   :   ID EQUAL const_value
                         }
                     |   const_declaration ';' ID EQUAL const_value
                         {
+                    	    if(check_id(*$3)){
+                    	    	yyerror("duplicate id : discard this");
+                    	    }
                             insert_symbol(*$3, $5);
                             INFO("Insert const id '%s' into id table.", $3->c_str());
                             wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
@@ -250,20 +270,17 @@ const_value         :   PLUS NUM
                     |	error
                     	{
                     	    $$.is_const = true;
-                    	    ERR("const error");
+                    	    $$.type = _INTEGER;
+                    	    nowConst = "0";
+                    	    ERR("const_value error: guess 0");
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
 		    |	VAR error ';'
 		    	{
 //		    	discard until ';';
-		    	   ERR("");
+		    	   ERR("error after var, expect var_declaration : discard until ';'");
 		    	}
-                    |	error ';'
-                    	{
-//                    	    abort all
-                    	    ERR("do you mean 'var'? ");
-                    	}
                     |
 
                     ;
@@ -319,6 +336,17 @@ type                :   basic_type
                             $$.type = _ARRAY;
                             wf($$.element_type," ");
                         }
+                    |	ARRAY '[' error ']' OF basic_type
+			{
+                            $$.dim = 1;
+                            $$.prd = init_period();
+                            $$.prd->start = 1;
+                            $$.prd->end = 10;
+                            ERR("period error : guess [1..10]");
+                            $$.element_type = $6.type;
+                            $$.type = _ARRAY;
+                            wf($$.element_type," ");
+                        }
                     ;
 
 basic_type          :   INTEGER
@@ -367,6 +395,10 @@ period              :   period ',' DIGITSDOTDOTDIGITS
 subprogram_declarations :   subprogram_declarations subprogram ';'
                             {
                                 it.end_block();
+                            }
+                        |   error END ';'
+                            {
+                            	ERR("subprogram_declarations error: discard until 'end ;'");
                             }
                         |
                         ;
@@ -420,7 +452,7 @@ formal_parameter    :   '(' parameter_list ')'
                         {
                             $$ = $2;
                         }
-                    |	'(' error ')'
+                    |	'(' ')'
                     	{
                     	    $$ = nullptr;
                     	    ERR("empty parameter: omit'()'");
@@ -441,8 +473,8 @@ parameter_list      :   parameter_list ';' parameter
                     |   parameter
                         {
                             $$ = $1;
-#if DEBUG
                             INFO("append %s to parameter list", $1->is_var ? "var" : "non-var");
+#if DEBUG
                             print_par_list($$);
 #endif
                         }
@@ -458,6 +490,7 @@ parameter           :   var_parameter
                     ;
 var_parameter       :   VAR value_parameter
                         {
+
                             parameter *tmp = $2;
                             while(tmp){
                                 tmp->is_var = true;
@@ -481,11 +514,17 @@ subprogram_body     :   const_declarations
 			compound_statement {wf(";\n}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
+		    |	_BEGIN error ';' statement_list END
+		    	{
+		    	    ERR("statement error: discard and continue");
+		    	}
+		    |	_BEGIN error END
+		    	{
+		    	    ERR("last statement error: discard");
+		    	}
                     ;
 statement_list      :   statement_list ';'{ yyerrok; wf(";\n");} statement
                     |   statement
-                    	{
-                    	}
                     ;
 statement           :   variable ASSIGNOP expression
                         {
@@ -549,10 +588,6 @@ statement           :   variable ASSIGNOP expression
                             }
                             s += "\\n";
                             wf("printf(\"", s, "\", ", t, ")");
-                        }
-                    |	error
-                        {
-                            ERR("error statement");
                         }
                     |
                     ;
@@ -619,6 +654,15 @@ id_varpart          :   '[' expression_list ']'
                                 }
                             }
                         }
+                    |	'[' error ']'
+			{
+                    	    ERR("error when cal id_varpart : discard until ']'");
+                    	}
+                    |	'[' ']'
+                    	{
+                    	    ERR("empty cal id_varpart: ignore'[]'");
+                    	}
+                    ;
                     |
                     	{
                     	}
@@ -670,7 +714,11 @@ procedure_call      :   ID
                         }
                     |	ID '(' error ')'
                     	{
-                    	    ERR("error when calling procedure()");
+                    	    ERR("error when calling %s : discard until ')'", $1->c_str());
+                    	}
+                    |	ID '(' ')'
+                    	{
+                    	    ERR("empty expression_list: ignore'()'");
                     	}
                     ;
 else_part           :   ELSE {wf("else\n");cout<<"ELSE"<<endl;} statement {wf(";\n");}
@@ -1252,7 +1300,6 @@ string convert_type(TYPE t)
         ret = "char";
         break;
     default:
-        ERR("Unsupport Type");
         break;
     }
     return ret;
@@ -1289,8 +1336,7 @@ void return_help(char *exe_path)
     printf("  -h, --help                Print the message and exit\n\n");
     exit(-1);
 }
-char *input_path;
-char *output_path;
+
 int main(int argc, char* argv[]){
     const char *optstring = "f:h";
     int opt;
@@ -1358,6 +1404,7 @@ int main(int argc, char* argv[]){
 
 int yyerror(const char *msg)
 {
+
 	extern int yylineno;
 	printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", yynerrs + 1, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
     success = 0;
