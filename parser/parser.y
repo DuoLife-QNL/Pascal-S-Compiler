@@ -609,7 +609,7 @@ id_varpart          :   '[' expression_list ']'
                                                 int high_bound = dim_period.end;
                                                 if (!(low_bound <= index && index <= high_bound)) {
                                                     sprintf(error_buffer, "Array '%s' index %d out of range!",
-                                                            $$->c_str(), dim_count);
+                                                            $$->name.c_str(), dim_count);
                                                     yyerror(error_buffer);
                                                 } 
                                             }
