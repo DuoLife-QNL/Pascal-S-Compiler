@@ -1591,6 +1591,9 @@ int main(int argc, char* argv[]){
     }
 
     input_path = argv[1];
+    if (argc == 3) {
+    	output_path = argv[2];
+    }
     int len = strlen(input_path);
     if (strcmp(argv[1] + len - 4, ".pas") != 0)
     {
