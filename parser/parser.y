@@ -549,16 +549,31 @@ id_varpart          :   '[' expression_list ']'
                                         yyerror(error_buffer);
                                     }
 
-                                    /* the array period shoulb be integer */
+                                    /* the array period should be integer */
                                     parameter *tmp = $2;
+                                    int dim_count = 0;
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
                                             sprintf(error_buffer, "all dimensions of array '%s' should be integer",
                                                     $$->c_str());
                                             yyerror(error_buffer);
                                             break;
+                                        }else {
+                                            /* check if index of array out of range */
+                                            if (_INTEGER == get_type(const_cast<char*>(tmp->text.c_str()))) {
+                                                int index = atoi(tmp->text.c_str());
+                                                period dim_period = id->get_period(dim_count);
+                                                int low_bound = dim_period.start;
+                                                int high_bound = dim_period.end;
+                                                if (!(low_bound <= index && index <= high_bound)) {
+                                                    sprintf(error_buffer, "Array '%s' index %d out of range!",
+                                                            $$->c_str(), dim_count);
+                                                    yyerror(error_buffer);
+                                                } 
+                                            }
                                         }
                                         tmp = tmp->next;
+                                        dim_count ++;
                                     }
                                 }
                             }
