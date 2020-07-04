@@ -1342,7 +1342,7 @@ bool check_id(string name, bool msg, bool check_const) {
 			auto bid = static_cast<BasicTypeId *>(id);
 			if (bid->is_const)
 			{
-				sprintf(error_buffer, "could not modify the const variable %s\n", name.c_str());
+				sprintf(error_buffer, "could not modify the const variable %s", name.c_str());
 				yyerror(error_buffer);
 				return false;
 			}
