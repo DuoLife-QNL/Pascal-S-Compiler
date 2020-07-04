@@ -162,7 +162,7 @@ program_head        :   PROGRAM ID
 			   int i;
 			   for(i = len - 1; input_path[i] != '/' && i > 0; i--);
 			   i += (input_path[i] == '/'? 1 : 0);
-                           if (strncmp(input_path + i, $2->c_str(), len - 4) != 0){
+                           if (strncmp(input_path + i, $2->c_str(), len - 4 -i) != 0){
                            	yyerror("Unit and file name do not match");
                            }
 			}
