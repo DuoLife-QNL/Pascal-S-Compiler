@@ -18,7 +18,7 @@ void debug(const int level, const char *file, int line, std::string msg) {
     }
 
     if (level & DEBUG) {
-        std::cout << level_head << file << "#" << line << ": " << msg
+        std::cout << level_head << file << ":" << line << ": " << msg
                   << std::endl;
     }
 }

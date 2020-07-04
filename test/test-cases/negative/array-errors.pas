@@ -2,8 +2,13 @@
 Program test(input, output);
 
 Var x,y: integer;
-    z1: array[9..1] Of integer;
-    z2: array[1..9, 2..10] of integer;
+  z1: array[9..1] Of integer;
+  z2: array[1..9, 2..10] of integer;
+  a: array[1...10] of integer;
+  b: array[] of integer;
+  c: array[1..10] of cccc;
+  d: char [10];
+
 Function gcd(a,b: integer): integer;
 
 Var f: integer;

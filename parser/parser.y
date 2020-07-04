@@ -3,12 +3,15 @@
     #include "string.h"
     int success = 1;
     IdTable it;
-    int error_no = 1;
+    int error_no = 0;
     char log_msg[1024];
     char error_buffer[1024];
+    char *input_path;
+    char *output_path;
     std::string nowConst = "";
 %}
-
+%define parse.error verbose
+%locations
 %code requires {
     /**
      * debug level:
@@ -149,19 +152,40 @@
 %%
 
 programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_body '.'
+			{
+			    INFO("Reach the end.");
+			}
                     ;
-program_head        :   PROGRAM ID '(' idlist ')'
+program_head        :   PROGRAM ID
+			{
+			   int len = strlen(input_path);
+                           if (strncmp(input_path, $2->c_str(), len - 4) != 0){
+                           	yyerror("Unit and file name do not match");
+                           }
+			}
+			'(' idlist ')'
                     |   PROGRAM ID
                     ;
-program_body        :   const_declarations{ wf("\n"); } var_declarations{ wf("\n"); } subprogram_declarations{ wf("\nint main(){\n"); } compound_statement{ wf("return 0;\n}\n"); }
+program_body        :   const_declarations{ wf("\n"); }
+			var_declarations{ wf("\n"); }
+			subprogram_declarations{ wf("\nint main(){\n"); }
+			compound_statement{ wf("return 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
-idlist              :   idlist ',' ID
+idlist              :	idlist ',' ID
                         {
                             INFO("new id '%s'", $3->c_str());
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
+                    |	idlist ',' error ',' ID
+                    	{
+                    	    ERR("idlist error");
+                    	    INFO("new id '%s'", $5->c_str());
+                            par_append($1, *$5, false);
+                            $$ = $1;
+
+                    	}
                     |   ID
                         {
                             INFO("new id '%s'", $1->c_str());
@@ -170,12 +194,30 @@ idlist              :   idlist ',' ID
                             $$->is_var = false;
                             $$->next = nullptr;
                         }
-                    |	error
+                    |	NUM ID
                     	{
-                    	    ERR("err id");
+//                    	    recovery with legal part
+                    	    $$ = new parameter;
+                            $$->name = *$2;
+                            $$->is_var = false;
+                            $$->next = nullptr;
+                    	    ERR("err id : discard error part and accept as %s", $$->name.c_str());
+                    	    INFO("new id '%s'", $$->name.c_str());
+                    	}
+                    |
+                    	{
+			    yyerror("missing idlist: ignore");
                     	}
                     ;
 const_declarations  :   CONST const_declaration ';'
+		    |	CONST error ';'
+		        {
+		            ERR("error after const, need const_declaration : discard until ';'");
+		        }
+                    |	error ';'
+                    	{
+                    	    ERR("do you mean 'const'? : discard until ';'");
+                    	}
                     |
                     ;
 
@@ -185,8 +227,11 @@ const_declaration   :   ID EQUAL const_value
                             INFO("Insert const id '%s' into id table.", $1->c_str());
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
-                |         const_declaration ';' ID EQUAL const_value
+                    |   const_declaration ';' ID EQUAL const_value
                         {
+                    	    if(check_id(*$3)){
+                    	    	yyerror("duplicate id : discard this");
+                    	    }
                             insert_symbol(*$3, $5);
                             INFO("Insert const id '%s' into id table.", $3->c_str());
                             wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
@@ -226,9 +271,21 @@ const_value         :   PLUS NUM
                             $$.type = _CHAR;
                             nowConst=$1;
                         }
+                    |	error
+                    	{
+                    	    $$.is_const = true;
+                    	    $$.type = _INTEGER;
+                    	    nowConst = "0";
+                    	    ERR("const_value error: guess 0");
+                    	}
                     ;
 var_declarations    :   VAR var_declaration ';'
+		    |	VAR error ';'
+		    	{
+		    	   ERR("error after var, expect var_declaration : discard until ';'");
+		    	}
                     |
+
                     ;
                         /*
                          * L is type <info>, storing all the information of ID.
@@ -292,7 +349,19 @@ type                :   basic_type
                             $$.type = _ARRAY;
                             wf($$.element_type," ");
                         }
+                    |	ARRAY '[' error ']' OF basic_type
+			{
+                            $$.dim = 1;
+                            $$.prd = init_period();
+                            $$.prd->start = 1;
+                            $$.prd->end = 3;
+                            ERR("period error : guess [1..3]");
+                            $$.element_type = $6.type;
+                            $$.type = _ARRAY;
+                            wf($$.element_type," ");
+                        }
                     ;
+
 basic_type          :   INTEGER
                         {
                             $$.type = _INTEGER;
@@ -311,7 +380,8 @@ basic_type          :   INTEGER
                         }
                     |	error
                     	{
-                    	    ERR("unknown type");
+                    	    $$.type = _INTEGER;
+                    	    ERR("unknown type : guess INTEGER");
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
@@ -338,6 +408,10 @@ period              :   period ',' DIGITSDOTDOTDIGITS
 subprogram_declarations :   subprogram_declarations subprogram ';'
                             {
                                 it.end_block();
+                            }
+                        |   error END ';'
+                            {
+                            	ERR("subprogram_declarations error: discard until 'end ;'");
                             }
                         |
                         ;
@@ -391,6 +465,11 @@ formal_parameter    :   '(' parameter_list ')'
                         {
                             $$ = $2;
                         }
+                    |	'(' ')'
+                    	{
+                    	    $$ = nullptr;
+                    	    ERR("empty parameter: omit'()'");
+                    	}
                     |
                         {
                             $$ = nullptr;
@@ -407,8 +486,8 @@ parameter_list      :   parameter_list ';' parameter
                     |   parameter
                         {
                             $$ = $1;
-#if DEBUG
                             INFO("append %s to parameter list", $1->is_var ? "var" : "non-var");
+#if DEBUG
                             print_par_list($$);
 #endif
                         }
@@ -442,9 +521,19 @@ value_parameter     :   idlist ':' basic_type
                             $$ = $1;
                         }
                     ;
-subprogram_body     :   const_declarations var_declarations compound_statement {wf("}\n");}
+subprogram_body     :   const_declarations
+			var_declarations
+			compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
+		    |	_BEGIN error ';' statement_list END
+		    	{
+		    	    ERR("statement error: discard and continue");
+		    	}
+		    |	_BEGIN error END
+		    	{
+		    	    ERR("last statement error: discard");
+		    	}
                     ;
 statement_list      :   statement_list ';' statement
                     |   statement
@@ -489,7 +578,6 @@ statement           :   variable ASSIGNOP expression
                         }
                     |   procedure_call
                         {
-
                         }
                     |   { wf("{\n");}
                         compound_statement
@@ -643,7 +731,6 @@ variable            :   ID id_varpart
                                 }
                             }
                         }
-                    ;
 id_varpart          :   '[' expression_list ']'
                         {
                             $$ = new parameter;
@@ -652,6 +739,15 @@ id_varpart          :   '[' expression_list ']'
                             $$->count_follow_pars = $2->count_follow_pars;
                             /* INFO("varpart %s : %p", $$->name.c_str(), $$->exps); */
                         }
+
+                    |	'[' error ']'
+			{
+                    	    ERR("error when cal id_varpart : discard until ']'");
+                    	}
+                    |	'[' ']'
+                    	{
+                    	    ERR("empty cal id_varpart: ignore'[]'");
+                    	}
                     | {$$ = nullptr;}
                     ;
 procedure_call      :   ID
@@ -699,6 +795,14 @@ procedure_call      :   ID
                                     break;
                             }
                         }
+                    |	ID '(' error ')'
+                    	{
+                    	    ERR("error when calling %s : discard until ')'", $1->c_str());
+                    	}
+                    |	ID '(' ')'
+                    	{
+                    	    ERR("empty expression_list: ignore'()'");
+                    	}
                     ;
 else_part           :   ELSE {wf("else\n");} statement
                     |
@@ -750,6 +854,13 @@ expression          :   simple_expression RELOP simple_expression
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing expression");
+                    	}
                     ;
 simple_expression   :   simple_expression ADDOP term
                         {
@@ -799,6 +910,13 @@ simple_expression   :   simple_expression ADDOP term
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing simple_expression");
+                    	}
                     ;
 term                :   term MULOP factor
                         {
@@ -854,6 +972,13 @@ term                :   term MULOP factor
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing operator");
+                    	}
                     ;
 factor              :   NUM
                         {
@@ -950,6 +1075,13 @@ factor              :   NUM
                             $$->type = $2->type;
                             $$->text = "-" + $2->text;
                         }
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _DEFAULT;
+                    	    $$->text = "";
+                    	    yyerror("missing operator");
+                    	}
                     ;
 
 %%
@@ -1108,7 +1240,7 @@ TYPE get_fun_type(string name) {
     } else {
         Id* id = it.get_id(index);
 //       TODO check if it is an instanceof block
-        return ((Block*)id)->get_ret_type();
+         return ((Block*)id)->get_ret_type();
     }
 }
 
@@ -1413,13 +1545,15 @@ int main(int argc, char* argv[]){
         {"help",  no_argument,       NULL, 'h'},
         {0, 0, 0, 0}
     };
-    char *input_path = NULL, *output_path = NULL;
+    input_path = NULL;
+    output_path = NULL;
     if (argc == 1) return_help(argv[0]);
     while ( (opt = getopt_long(argc, argv, optstring, long_options, &option_index)) != -1) {
         if (opt == 'h' || opt == '?'){
             return_help(argv[0]);
         }
     }
+
     input_path = argv[1];
     int len = strlen(input_path);
     if (strcmp(argv[1] + len - 4, ".pas") != 0)
@@ -1447,9 +1581,10 @@ int main(int argc, char* argv[]){
     }
     if (fp2 == NULL)
     {
-        input_path[len - 3] = 'c';
-        input_path[len - 2] = 0;
-        output_path = input_path;
+    	output_path = new char[1024];
+        strcpy(output_path,input_path);
+        output_path[len - 3] = 'c';
+        output_path[len - 2] = 0;
         fp2 = fopen(output_path, "w");
         if (fp2 == NULL)
         {
@@ -1458,19 +1593,21 @@ int main(int argc, char* argv[]){
         }
     }
     yyout = fp2;
+    printf("start parsing %s to %s\n",input_path, output_path);
     yyparse();
     if (success == 1)
         printf("\033[32mParsing doneee.\033[0m\n");
     else {
-        printf("\n\033[31mParse failed. %d errors detected.\033[0m\n", (error_no - 1));
+        printf("\n\033[31mParse failed. %d errors detected.\033[0m\n", error_no);
     }
     return 0;
 }
 
 int yyerror(const char *msg)
 {
-	extern int yylineno;
-	printf("\033[31mError\033[0m %d, Line %d: %s\n", error_no++, yylineno, msg);
+
+    extern int yylineno;
+    printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
     success = 0;
-	return 0;
+    return 0;
 }

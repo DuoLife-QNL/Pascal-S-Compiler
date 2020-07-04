@@ -23,7 +23,7 @@ find_package(FLEX REQUIRED)
 
 SET(parser_dir ${CMAKE_SOURCE_DIR}/parser)
 SET(scanner_dir ${CMAKE_SOURCE_DIR}/scanner)
-
+SET(build_dir ${CMAKE_SOURCE_DIR}/build)
 SET(bison_output ${CMAKE_SOURCE_DIR}/parser/parser.tab.cpp)
 SET(flex_output ${CMAKE_SOURCE_DIR}/scanner/lex.yy.cpp)
 
