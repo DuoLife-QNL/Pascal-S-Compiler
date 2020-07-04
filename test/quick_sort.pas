@@ -18,7 +18,6 @@ Begin
           a[i] := a[j];
           a[j] := temp
         End;
-      j := j + 1
     End ;
   i := i + 1;
   temp := a[i];
@@ -44,12 +43,10 @@ Begin
     Begin
       read(tempOut);
       a[k] := tempOut;
-      k := k+1
     End;
   qs(1, m);
   For k:=1 To (m+1) Do
     Begin
       write(a[k]);
-      k := k + 1
     End
 End.
