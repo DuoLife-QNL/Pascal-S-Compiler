@@ -629,7 +629,7 @@ variable            :   ID id_varpart
                                                 int low_bound = dim_period.start;
                                                 int high_bound = dim_period.end;
                                                 if (!(low_bound <= index && index <= high_bound)) {
-                                                    sprintf(error_buffer, "Array '%s' index %d out of range!",
+                                                    sprintf(error_buffer, "Array '%s' dimension %d out of range!",
                                                             $$->name.c_str(), dim_count);
                                                     yyerror(error_buffer);
                                                 }
@@ -1470,7 +1470,7 @@ int main(int argc, char* argv[]){
 int yyerror(const char *msg)
 {
 	extern int yylineno;
-	printf("\033[31mError\033[0m  %d, Line %d: %s\n", error_no++, yylineno, msg);
+	printf("\033[31mError\033[0m %d, Line %d: %s\n", error_no++, yylineno, msg);
     success = 0;
 	return 0;
 }
