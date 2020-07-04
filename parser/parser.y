@@ -568,6 +568,7 @@ variable            :   ID id_varpart
                                 }
                                 $$->exps = $2;
                             }
+                            $2->name = *$1;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
