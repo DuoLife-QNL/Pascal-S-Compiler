@@ -197,15 +197,16 @@ idlist              :	idlist ',' ID
                             $$->is_var = false;
                             $$->next = nullptr;
                         }
-                    |	NUM ID
+                    |	error
                     	{
 //                    	    recovery with legal part
                     	    $$ = new parameter;
-                            $$->name = *$2;
+                            $$->name = "__ERROR__";
                             $$->is_var = false;
                             $$->next = nullptr;
                     	    ERR("err id : discard error part and accept as %s", $$->name.c_str());
                     	    INFO("new id '%s'", $$->name.c_str());
+                    	    yyerrok;
                     	}
                     |
                     	{
@@ -218,14 +219,19 @@ const_declarations  :   CONST const_declaration ';'
 
 const_declaration   :   ID EQUAL const_value
                         {
+			    if(check_id(*$1, false)){
+			    	INFO("check id: %s", $1->c_str());
+                    	    	yyerror("duplicate id : discard");
+                    	    }
                             insert_symbol(*$1, $3);
                             INFO("Insert const id '%s' into id table.", $1->c_str());
                             wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
                     |   const_declaration ';' ID EQUAL const_value
                         {
-                    	    if(check_id(*$3)){
-                    	    	yyerror("duplicate id : discard this");
+                    	    if(check_id(*$3, false)){
+                    	        INFO("check id: %s", $3->c_str());
+                    	    	yyerror("duplicate id : discard");
                     	    }
                             insert_symbol(*$3, $5);
                             INFO("Insert const id '%s' into id table.", $3->c_str());
@@ -245,7 +251,7 @@ const_value         :   PLUS NUM
                             nowConst=$2;
                             nowConst="-"+nowConst;
                         }
-                    |  NUM
+                    |   NUM
                         {
                             $$.is_const = true;
                             $$.type = get_type($1);
@@ -272,9 +278,16 @@ const_value         :   PLUS NUM
                     	    $$.type = _INTEGER;
                     	    nowConst = "0";
                     	    ERR("const_value error: guess 0");
+
+                    	    yyclearin;
+                    	    yyerrok;
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
+	     	    |	VAR error ';'
+	     	    	{
+	     	    	    ERR("var error");
+	     	    	}
                     |
 
                     ;
@@ -286,22 +299,31 @@ var_declarations    :   VAR var_declaration ';'
                          */
 var_declaration     :   var_declaration ';' ID L
                         {
-                            insert_symbol(*$3, $4);
-                            INFO("Insert new id '%s' into id table.", $3->c_str());
-                            if ($4.type != _ARRAY) wf(*$3,";\n");
-                            else
-                            {
-                                wf(*$3);
-                                period *nowPrd=$4.prd;
-                                while(nowPrd!=nullptr){
-                                    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
-                                    nowPrd=nowPrd->next;
-                                       }
-                                wf(";\n");
+                            if(check_id(*$3,false)){
+                                INFO("check id: %s", $3->c_str());
+                            	yyerror("duplicate id : discard ");
+                            }else{
+				    insert_symbol(*$3, $4);
+				    INFO("Insert new id '%s' into id table.", $3->c_str());
+				    if ($4.type != _ARRAY) wf(*$3,";\n");
+				    else
+				    {
+					wf(*$3);
+					period *nowPrd=$4.prd;
+					while(nowPrd!=nullptr){
+					    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
+					    nowPrd=nowPrd->next;
+					       }
+					wf(";\n");
+				    }
                             }
                         }
                     |   ID L
                         {
+			    if(check_id(*$1, false)){
+			        INFO("check id: %s", $1->c_str());
+                            	yyerror("duplicate id : discard ");
+                            }else{
                             insert_symbol(*$1, $2);
                             INFO("Insert new id '%s' into id table.", $1->c_str());
                             if ($2.type != _ARRAY)wf(*$1,";\n");
@@ -314,6 +336,7 @@ var_declaration     :   var_declaration ';' ID L
                                     nowPrd=nowPrd->next;
                                        }
                                 wf(";\n");
+                            }
                             }
                         }
                     ;
@@ -373,6 +396,8 @@ basic_type          :   INTEGER
                     	{
                     	    $$.type = _INTEGER;
                     	    ERR("unknown type : guess INTEGER");
+                    	    yyclearin;
+                    	    yyerrok;
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
@@ -400,10 +425,10 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                             {
                                 it.end_block();
                             }
-                        |   error END ';'
-                            {
-                            	ERR("subprogram_declarations error: discard until 'end ;'");
-                            }
+//                        |   error END ';'
+//                            {
+//                            	ERR("subprogram_declarations error: discard until 'end ;'");
+//                            }
                         |
                         ;
 subprogram          :   subprogram_head ';'{wf("{\n");}  subprogram_body
@@ -440,7 +465,6 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(true, $5.type, $3);
 
 #endif
-			    printf("~~~~~~");
                             insert_function(*$2, $3, $5.type);
                             INFO("Insert done.");
 
@@ -796,9 +820,11 @@ procedure_call      :   ID
                     |	ID '(' error ')'
                     	{
                     	    ERR("error when calling %s : discard until ')'", $1->c_str());
+                    	    yyerrok;
                     	}
                     |	ID '(' ')'
                     	{
+                    	    yyerror("empty expression_list: ignore'()'");
                     	    ERR("empty expression_list: ignore'()'");
                     	}
                     ;
@@ -852,12 +878,13 @@ expression          :   simple_expression RELOP simple_expression
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |
+                    |	error
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                    	    yyerror("missing expression");
+                    	    ERR("missing expression");
+                    	    yyerrok;
                     	}
                     ;
 simple_expression   :   simple_expression ADDOP term
@@ -908,12 +935,13 @@ simple_expression   :   simple_expression ADDOP term
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |
+                    |   error
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                    	    yyerror("missing simple_expression");
+                    	    ERR("missing simple_expression");
+                    	    yyerrok;
                     	}
                     ;
 term                :   term MULOP factor
@@ -970,12 +998,13 @@ term                :   term MULOP factor
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |
+                    |   error
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                    	    yyerror("missing operator");
+			    ERR("missing term");
+                    	    yyerrok;
                     	}
                     ;
 factor              :   NUM
@@ -1073,12 +1102,13 @@ factor              :   NUM
                             $$->type = $2->type;
                             $$->text = "-" + $2->text;
                         }
-                    |
+                    |	error
                     	{
                     	    $$ = new parameter;
                     	    $$->type = _DEFAULT;
                     	    $$->text = "";
-                    	    yyerror("missing operator");
+                   	    ERR("missing factor");
+			    yyerrok;
                     	}
                     ;
 
