@@ -922,17 +922,37 @@ void insert_function(string name, parameter *par, TYPE rt){
     }
 }
 
-/*
- * find what type(integer / real) is the num
- * TODO: add boolean (true / false) here
+/**
+ * find if a cstring is pure integer or real,
+ * which means it is [digits] or [digits.digits].
+ * @return {TYPE} _INTEGER if pure integer
+ *         {TYPE} _REAL if pure real
+ *         {TYPE} _DEFAULT for other cases
  */
 TYPE get_type(char *s){
     string ss = s;
     string::size_type idx;
     idx = ss.find(".");
     if (idx == string::npos){
+        while (*s) {
+            if (!(('0' <= *s) && (*s <= '9'))) {
+                return _DEFAULT;
+            }
+            s++;
+        }
         return _INTEGER;
     } else {
+        int count_dot = 0;
+        while (*s) {
+            if (!(('0' <= *s) && (*s <= '9'))) {
+                if (('.' == *s) && (0 == count_dot)) {
+                    count_dot ++;
+                    continue;
+                }
+                return _DEFAULT;
+            }
+            s++;
+        }
         return _REAL;
     }
 }
