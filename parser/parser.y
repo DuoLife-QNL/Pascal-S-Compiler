@@ -67,6 +67,7 @@
         /* for array type */
         TYPE element_type = _DEFAULT;
         parameter *next = nullptr;
+        parameter *exps = nullptr;
         string text = "test";
     }parameter;
 
@@ -83,16 +84,19 @@
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
 
-    TYPE get_type(char *s);
+    TYPE get_type(const char *s);
     TYPE cmp_type(TYPE type1, TYPE type2, TYPE et1, TYPE et2);
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
+    Id *get_id(string name);
 
     bool check_id(string name, bool msg = true);
     void check_function(string func_name, parameter *actual_paras);
     int check_type(string name, TYPE c_type, bool msg = true);
+    bool check_dim(string name, parameter *exps, bool msg = true);
+
 
 // target code generation funciton start
     void wf(const char *s);
@@ -104,6 +108,7 @@
     string convert_relop(string s);
     string convert_type(TYPE t);
     string convert_type_printf(TYPE t);
+    string convert_array(parameter *array);
 // target code generation function end
 }
 
@@ -139,7 +144,7 @@
 %type <par> parameter var_parameter value_parameter
 %type <par> expression_list variable_list
 %type <par> expression simple_expression term factor variable
-%type <text> id_varpart
+%type <par> id_varpart
 
 %%
 
@@ -235,8 +240,9 @@ var_declaration     :   var_declaration ';' ID L
                         {
                             insert_symbol(*$3, $4);
                             INFO("Insert new id '%s' into id table.", $3->c_str());
-                            if ($4.dim==0) wf(*$3,";\n");
-                            else{
+                            if ($4.type != _ARRAY) wf(*$3,";\n");
+                            else
+                            {
                                 wf(*$3);
                                 period *nowPrd=$4.prd;
                                 while(nowPrd!=nullptr){
@@ -244,19 +250,28 @@ var_declaration     :   var_declaration ';' ID L
                                     nowPrd=nowPrd->next;
                                        }
                                 wf(";\n");
-                                  }
+                            }
                         }
                     |   ID L
                         {
                             insert_symbol(*$1, $2);
                             INFO("Insert new id '%s' into id table.", $1->c_str());
-                            if ($2.dim==0)wf(*$1,";\n");
+                            if ($2.type != _ARRAY)wf(*$1,";\n");
+                            else
+                            {
+                                wf(*$1);
+                                period *nowPrd=$2.prd;
+                                while(nowPrd!=nullptr){
+                                    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
+                                    nowPrd=nowPrd->next;
+                                       }
+                                wf(";\n");
+                            }
                         }
                     ;
 L                   :   ':' type
                         {
-                                  $$ = $2;
-
+                            $$ = $2;
                         }
                     |   ',' ID L
                         {
@@ -438,7 +453,17 @@ statement           :   variable ASSIGNOP expression
                         {
                             auto is_func = get_id_info($1->name)->type == _FUNCTION;
                             if (is_func) wf("return ", $3->text);
-                            else wf($1->name, "=", $3->text);
+                            else
+                            {
+                                if (get_type($1->name.c_str()) != _ARRAY)
+                                    wf($1->name, "=", $3->text);
+                                else
+                                {
+                                    auto Aid = static_cast<ArrayId *>(get_id($1->name));
+                                    int count = 0;
+                                    wf($1->name, convert_array($1), "=", $3->text);
+                                }
+                            }
                         }
                     |   procedure_call
                         {
@@ -455,11 +480,11 @@ statement           :   variable ASSIGNOP expression
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
                             check_id(*$2);
-                            wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
+                            wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n");
                         }
                         statement
                         {
-                            wf(";\n}\n");
+                            wf(";\n");
                         }
                     |   READ '(' variable_list ')'
                         {
@@ -473,8 +498,16 @@ statement           :   variable ASSIGNOP expression
                                 {
                                     t += ", ";
                                 }
-                                s += convert_type_printf(cur->type);
-                                t += "&" + cur->name;
+                                if (get_type(cur->name.c_str()) != _ARRAY)
+                                {
+                                    s += convert_type_printf(cur->type);
+                                    t += "&" + cur->name;
+                                }
+                                else
+                                {
+                                    s += convert_type_printf(cur->element_type);
+                                    t += "&" + cur->name;
+                                }
 
                             }
                             wf("scanf(\"", s, "\", ", t, ")");
@@ -492,8 +525,16 @@ statement           :   variable ASSIGNOP expression
                                     s += " ";
                                     t += ", ";
                                 }
-                                s += convert_type_printf(cur->type);
-                                t += cur->text;
+                                if (get_type(cur->name.c_str()) != _ARRAY)
+                                {
+                                    s += convert_type_printf(cur->type);
+                                    t += "&" + cur->name;
+                                }
+                                else
+                                {
+                                    s += convert_type_printf(cur->element_type);
+                                    t += "&" + cur->name;
+                                }
                             }
                             s += "\\n";
                             wf("printf(\"", s, "\", ", t, ")");
@@ -525,20 +566,20 @@ variable            :   ID id_varpart
                                     ArrayId *arrayId = (ArrayId *)id;
                                     $$->element_type = arrayId->get_element_type();
                                 }
+                                $$->exps = $2;
                             }
-                            $2 = $1;
                         }
                     ;
 id_varpart          :   '[' expression_list ']'
                         {
                             /* check if id exists */
-                            if (check_id(*$$, false)) {
-                                int index = it.find_id(*$$);
+                            if (check_id($$->name, false)) {
+                                int index = it.find_id($$->name);
                                 TYPE type = it.get_id(index)->get_type();
                                 /* check if the id of type array */
                                 if (_ARRAY != type) {
                                     sprintf(error_buffer, "'%s' is '%s', array id expected",
-                                            $$->c_str(), convert_type(type).c_str());
+                                            $$->name.c_str(), convert_type(type).c_str());
                                     yyerror(error_buffer);
                                 }else {
                                     /* check if dimension matches */
@@ -554,12 +595,13 @@ id_varpart          :   '[' expression_list ']'
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
                                             sprintf(error_buffer, "all dimensions of array '%s' should be integer",
-                                                    $$->c_str());
+                                                    $$->name.c_str());
                                             yyerror(error_buffer);
                                             break;
                                         }
                                         tmp = tmp->next;
                                     }
+                                    $$->exps = $2;
                                 }
                             }
                         }
@@ -633,8 +675,8 @@ expression_list     :   expression_list ',' expression
 expression          :   simple_expression RELOP simple_expression
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type, $3->type, 
-                                                 $1->element_type, 
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
                                                  $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("RELOP operation match error");
@@ -645,8 +687,8 @@ expression          :   simple_expression RELOP simple_expression
                     |   simple_expression EQUAL simple_expression
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type, $3->type, 
-                                                 $1->element_type, 
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
                                                  $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("RELOP operation match error");
@@ -665,8 +707,8 @@ expression          :   simple_expression RELOP simple_expression
 simple_expression   :   simple_expression ADDOP term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type, $3->type, 
-                                                 $1->element_type, 
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
                                                  $3->element_type);
                             if (type != _BOOLEAN) {
                                 yyerror("'or' operation match error");
@@ -677,8 +719,8 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression PLUS term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type, $3->type, 
-                                                 $1->element_type, 
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
                                                  $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("'+' operation match error");
@@ -691,8 +733,8 @@ simple_expression   :   simple_expression ADDOP term
                     |   simple_expression UMINUS term
                         {
                             $$ = new parameter;
-                            TYPE type = cmp_type($1->type, $3->type, 
-                                                 $1->element_type, 
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
                                                  $3->element_type);
                             if (type != _REAL && type != _INTEGER) {
                                 yyerror("'-' operation match error");
@@ -719,8 +761,8 @@ term                :   term MULOP factor
                             string* s = $2;
                             int i = get_mulop_type(s);
                             string mulop_s;
-                            TYPE type = cmp_type($1->type, $3->type, 
-                                                 $1->element_type, 
+                            TYPE type = cmp_type($1->type, $3->type,
+                                                 $1->element_type,
                                                  $3->element_type);
                             switch (i) {
                             case 1: // and
@@ -777,9 +819,22 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             $$ = $1;
-                            if ($$->is_var) $$->text = "(*" + $1->name + ")";
-                            else $$->text = $1->name;
-                            $$->is_lvalue = true;
+                            if (check_id($1->name))
+                            {
+                                string s;
+                                if ($1->type != _ARRAY)
+                                {
+                                    s = $1->name;
+                                }
+                                else
+                                {
+                                    $$->type = $1->element_type;
+                                    s = $1->name + convert_array($1);
+                                }
+                                if ($$->is_var) $$->text = "(*" + s + ")";
+                                else $$->text = s;
+                                $$->is_lvalue = true;
+                            }
                         }
                     |   ID '(' expression_list ')'
                         {
@@ -926,7 +981,7 @@ void insert_function(string name, parameter *par, TYPE rt){
  * find what type(integer / real) is the num
  * TODO: add boolean (true / false) here
  */
-TYPE get_type(char *s){
+TYPE get_type(const char *s){
     string ss = s;
     string::size_type idx;
     idx = ss.find(".");
@@ -1053,6 +1108,17 @@ std::vector<Parameter> get_par_list(string id)
     return static_cast<Block *>(f)->get_par_list();
 }
 
+Id *get_id(string name)
+{
+    int index;
+    index = it.find_id(name);
+    if (index == -1) {
+        return nullptr;
+    } else {
+        return it.get_id(index);
+    }
+}
+
 /**
  * Check whether an id exists in the id table and
  * report error if id undeclared
@@ -1141,6 +1207,25 @@ int check_type(string name, TYPE c_type, bool msg) {
     }
 }
 
+bool check_dim(string name, parameter *exps, bool msg)
+{
+    auto Aid = static_cast<ArrayId *>(get_id(name));
+    int dim = Aid->get_dim();
+    int exp_length = 0;
+    for (auto *cur = exps; cur; cur = cur->next) ++exp_length;
+    if (dim != exp_length)
+    {
+        if (msg)
+        {
+            sprintf(error_buffer, "dim of array %s id %d, got %d ", name.c_str(), dim, exp_length);
+            yyerror(error_buffer);
+        }
+        return false;
+    }
+    return true;
+}
+
+
 // target code generation start
 void wf(const char *s)
 {
@@ -1190,7 +1275,7 @@ string convert_type(TYPE t)
         ret = "char";
         break;
     default:
-        ERR("Unsupport Type");
+        ERR("Unsupport Type in c-like type");
     }
     return ret;
 }
@@ -1213,10 +1298,28 @@ string convert_type_printf(TYPE t)
         ret = "%c";
         break;
     default:
-        yyerror("Unsupport Type");
+        yyerror("Unsupport Type in printf");
     }
     return ret;
 }
+
+string convert_array(parameter *array)
+{
+    string s;
+    s += "[";
+    auto Aid = static_cast<ArrayId *>(get_id(array->name));
+    int count = 0;
+    for (auto *cur = array->exps; cur; cur = cur->next)
+    {
+        auto p = Aid->get_period(count);
+        INFO("p: %p", p);
+        ++count;
+        s += cur->text + "-" + to_string(p.start);
+        s += "][";
+    }
+    s += "]";
+}
+
 // target code generation end
 
 void return_help(char *exe_path)
