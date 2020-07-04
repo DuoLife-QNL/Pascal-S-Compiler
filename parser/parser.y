@@ -1497,7 +1497,7 @@ string convert_relop(const string s)
 
 string convert_type(TYPE t)
 {
-    string ret;
+    string ret = "void";
     switch (t)
     {
     case _INTEGER:
@@ -1511,6 +1511,11 @@ string convert_type(TYPE t)
         break;
     case _CHAR:
         ret = "char";
+        break;
+    case _DEFAULT:
+    case _VOID:
+        ret = "void";
+        ERR("Procedure does not have return value");
         break;
     default:
         ERR("Unsupport Type in c-like type");
