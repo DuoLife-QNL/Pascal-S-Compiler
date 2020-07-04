@@ -9,7 +9,7 @@ Function partition(low,high: integer): integer;
 Var i, j, temp: integer;
 Begin
   i := low - 1;
-  For j:=low To high Do
+  For j:=low To (high - 1) Do
     Begin
       If a[j] <= a[high] Then
         Begin
@@ -18,7 +18,6 @@ Begin
           a[i] := a[j];
           a[j] := temp
         End;
-      j := j + 1
     End ;
   i := i + 1;
   temp := a[i];
@@ -40,16 +39,14 @@ Begin
 End;
 Begin
   read(m);
-  For k:=1 To (m + 1) Do
+  For k:=1 To m Do
     Begin
       read(tempOut);
       a[k] := tempOut;
-      k := k+1
     End;
   qs(1, m);
-  For k:=1 To (m+1) Do
+  For k:=1 To m Do
     Begin
       write(a[k]);
-      k := k + 1
     End
 End.

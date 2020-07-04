@@ -3,6 +3,7 @@
     #include "string.h"
     int success = 1;
     IdTable it;
+    int error_no = 0;
     char log_msg[1024];
     char error_buffer[1024];
     char *input_path;
@@ -43,7 +44,6 @@
 
     extern int yylex();
     int yyerror(const char *s);
-    static int err_no = 0;
     using namespace std;
 
     typedef struct info{
@@ -70,6 +70,7 @@
         /* for array type */
         TYPE element_type = _DEFAULT;
         parameter *next = nullptr;
+        parameter *exps = nullptr;
         string text = "test";
     }parameter;
 
@@ -86,16 +87,19 @@
     void print_block_info(bool is_func, TYPE ret_type, parameter *p);
 #endif
 
-    TYPE get_type(char *s);
+    TYPE get_type(const char *s);
     TYPE cmp_type(TYPE type1, TYPE type2, TYPE et1, TYPE et2);
     int get_mulop_type(string *s);
     TYPE get_fun_type(string name);
     std::vector<Parameter> get_par_list(string id);
     parameter* get_id_info(string name);
+    Id *get_id(string name);
 
     bool check_id(string name, bool msg = true);
     void check_function(string func_name, parameter *actual_paras);
     int check_type(string name, TYPE c_type, bool msg = true);
+    bool check_dim(string name, parameter *exps, bool msg = true);
+
 
 // target code generation funciton start
     void wf(const char *s);
@@ -107,6 +111,7 @@
     string convert_relop(string s);
     string convert_type(TYPE t);
     string convert_type_printf(TYPE t);
+    string convert_array(parameter *array);
 // target code generation function end
 }
 
@@ -142,7 +147,7 @@
 %type <par> parameter var_parameter value_parameter
 %type <par> expression_list variable_list
 %type <par> expression simple_expression term factor variable
-%type <text> id_varpart
+%type <par> id_varpart
 
 %%
 
@@ -164,12 +169,11 @@ program_head        :   PROGRAM ID
 program_body        :   const_declarations{ wf("\n"); }
 			var_declarations{ wf("\n"); }
 			subprogram_declarations{ wf("\nint main(){\n"); }
-			compound_statement{ wf(";\nreturn 0;\n}\n"); }
+			compound_statement{ wf("return 0;\n}\n"); }
                     ;
 /* this is now only used for parameters */
 idlist              :	idlist ',' ID
                         {
-
                             INFO("new id '%s'", $3->c_str());
                             par_append($1, *$3, false);
                             $$ = $1;
@@ -294,8 +298,9 @@ var_declaration     :   var_declaration ';' ID L
                         {
                             insert_symbol(*$3, $4);
                             INFO("Insert new id '%s' into id table.", $3->c_str());
-                            if ($4.dim==0) wf(*$3,";\n");
-                            else{
+                            if ($4.type != _ARRAY) wf(*$3,";\n");
+                            else
+                            {
                                 wf(*$3);
                                 period *nowPrd=$4.prd;
                                 while(nowPrd!=nullptr){
@@ -303,19 +308,28 @@ var_declaration     :   var_declaration ';' ID L
                                     nowPrd=nowPrd->next;
                                        }
                                 wf(";\n");
-                                  }
+                            }
                         }
                     |   ID L
                         {
                             insert_symbol(*$1, $2);
                             INFO("Insert new id '%s' into id table.", $1->c_str());
-                            if ($2.dim==0)wf(*$1,";\n");
+                            if ($2.type != _ARRAY)wf(*$1,";\n");
+                            else
+                            {
+                                wf(*$1);
+                                period *nowPrd=$2.prd;
+                                while(nowPrd!=nullptr){
+                                    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
+                                    nowPrd=nowPrd->next;
+                                       }
+                                wf(";\n");
+                            }
                         }
                     ;
 L                   :   ':' type
                         {
-                                  $$ = $2;
-
+                            $$ = $2;
                         }
                     |   ',' ID L
                         {
@@ -411,7 +425,7 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(false, _VOID , $3);
 #endif
                             insert_procedure(*$2, $3);
-			                cout << "insert done" << endl;
+			                INFO("Insert done");
 
                             wf("void ", *$2, "(");
                             bool first = true;
@@ -490,7 +504,6 @@ parameter           :   var_parameter
                     ;
 var_parameter       :   VAR value_parameter
                         {
-
                             parameter *tmp = $2;
                             while(tmp){
                                 tmp->is_var = true;
@@ -511,7 +524,7 @@ value_parameter     :   idlist ':' basic_type
                     ;
 subprogram_body     :   const_declarations
 			var_declarations
-			compound_statement {wf(";\n}\n");}
+			compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
 		    |	_BEGIN error ';' statement_list END
@@ -523,52 +536,111 @@ compound_statement  :   _BEGIN statement_list END
 		    	    ERR("last statement error: discard");
 		    	}
                     ;
-statement_list      :   statement_list ';'{ yyerrok; wf(";\n");} statement
+statement_list      :   statement_list ';' statement
                     |   statement
                     ;
 statement           :   variable ASSIGNOP expression
                         {
-                            auto is_func = get_id_info($1->name)->type == _FUNCTION;
-                            if (is_func) wf("return ", $3->text);
-                            else wf($1->name, "=", $3->text);
+                            if (check_id($1->name, false))
+                            {
+                                auto is_func = $1->type == _FUNCTION;
+                                if (is_func)
+                                {
+                                    if (get_fun_type($1->name) == $3->type)
+                                        wf("return ", $3->text, ";\n");
+                                    else
+                                    {
+                                        sprintf(error_buffer, "Return type of function %s mismatch: expect %s, got %s\n",
+                                            $1->name.c_str(), convert_type(get_fun_type($1->name)).c_str(), convert_type($3->type).c_str());
+                                        yyerror(error_buffer);
+                                    }
+                                }
+                                else
+                                {
+                                    auto check_t = $1->type == _ARRAY ? $1->element_type : $1->type;
+                                    if (check_t != $3->type)
+                                    {
+                                        sprintf(error_buffer, "Assign to variable %s type mismatch: expect %s, got %s\n",
+                                            $1->name.c_str(), convert_type(check_t).c_str(), convert_type($3->type).c_str());
+                                        yyerror(error_buffer);
+                                    }
+                                    else
+                                    {
+                                        if ($1->is_var) wf("*");
+                                        if ($1->type != _ARRAY)
+                                            wf($1->name, "=", $3->text, ";\n");
+                                        else
+                                        {
+                                            wf($1->name, convert_array($1), "=", $3->text, ";\n");
+                                        }
+                                    }
+                                }
+                            }
                         }
                     |   procedure_call
                         {
                         }
                     |   { wf("{\n");}
                         compound_statement
-                        { wf(";}\n");}
+                        { wf("}\n");}
                     |   IF expression THEN
                         {
-                            wf("if(", $2->text, ")\n");
+                            if ($2->type != _BOOLEAN)
+                            {
+                                sprintf(error_buffer, "Expression in IF statement expect to be type of boolean, got %s",
+                                    convert_type($2->type).c_str());
+                                yyerror(error_buffer);
+                            }
+                            else
+                            {
+                                wf("if(", $2->text, ")\n");
+                            }
                         }
-                        statement {wf(";\n");} else_part
+                        statement else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            check_id(*$2);
-                            wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n{\n");
+                            if (check_id(*$2, false) && check_type(*$2, _INTEGER) == 2)
+                            {
+                                if ($4->type != _INTEGER || $6->type != _INTEGER)
+                                {
+                                    sprintf(error_buffer, "Expression in FOR statement expect to be type of integer, got %s and %s",
+                                        convert_type($4->type).c_str(), convert_type($6->type).c_str());
+                                    yyerror(error_buffer);
+                                }
+                                else
+                                {
+                                    wf("for(", *$2, "=", $4->text, ";", *$2, "<=", $6->text, ";", "++", *$2, ")\n");
+                                }
+                            }
                         }
                         statement
-                        {
-                            wf(";\n}\n");
-                        }
                     |   READ '(' variable_list ')'
                         {
                             string s, t;
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                if (first)
-                                    first = false;
-                                else
+                                if (check_id(cur->name, false))
                                 {
-                                    t += ", ";
+                                    if (first)
+                                        first = false;
+                                    else
+                                    {
+                                        t += ", ";
+                                    }
+                                    if (get_type(cur->name.c_str()) != _ARRAY)
+                                    {
+                                        s += convert_type_printf(cur->type);
+                                        t += "&" + cur->name;
+                                    }
+                                    else
+                                    {
+                                        s += convert_type_printf(cur->element_type);
+                                        t += "&" + cur->name + convert_array(cur->exps);
+                                    }
                                 }
-                                s += convert_type_printf(cur->type);
-                                t += "&" + cur->name;
-
                             }
-                            wf("scanf(\"", s, "\", ", t, ")");
+                            wf("scanf(\"", s, "\", ", t, ");\n");
                         }
                     |   WRITE '(' expression_list ')'
                         {
@@ -587,7 +659,7 @@ statement           :   variable ASSIGNOP expression
                                 t += cur->text;
                             }
                             s += "\\n";
-                            wf("printf(\"", s, "\", ", t, ")");
+                            wf("printf(\"", s, "\", ", t, ");\n");
                         }
                     |
                     ;
@@ -609,29 +681,18 @@ variable            :   ID id_varpart
                         {
                             $$ = get_id_info(*$1);
                             if (check_id(*$1)) {
-                                Id *id = it.get_id(it.find_id(*$1));
-                                TYPE id_type = id->get_type();
-                                if(_ARRAY == id_type) {
+                                int index = it.find_id(*$1);
+                                Id *id = it.get_id(index);
+                                TYPE type = id->get_type();
+                                if (_ARRAY != type && $2 != nullptr)
+                                {
+                                    sprintf(error_buffer, "'%s' is '%s', array id expected",
+                                            $$->name.c_str(), convert_type(type).c_str());
+                                    yyerror(error_buffer);
+                                }
+                                if(_ARRAY == type) {
                                     INFO("%s is array type", $1->c_str());
                                     ArrayId *arrayId = (ArrayId *)id;
-                                    $$->element_type = arrayId->get_element_type();
-                                }
-                            }
-                            $2 = $1;
-                        }
-                    ;
-id_varpart          :   '[' expression_list ']'
-                        {
-                            /* check if id exists */
-                            if (check_id(*$$, false)) {
-                                int index = it.find_id(*$$);
-                                TYPE type = it.get_id(index)->get_type();
-                                /* check if the id of type array */
-                                if (_ARRAY != type) {
-                                    sprintf(error_buffer, "'%s' is '%s', array id expected",
-                                            $$->c_str(), convert_type(type).c_str());
-                                    yyerror(error_buffer);
-                                }else {
                                     /* check if dimension matches */
                                     ArrayId *id = (ArrayId *)it.get_id(index);
                                     int dim = id->get_dim();
@@ -640,20 +701,46 @@ id_varpart          :   '[' expression_list ']'
                                         yyerror(error_buffer);
                                     }
 
-                                    /* the array period shoulb be integer */
-                                    parameter *tmp = $2;
+                                    /* the array period should be integer */
+                                    parameter *tmp = $2->exps;
+                                    int dim_count = 0;
                                     while (tmp != NULL) {
                                         if (_INTEGER != tmp->type) {
                                             sprintf(error_buffer, "all dimensions of array '%s' should be integer",
-                                                    $$->c_str());
+                                                    $$->name.c_str());
                                             yyerror(error_buffer);
                                             break;
+                                        }else {
+                                            /* check if index of array out of range */
+                                            if (_INTEGER == get_type(const_cast<char*>(tmp->text.c_str()))) {
+                                                int index = atoi(tmp->text.c_str());
+                                                period dim_period = id->get_period(dim_count);
+                                                int low_bound = dim_period.start;
+                                                int high_bound = dim_period.end;
+                                                if (!(low_bound <= index && index <= high_bound)) {
+                                                    sprintf(error_buffer, "Array '%s' index %d out of range!",
+                                                            $$->name.c_str(), dim_count);
+                                                    yyerror(error_buffer);
+                                                }
+                                            }
                                         }
                                         tmp = tmp->next;
                                     }
+                                    $$->element_type = arrayId->get_element_type();
+                                    $$->exps = $2->exps;
+                                    /* INFO("var %s : %p %p", $$->name.c_str(), $$->exps, $2->exps); */
                                 }
                             }
                         }
+id_varpart          :   '[' expression_list ']'
+                        {
+                            $$ = new parameter;
+                            $$->type = _ARRAY;
+                            $$->exps = $2;
+                            $$->count_follow_pars = $2->count_follow_pars;
+                            /* INFO("varpart %s : %p", $$->name.c_str(), $$->exps); */
+                        }
+
                     |	'[' error ']'
 			{
                     	    ERR("error when cal id_varpart : discard until ']'");
@@ -662,10 +749,7 @@ id_varpart          :   '[' expression_list ']'
                     	{
                     	    ERR("empty cal id_varpart: ignore'[]'");
                     	}
-                    ;
-                    |
-                    	{
-                    	}
+                    | {$$ = nullptr;}
                     ;
 procedure_call      :   ID
                         {
@@ -673,8 +757,8 @@ procedure_call      :   ID
                                 if (2 != check_type(*$1, _PROCEDURE, false)) {
                                     check_type(*$1, _FUNCTION);
                                 }
+                                wf(*$1, "();\n");
                             }
-                            wf(*$1, "()");
                         }
                     |   ID '(' expression_list ')'
                         {
@@ -705,7 +789,7 @@ procedure_call      :   ID
                                         wf((par_list[argc].is_var ? "&": "") + c->text);
                                         ++argc;
                                     }
-                                    wf(")");
+                                    wf(");\n");
                                     break;
                                 }
                                 default:
@@ -721,7 +805,7 @@ procedure_call      :   ID
                     	    ERR("empty expression_list: ignore'()'");
                     	}
                     ;
-else_part           :   ELSE {wf("else\n");cout<<"ELSE"<<endl;} statement {wf(";\n");}
+else_part           :   ELSE {wf("else\n");} statement
                     |
                     ;
 expression_list     :   expression_list ',' expression
@@ -887,9 +971,22 @@ factor              :   NUM
                         {
                             $$ = new parameter;
                             $$ = $1;
-                            if ($$->is_var) $$->text = "(*" + $1->name + ")";
-                            else $$->text = $1->name;
-                            $$->is_lvalue = true;
+                            if (check_id($1->name))
+                            {
+                                string s;
+                                if ($1->type != _ARRAY)
+                                {
+                                    s = $1->name;
+                                }
+                                else
+                                {
+                                    $$->type = $1->element_type;
+                                    s = $1->name + convert_array($1);
+                                }
+                                if ($$->is_var) $$->text = "(*" + s + ")";
+                                else $$->text = s;
+                                $$->is_lvalue = true;
+                            }
                         }
                     |   ID '(' expression_list ')'
                         {
@@ -1032,17 +1129,37 @@ void insert_function(string name, parameter *par, TYPE rt){
     }
 }
 
-/*
- * find what type(integer / real) is the num
- * TODO: add boolean (true / false) here
+/**
+ * find if a cstring is pure integer or real,
+ * which means it is [digits] or [digits.digits].
+ * @return {TYPE} _INTEGER if pure integer
+ *         {TYPE} _REAL if pure real
+ *         {TYPE} _DEFAULT for other cases
  */
-TYPE get_type(char *s){
+TYPE get_type(const char *s){
     string ss = s;
     string::size_type idx;
     idx = ss.find(".");
     if (idx == string::npos){
+        while (*s) {
+            if (!(('0' <= *s) && (*s <= '9'))) {
+                return _DEFAULT;
+            }
+            s++;
+        }
         return _INTEGER;
     } else {
+        int count_dot = 0;
+        while (*s) {
+            if (!(('0' <= *s) && (*s <= '9'))) {
+                if (('.' == *s) && (0 == count_dot)) {
+                    count_dot ++;
+                    continue;
+                }
+                return _DEFAULT;
+            }
+            s++;
+        }
         return _REAL;
     }
 }
@@ -1163,6 +1280,17 @@ std::vector<Parameter> get_par_list(string id)
     return static_cast<Block *>(f)->get_par_list();
 }
 
+Id *get_id(string name)
+{
+    int index;
+    index = it.find_id(name);
+    if (index == -1) {
+        return nullptr;
+    } else {
+        return it.get_id(index);
+    }
+}
+
 /**
  * Check whether an id exists in the id table and
  * report error if id undeclared
@@ -1170,9 +1298,12 @@ std::vector<Parameter> get_par_list(string id)
  */
 bool check_id(string name, bool msg) {
     if (it.find_id(name) == -1) {
-        ERR("Id '%s' not in id table", name.c_str());
-        sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
-        yyerror(error_buffer);
+        if (msg)
+        {
+            ERR("Id '%s' not in id table", name.c_str());
+            sprintf(error_buffer, "Use of undeclared identifier '%s'",name.c_str());
+            yyerror(error_buffer);
+        }
         return false;
     }
     return true;
@@ -1251,6 +1382,25 @@ int check_type(string name, TYPE c_type, bool msg) {
     }
 }
 
+bool check_dim(string name, parameter *exps, bool msg)
+{
+    auto Aid = static_cast<ArrayId *>(get_id(name));
+    int dim = Aid->get_dim();
+    int exp_length = 0;
+    for (auto *cur = exps; cur; cur = cur->next) ++exp_length;
+    if (dim != exp_length)
+    {
+        if (msg)
+        {
+            sprintf(error_buffer, "dim of array %s id %d, got %d ", name.c_str(), dim, exp_length);
+            yyerror(error_buffer);
+        }
+        return false;
+    }
+    return true;
+}
+
+
 // target code generation start
 void wf(const char *s)
 {
@@ -1300,7 +1450,7 @@ string convert_type(TYPE t)
         ret = "char";
         break;
     default:
-        break;
+        ERR("Unsupport Type in c-like type");
     }
     return ret;
 }
@@ -1323,10 +1473,33 @@ string convert_type_printf(TYPE t)
         ret = "%c";
         break;
     default:
-        yyerror("Unsupport Type");
+        yyerror("Unsupport Type in printf");
     }
     return ret;
 }
+
+string convert_array(parameter *array)
+{
+    string s;
+    s += "[";
+    auto Aid = static_cast<ArrayId *>(get_id(array->name));
+    int count = 0;
+    bool first = true;
+    for (auto *cur = array->exps; cur; cur = cur->next)
+    {
+        if (first)
+            first = false;
+        else
+            s += "][";
+        auto p = Aid->get_period(count);
+        ++count;
+        s += cur->text + "-" + to_string(p.start);
+        /* INFO("text %s", cur->text.c_str()); */
+    }
+    s += "]";
+    return s;
+}
+
 // target code generation end
 
 void return_help(char *exe_path)
@@ -1396,9 +1569,10 @@ int main(int argc, char* argv[]){
     printf("start parsing %s to %s\n",input_path, output_path);
     yyparse();
     if (success == 1)
-        printf("Parsing doneee.\n");
-    else
-        printf("Parsing failed, total error %d", yynerrs + 1);
+        printf("\033[32mParsing doneee.\033[0m\n");
+    else {
+        printf("\n\033[31mParse failed. %d errors detected.\033[0m\n", error_no);
+    }
     return 0;
 }
 
@@ -1406,7 +1580,7 @@ int yyerror(const char *msg)
 {
 
 	extern int yylineno;
-	printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", yynerrs + 1, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
+	printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
     success = 0;
 	return 0;
 }

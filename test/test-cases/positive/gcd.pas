@@ -1,3 +1,4 @@
+  
 program example(input, output);
     var x, y: integer;
     function gcd(a, b:integer):integer;
@@ -7,6 +8,6 @@ program example(input, output);
         end;
     begin
 
-        read(x, y);
+        read(x, r);
         write(x, y)
     end.
