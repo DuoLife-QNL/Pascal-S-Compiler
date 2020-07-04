@@ -159,6 +159,7 @@ programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_bod
 program_head        :   PROGRAM ID
 			{
 			   int len = strlen(input_path);
+			   int i;
                            if (strncmp(input_path, $2->c_str(), len - 4) != 0){
                            	yyerror("Unit and file name do not match");
                            }
@@ -210,14 +211,6 @@ idlist              :	idlist ',' ID
                     	}
                     ;
 const_declarations  :   CONST const_declaration ';'
-		    |	CONST error ';'
-		        {
-		            ERR("error after const, need const_declaration : discard until ';'");
-		        }
-                    |	error ';'
-                    	{
-                    	    ERR("do you mean 'const'? : discard until ';'");
-                    	}
                     |
                     ;
 
@@ -280,10 +273,6 @@ const_value         :   PLUS NUM
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
-		    |	VAR error ';'
-		    	{
-		    	   ERR("error after var, expect var_declaration : discard until ';'");
-		    	}
                     |
 
                     ;
@@ -423,18 +412,22 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
+			    printf("~~~1~~~");
                             insert_procedure(*$2, $3);
-			                INFO("Insert done");
-
+                            printf("~~~2~~~");
+			    INFO("Insert done");
+			    printf("~~~3~~~");
                             wf("void ", *$2, "(");
                             bool first = true;
-                            for (auto *cur = $3; cur; cur = cur->next)
-                            {
-                                if (first)
-                                    first = false;
-                                else
-                                    wf(", ");
-                                wf(cur->type, cur->is_var ? " *": " ", cur->name);
+                            if($3 != nullptr){
+                                for (auto *cur = $3; cur; cur = cur->next)
+                                {
+                                    if (first)
+                                        first = false;
+                                    else
+                                        wf(", ");
+                                    wf(cur->type, cur->is_var ? " *": " ", cur->name);
+                                }
                             }
                             wf(")");
                         }
@@ -445,18 +438,21 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(true, $5.type, $3);
 
 #endif
+			    printf("~~~~~~");
                             insert_function(*$2, $3, $5.type);
                             INFO("Insert done.");
 
                             wf($5.type, " ", *$2, "(");
                             bool first = true;
-                            for (auto *cur = $3; cur; cur = cur->next)
-                            {
-                                if (first)
-                                    first = false;
-                                else
-                                    wf(", ");
-                                wf(cur->type, cur->is_var ? " *": " ", cur->name);
+                            if($3 != nullptr){
+                                for (auto *cur = $3; cur; cur = cur->next)
+                                {
+                                    if (first)
+                                        first = false;
+                                    else
+                                        wf(", ");
+                                    wf(cur->type, cur->is_var ? " *": " ", cur->name);
+                                }
                             }
                             wf(")");
                         }
