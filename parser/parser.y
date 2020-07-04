@@ -1282,7 +1282,7 @@ int main(int argc, char* argv[]){
     yyout = fp2;
     yyparse();
     if (success == 1)
-        printf("Parsing doneee.\n");
+        printf("\033[32mParsing doneee.\033[0m\n");
     return 0;
 }
 
