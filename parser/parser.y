@@ -5,7 +5,6 @@
     IdTable it;
     char log_msg[1024];
     char error_buffer[1024];
-
     std::string nowConst = "";
 %}
 
@@ -451,21 +450,41 @@ statement_list      :   statement_list ';' statement
                     ;
 statement           :   variable ASSIGNOP expression
                         {
-                            auto is_func = $1->type == _FUNCTION;
-                            if (is_func) wf("return ", $3->text);
-                            else
+                            if (check_id($1->name))
                             {
-                                if ($1->is_var) wf("*");
-                                if ($1->type != _ARRAY)
-                                    wf($1->name, "=", $3->text);
+                                auto is_func = $1->type == _FUNCTION;
+                                if (is_func)
+                                {
+                                    if (get_fun_type($1->name) == $3->type)
+                                        wf("return ", $3->text, ";\n");
+                                    else
+                                    {
+                                        sprintf(error_buffer, "Return type of function %s mismatch: expect %s, got %s\n",
+                                            $1->name.c_str(), convert_type(get_fun_type($1->name)).c_str(), convert_type($3->type).c_str());
+                                        yyerror(error_buffer);
+                                    }
+                                }
                                 else
                                 {
-                                    auto Aid = static_cast<ArrayId *>(get_id($1->name));
-                                    int count = 0;
-                                    wf($1->name, convert_array($1), "=", $3->text);
+                                    auto check_t = $1->type == _ARRAY ? $1->element_type : $1->type;
+                                    if (check_t != $3->type)
+                                    {
+                                        sprintf(error_buffer, "Assign to variable %s type mismatch: expect %s, got %s\n",
+                                            $1->name.c_str(), convert_type(check_t).c_str(), convert_type($3->type).c_str());
+                                        yyerror(error_buffer);
+                                    }
+                                    else
+                                    {
+                                        if ($1->is_var) wf("*");
+                                        if ($1->type != _ARRAY)
+                                            wf($1->name, "=", $3->text, ";\n");
+                                        else
+                                        {
+                                            wf($1->name, convert_array($1), "=", $3->text, ";\n");
+                                        }
+                                    }
                                 }
                             }
-                            wf(";\n");
                         }
                     |   procedure_call
                         {
@@ -476,13 +495,33 @@ statement           :   variable ASSIGNOP expression
                         { wf("}\n");}
                     |   IF expression THEN
                         {
-                            wf("if(", $2->text, ")\n");
+                            if ($2->type != _BOOLEAN)
+                            {
+                                sprintf(error_buffer, "Expression in IF statement expect to be type of boolean, got %s",
+                                    convert_type($2->type).c_str());
+                                yyerror(error_buffer);
+                            }
+                            else
+                            {
+                                wf("if(", $2->text, ")\n");
+                            }
                         }
                         statement else_part
                     |   FOR ID ASSIGNOP expression TO expression DO
                         {
-                            check_id(*$2);
-                            wf("for(", *$2, "=", $4->text, ";", *$2, "<", $6->text, ";", "++", *$2, ")\n");
+                            if (check_id(*$2) && check_type(*$2, _INTEGER) == 2)
+                            {
+                                if ($4->type != _INTEGER || $6->type != _INTEGER)
+                                {
+                                    sprintf(error_buffer, "Expression in FOR statement expect to be type of integer, got %s and %s",
+                                        convert_type($4->type).c_str(), convert_type($6->type).c_str());
+                                    yyerror(error_buffer);
+                                }
+                                else
+                                {
+                                    wf("for(", *$2, "=", $4->text, ";", *$2, "<=", $6->text, ";", "++", *$2, ")\n");
+                                }
+                            }
                         }
                         statement
                     |   READ '(' variable_list ')'
@@ -491,23 +530,25 @@ statement           :   variable ASSIGNOP expression
                             bool first = true;
                             for (auto cur = $3; cur; cur = cur->next)
                             {
-                                if (first)
-                                    first = false;
-                                else
+                                if (check_id(cur->name))
                                 {
-                                    t += ", ";
+                                    if (first)
+                                        first = false;
+                                    else
+                                    {
+                                        t += ", ";
+                                    }
+                                    if (get_type(cur->name.c_str()) != _ARRAY)
+                                    {
+                                        s += convert_type_printf(cur->type);
+                                        t += "&" + cur->name;
+                                    }
+                                    else
+                                    {
+                                        s += convert_type_printf(cur->element_type);
+                                        t += "&" + cur->name + convert_array(cur->exps);
+                                    }
                                 }
-                                if (get_type(cur->name.c_str()) != _ARRAY)
-                                {
-                                    s += convert_type_printf(cur->type);
-                                    t += "&" + cur->name;
-                                }
-                                else
-                                {
-                                    s += convert_type_printf(cur->element_type);
-                                    t += "&" + cur->name + convert_array(cur->exps);
-                                }
-
                             }
                             wf("scanf(\"", s, "\", ", t, ");\n");
                         }
@@ -618,8 +659,8 @@ procedure_call      :   ID
                                 if (2 != check_type(*$1, _PROCEDURE, false)) {
                                     check_type(*$1, _FUNCTION);
                                 }
+                                wf(*$1, "();\n");
                             }
-                            wf(*$1, "();\n");
                         }
                     |   ID '(' expression_list ')'
                         {
@@ -650,16 +691,15 @@ procedure_call      :   ID
                                         wf((par_list[argc].is_var ? "&": "") + c->text);
                                         ++argc;
                                     }
-                                    wf(")");
+                                    wf(");\n");
                                     break;
                                 }
                                 default:
                                     break;
                             }
-                            wf(";\n");
                         }
                     ;
-else_part           :   ELSE {wf(";\nelse\n");} statement
+else_part           :   ELSE {wf("else\n");} statement
                     |
                     ;
 expression_list     :   expression_list ',' expression
