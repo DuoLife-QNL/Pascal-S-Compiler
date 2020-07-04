@@ -611,7 +611,7 @@ procedure_call      :   ID
                             }
                         }
                     ;
-else_part           :   ELSE {wf("else\n");cout<<"ELSE"<<endl;} statement {wf(";\n");}
+else_part           :   ELSE {wf("else\n");} statement {wf(";\n");}
                     |
                     ;
 expression_list     :   expression_list ',' expression
