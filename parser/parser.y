@@ -1470,7 +1470,7 @@ int main(int argc, char* argv[]){
 int yyerror(const char *msg)
 {
 	extern int yylineno;
-	printf("\033[31mError\033[0m  %d, Line Number: %d %s\n", error_no++, yylineno, msg);
+	printf("\033[31mError\033[0m  %d, Line %d: %s\n", error_no++, yylineno, msg);
     success = 0;
 	return 0;
 }
