@@ -1,5 +1,4 @@
-
-Program test(input, output);
+Program array_errors(input, output);
 
 Var x,y,z: integer;
 Begin

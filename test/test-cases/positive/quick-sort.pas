@@ -1,5 +1,4 @@
-
-Program test(input, output);
+Program array_errors(input, output);
 
 Var a: array[1..101] Of integer;
   k,

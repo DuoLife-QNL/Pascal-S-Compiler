@@ -1,8 +1,9 @@
 Program id_errors(input, output);
 Const
-  a = bbb sad;
+  b = 1;
+  a = bb;
 Var
-  x, y: integer;
+  a, x, x, y: integer;
 Begin
   x := 3 +;
   read(r, y)

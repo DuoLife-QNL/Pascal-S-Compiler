@@ -1,13 +1,14 @@
-
-Program test(input, output);
+Program array_errors(input, output);
 
 Var x,y: integer;
+
   z1: array[9..1] Of integer;
   z2: array[1..9, 2..10] of integer;
-  a: array[1...10] of integer;
+  z3: array[-1..9] of integer;
+  a: array[adc...10] of integer;
   b: array[] of integer;
-  c: array[1..10] of cccc;
-  d: char [10];
+  c: array[1..10] of rea;
+  d: real;
 
 Function gcd(a,b: integer): integer;
 
