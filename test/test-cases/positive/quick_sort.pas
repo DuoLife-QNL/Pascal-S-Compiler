@@ -1,4 +1,5 @@
-Program array_errors(input, output);
+
+Program quick_sort(input, output);
 
 Var a: array[1..101] Of integer;
   k,

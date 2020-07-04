@@ -42,7 +42,7 @@ void IdTable::end_block(){
   relocate();
 }
 
-inline bool IdTable::in_cur_scope(int i){
+bool IdTable::in_cur_scope(int i){
   return i >= index.top();
 }
 

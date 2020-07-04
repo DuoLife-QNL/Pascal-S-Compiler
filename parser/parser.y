@@ -439,11 +439,8 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
-			    printf("~~~1~~~");
                             insert_procedure(*$2, $3);
-                            printf("~~~2~~~");
-			    INFO("Insert done");
-			    printf("~~~3~~~");
+                            INFO("Insert done");
                             wf("void ", *$2, "(");
                             bool first = true;
                             if($3 != nullptr){
@@ -1096,7 +1093,7 @@ factor              :   NUM
                             $$ = new parameter;
                             if ($2->type != _BOOLEAN && $2->type != _INTEGER) {
                                 char error_msg[100];
-                                sprintf(error_msg,"'%s'''is not real or integer",$2->text.c_str());
+                                sprintf(error_msg,"'%s'is not real or integer",$2->text.c_str());
                                 yyerror(error_msg);
                             }
                             $$->type = $2->type;
@@ -1128,11 +1125,17 @@ int get_last_digit(const string &s){
  */
 void insert_symbol(string name, info t){
     /* basic type */
+    Id *id; 
     if (t.type >= _INTEGER and t.type <= _CHAR){
-        BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
-        it.enter_id((Id*)id);
+        id = new BasicTypeId(name, t.type, t.is_const);
     } else if (t.type == _ARRAY){  /* array */
-        ArrayId *id = new ArrayId(name, t.element_type, t.dim, t.prd);
+        id = new ArrayId(name, t.element_type, t.dim, t.prd);
+    }
+    int index = it.find_id(id->get_name());
+    if (it.in_cur_scope(index)) {
+        sprintf(error_buffer,"duplicate identifier '%s'",id->get_name().c_str());
+        yyerror(error_buffer);
+    } else {
         it.enter_id((Id*)id);
     }
 }
