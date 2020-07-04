@@ -3,7 +3,7 @@
     #include "string.h"
     int success = 1;
     IdTable it;
-    int error_no = 0;
+    int error_no = 1;
     char log_msg[1024];
     char error_buffer[1024];
     std::string nowConst = "";
