@@ -6,7 +6,7 @@ end;
 procedure emptyId();
 begin
 end;
+
 begin
-  read;
-  write();
+
 end.
