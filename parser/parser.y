@@ -924,7 +924,7 @@ simple_expression   :   simple_expression ADDOP term
                     	    $$ = new parameter;
                     	    $$->type = _INTEGER;
                     	    $$->text = "";
-                    	    yyerror("缺少运算符");
+                    	    yyerror("missing operator");
                     	    yyerrok;
                     	}
                     |   term
@@ -936,16 +936,14 @@ simple_expression   :   simple_expression ADDOP term
                             $$->is_lvalue = $1->is_lvalue;
                         }
 
-//                    |
-//                    	{
-//                    	    $$ = new parameter;
-//                    	    $$->type = _INTEGER;
-//                    	    $$->text = "";
-//
-//                    	    yyerror("missing simple_expression");
-//                    	    yyclearin;
-//                    	    yyerrok;
-//                    	}
+                    |
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _INTEGER;
+                    	    $$->text = "";
+
+                    	    yyerror("missing simple_expression");
+                    	}
                     ;
 term                :   term MULOP factor
                         {
