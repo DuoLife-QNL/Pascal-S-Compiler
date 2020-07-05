@@ -186,7 +186,7 @@ idlist              :	idlist ',' ID
                         }
                     |	idlist ',' error
                     	{
-                    	    ERR("idlist error: discard until ','");
+                    	    yyerror("syntex error, idlist error: discard until ','");
                     	    yyclearin;
                     	    yyerrok;
                     	}
@@ -200,16 +200,21 @@ idlist              :	idlist ',' ID
                         }
                     |
                     	{
-			    yyerror("missing idlist: ignore");
+			    yyerror("syntex error, missing idlist: ignore");
                     	}
                     ;
 const_declarations  :   CONST const_declaration ';'
 			{
 			   INFO("const declarations end");
 			}
-		    |	const_declarations error ';'
+		    |	CONST const_declaration ';' error ';' const_declaration ';'
 		    	{
-		    	    ERR("errors after const declarations: discard until ';'");
+		    	    yyerror("syntex error, errors after const_declaration: discard and continue");
+		    	    yyerrok;
+		    	}
+		    |	CONST const_declaration ';' error ';'
+		    	{
+		    	    ERR("syntex error, errors after const declarations: discard until ';'");
 		    	    yyclearin;
 		    	    yyerrok;
 		    	}
@@ -268,22 +273,26 @@ const_value         :   PLUS NUM
                     	    $$.is_const = true;
                     	    $$.type = _INTEGER;
                     	    nowConst = "0";
-                    	    ERR("const_value error: guess 0");
+                    	    ERR("syntex error, const_value error: guess 0");
                     	    yyclearin;
                     	    yyerrok;
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
-		    |	var_declarations error ';' var_declaration ';'
+		    |	VAR var_declaration ';' error ';' var_declaration ';'
 		    	{
-		    	    yyerror("errors after var_declarations: discard and continue");
+		    	    yyerror("syntex error, errors after var_declarations: discard and continue");
 		    	    yyerrok;
 		    	}
-		    |	var_declarations error ';'
+		    |	VAR var_declaration ';' error ';'
 		    	{
-		    	    yyerror("errors after var_declarations: discard until ';'");
+		    	    yyerror("syntex error, errors after var_declarations: discard until ';'");
 		    	    yyerrok;
 		    	}
+//		    |	var_declarations error
+//		    	{
+//		    	    yyerror("syntex error, errors after var_declarations: discard until next");
+//		    	}
                     |
 
                     ;
@@ -387,7 +396,7 @@ basic_type          :   INTEGER
                     |	error
                     	{
                     	    $$.type = _INTEGER;
-                    	    ERR("unknown type : guess INTEGER");
+                    	    yyerror("syntax error, unknown type : guess INTEGER");
                     	    yyclearin;
                     	    yyerrok;
                     	}
@@ -419,7 +428,7 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                             }
                         |   subprogram_declarations error END ';'
                             {
-                            	ERR("subprogram_declarations error: discard until 'end ;'");
+                            	yyerror("syntex error, subprogram_declarations error: discard until 'end ;'");
                             }
                         |
                         ;
@@ -479,7 +488,13 @@ formal_parameter    :   '(' parameter_list ')'
                     |	'(' ')'
                     	{
                     	    $$ = nullptr;
-                    	    yyerror("empty parameter: omit'()'");
+                    	    yyerror("syntex error, empty parameter: omit'()'");
+                    	}
+		    |	'(' error ')'
+                    	{
+                    	    $$ = nullptr;
+                    	    yyerror("syntex error, parameter list error");
+                    	    yyerrok;
                     	}
                     |
                         {
@@ -757,11 +772,11 @@ id_varpart          :   '[' expression_list ']'
 
                     |	'[' error ']'
 			{
-                    	    yyerror("error when cal id_varpart : discard until ']'");
+                    	    yyerror("syntex error, error when cal id_varpart : discard until ']'");
                     	}
                     |	'[' ']'
                     	{
-                    	    yyerror("empty cal id_varpart: ignore'[]'");
+                    	    yyerror("syntex error, empty cal id_varpart: ignore'[]'");
                     	}
                     | {$$ = nullptr;}
                     ;
