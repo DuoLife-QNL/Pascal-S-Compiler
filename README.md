@@ -1,4 +1,4 @@
-# Pascal-S-Complier
+# Pascal-S-Compiler
 
 A compiler for Pascal-S, output as C, using Flex and Bison
 
@@ -11,7 +11,7 @@ Ubuntu 16.04/18.04
 ## 软件使用方式
 
 ```
-Pascal-S-Complier <input_file> [output_file] [options]
+Pascal-S-Compiler <input_file> [output_file] [options]
 ```
 
 - input_file: the `*.pas` file
