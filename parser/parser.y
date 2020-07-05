@@ -160,9 +160,13 @@ program_head        :   PROGRAM ID
 			{
 			   int len = strlen(input_path);
 			   int i;
-                           if (strncmp(input_path, $2->c_str(), len - 4) != 0){
+			   for(i = len - 1; input_path[i] != '/' && i >0 ; i--);
+			   i += (input_path[i]=='/'?1:0);
+                           if (strncmp(input_path + i, $2->c_str(), len - 4 -i) != 0){
                            	yyerror("Unit and file name do not match");
                            }
+                           INFO("%s",input_path + i);
+                           INFO("%s",$2->c_str());
 			}
 			'(' idlist ')'
                     |   PROGRAM ID
@@ -430,11 +434,8 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             INFO("inserting procedure '%s'", $2->c_str());
                             print_block_info(false, _VOID , $3);
 #endif
-			    printf("~~~1~~~");
                             insert_procedure(*$2, $3);
-                            printf("~~~2~~~");
 			    INFO("Insert done");
-			    printf("~~~3~~~");
                             wf("void ", *$2, "(");
                             bool first = true;
                             if($3 != nullptr){
@@ -456,7 +457,6 @@ subprogram_head     :   PROCEDURE ID formal_parameter
                             print_block_info(true, $5.type, $3);
 
 #endif
-			    printf("~~~~~~");
                             insert_function(*$2, $3, $5.type);
                             INFO("Insert done.");
 
