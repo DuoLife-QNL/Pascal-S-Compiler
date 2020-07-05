@@ -341,7 +341,6 @@ L                   :   ':' type
                             insert_symbol(*$2, $3);
                             INFO("Insert 1 new id '%s' into id table.", $2->c_str());
                             $$ = $3;
-                            cout<<$3.dim<<endl;
                             if ($3.dim==0)wf(*$2,", "); 
                             else  {
                                 wf(*$2);
