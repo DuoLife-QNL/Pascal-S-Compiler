@@ -563,7 +563,7 @@ statement           :   variable ASSIGNOP expression
                                     auto check_t = $1->type == _ARRAY ? $1->element_type : $1->type;
                                     if (check_t != $3->type)
                                     {
-                                        sprintf(error_buffer, "Assign to variable %s type mismatch: expect %s, got %s\n",
+                                        sprintf(error_buffer, "Assign to variable %s type mismatch: expect %s, got %s",
                                             $1->name.c_str(), convert_type(check_t).c_str(), convert_type($3->type).c_str());
                                         yyerror(error_buffer);
                                     }
