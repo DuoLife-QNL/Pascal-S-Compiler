@@ -296,6 +296,7 @@ var_declarations    :   VAR var_declaration ';'
                          */
 var_declaration     :   var_declaration ';' ID L
                         {
+                            $4.is_const = false;
                             insert_symbol(*$3, $4);
                             INFO("Insert new id '%s' into id table.", $3->c_str());
                             if ($4.type != _ARRAY) wf(*$3,";\n");
@@ -313,6 +314,7 @@ var_declaration     :   var_declaration ';' ID L
 
                     |	ID L
                         {
+                            $2.is_const = false;
                             insert_symbol(*$1, $2);
                             INFO("Insert new id '%s' into id table.", $1->c_str());
                             if ($2.type != _ARRAY)wf(*$1,";\n");
