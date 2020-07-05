@@ -1,4 +1,6 @@
+
 Program const_errors(input, output);
+
 Const
   b = 1;
   a = b;
@@ -10,6 +12,9 @@ Const
   f = 1;
 Begin
   read(b);
-  for b := 1 to 3 do
-    a := 4
+  For b := 1 To 3 Do
+    Begin
+      a := 4;
+      b := 3;
+    End;
 End.
