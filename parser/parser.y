@@ -1130,7 +1130,7 @@ void insert_symbol(string name, info t){
         sprintf(error_buffer,"duplicate identifier '%s'",id->get_name().c_str());	
         yyerror(error_buffer);	
     } else {	
-        it.enter_id((Id*)id);	        it.enter_id((Id*)id);
+        it.enter_id((Id*)id);
     }
 }
 
@@ -1147,8 +1147,12 @@ void insert_procedure(string name, parameter *par){
         par1 = par1->next;
     }
     ProcedureId *id = new ProcedureId(name, pl);
+    int index = it.find_id(id->get_name());	
+    if (index != -1) {	
+        sprintf(error_buffer,"duplicate procedure '%s'",id->get_name().c_str());	
+        yyerror(error_buffer);	
+    } 	
     it.enter_id((Id*)id);
-
     parameter* par2 = par;
     while(par2){
         Parameter *p = new Parameter(par2->name, par2->type, par2->is_var);
@@ -1171,6 +1175,11 @@ void insert_function(string name, parameter *par, TYPE rt){
         par1 = par1->next;
     }
     FunctionId *id = new FunctionId(name, pl, rt);
+    int index = it.find_id(id->get_name());	
+    if (index != -1) {	
+        sprintf(error_buffer,"duplicate function '%s'",id->get_name().c_str());	
+        yyerror(error_buffer);	
+    } 	
     it.enter_id((Id*)id);
 
     parameter* par2 = par;

@@ -23,7 +23,7 @@ Begin
   // for 循环变量必须为整型
   For bool := 1 To 2.3 Do
     Begin
-      // if 循环判断条件必须为布尔类型
+      // if 判断条件必须为布尔类型
       If 1 + 2 Then
         int := 3
     End;
