@@ -337,9 +337,11 @@ var_declaration     :   var_declaration ';' ID L
 L                   :   ':' type
                         {
                             $$ = $2;
+                            $$.is_const = false;
                         }
                     |   ',' ID L
                         {
+                            $3.is_const = false;
                             insert_symbol(*$2, $3);
                             INFO("Insert new id '%s' into id table.", $2->c_str());
                             $$ = $3;
