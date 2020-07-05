@@ -1426,14 +1426,14 @@ void check_function(string func_name, parameter *actual_paras)
     {
         if (cur->type != formal_paras[argc].get_type())
         {
-            sprintf(error_buffer, "arg %d of function %s require type %s, got %s.",
+            sprintf(error_buffer, "Arg %d of procedure %s require type %s, got %s.",
                 argc + 1, func_name.c_str(),
                 convert_type(formal_paras[argc].get_type()).c_str(), convert_type(cur->type).c_str());
             yyerror(error_buffer);
         }
         if (formal_paras[argc].is_var && !cur->is_lvalue)
         {
-            sprintf(error_buffer, "var arg %d of function %s require lvalue",
+            sprintf(error_buffer, "Var arg %d of procedure %s require lvalue",
                 argc + 1, func_name.c_str());
             yyerror(error_buffer);
         }
