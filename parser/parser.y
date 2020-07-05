@@ -1417,7 +1417,7 @@ void check_function(string func_name, parameter *actual_paras)
     }
     if (formal_paras.size() != actual_count)
     {
-        sprintf(error_buffer, "function %s length mismatch, require %d parmeters, got %d.",
+        sprintf(error_buffer, "Procedure %s length mismatch, require %d parmeters, got %d.",
             func_name.c_str(), (int)formal_paras.size(), actual_count);
         yyerror(error_buffer);
     }
