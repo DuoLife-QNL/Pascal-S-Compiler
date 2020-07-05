@@ -7,6 +7,11 @@ Var
   a, x, x, y: integer;
   // 重复定义
   a: integer;
+  // 类型错误
+  z: int;
+  // 变量定义语句错误
+  a = 10;
+  b = a;
 Begin
   // 运算对象缺失
   x := 3 +;
