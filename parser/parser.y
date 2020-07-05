@@ -1006,7 +1006,7 @@ term                :   term MULOP factor
                     	    $$ = new parameter;
                     	    $$->type = _INTEGER;
                     	    $$->text = "";
-                    	    ERR("missing term");
+                    	    yyerror("missing term");
                     	}
                     ;
 factor              :   NUM
