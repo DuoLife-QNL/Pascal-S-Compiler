@@ -179,13 +179,11 @@ idlist              :	idlist ',' ID
                             par_append($1, *$3, false);
                             $$ = $1;
                         }
-                    |	idlist ',' error ',' ID
+                    |	idlist ',' error
                     	{
-                    	    ERR("idlist error");
-                    	    INFO("new id '%s'", $5->c_str());
-                            par_append($1, *$5, false);
-                            $$ = $1;
-
+                    	    ERR("idlist error: discard until ','");
+                    	    yyclearin;
+                    	    yyerrok;
                     	}
                     |   ID
                         {
@@ -195,42 +193,46 @@ idlist              :	idlist ',' ID
                             $$->is_var = false;
                             $$->next = nullptr;
                         }
-                    |	NUM ID
-                    	{
-//                    	    recovery with legal part
-                    	    $$ = new parameter;
-                            $$->name = *$2;
-                            $$->is_var = false;
-                            $$->next = nullptr;
-                    	    ERR("err id : discard error part and accept as %s", $$->name.c_str());
-                    	    INFO("new id '%s'", $$->name.c_str());
-                    	}
                     |
                     	{
 			    yyerror("missing idlist: ignore");
                     	}
                     ;
 const_declarations  :   CONST const_declaration ';'
+			{
+			   INFO("const declarations end");
+			}
+		    |	const_declarations error ';'
+		    	{
+		    	    ERR("errors after const declarations: discard until ';'");
+		    	    yyerrok;
+		    	}
                     |
                     ;
 
-const_declaration   :   ID EQUAL const_value
+const_declaration   :   const_declaration ';' ID EQUAL const_value
                         {
-							if(check_id(*$1, false)){
-                    	    	yyerror("duplicate id : discard this");
-                    	    }
-                            insert_symbol(*$1, $3);
-                            INFO("Insert const id '%s' into id table.", $1->c_str());
-                            wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
-                        }
-                    |   const_declaration ';' ID EQUAL const_value
-                        {
+                            INFO("c3");
                     	    if(check_id(*$3, false)){
-                    	    	yyerror("duplicate id : discard this");
-                    	    }
-                            insert_symbol(*$3, $5);
-                            INFO("Insert const id '%s' into id table.", $3->c_str());
-                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                    	        ERR("duplicate id %s", $3->c_str());
+                    	    	yyerror("duplicate id : discard this3");
+                    	    } else {
+                                insert_symbol(*$3, $5);
+                                INFO("Insert const id '%s' into id table.", $3->c_str());
+                                wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                            }
+                        }
+   	   	    |   ID EQUAL const_value
+                        {
+                            INFO("c1");
+			    if(check_id(*$1, false)){
+			        ERR("duplicate id %s", $1->c_str());
+                    	    	yyerror("duplicate id : discard this1");
+                    	    } else {
+                                insert_symbol(*$1, $3);
+                                INFO("Insert const id '%s' into id table.", $1->c_str());
+                                wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
+                            }
                         }
                     ;
 const_value         :   PLUS NUM
@@ -273,9 +275,16 @@ const_value         :   PLUS NUM
                     	    $$.type = _INTEGER;
                     	    nowConst = "0";
                     	    ERR("const_value error: guess 0");
+                    	    yyclearin;
+                    	    yyerrok;
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
+		    |	var_declarations error ';'
+		    	{
+		    	    ERR("errors after var_declarations: discard until ';'");
+		    	    yyerrok;
+		    	}
                     |
 
                     ;
@@ -301,7 +310,8 @@ var_declaration     :   var_declaration ';' ID L
                                 wf(";\n");
                             }
                         }
-                    |   ID L
+
+                    |	ID L
                         {
                             insert_symbol(*$1, $2);
                             INFO("Insert new id '%s' into id table.", $1->c_str());
@@ -329,6 +339,7 @@ L                   :   ':' type
                             $$ = $3;
                             if ($3.dim==0)wf(*$2,", ");
                         }
+
 type                :   basic_type
                         {
                             $$ = $1;
@@ -374,6 +385,8 @@ basic_type          :   INTEGER
                     	{
                     	    $$.type = _INTEGER;
                     	    ERR("unknown type : guess INTEGER");
+                    	    yyclearin;
+                    	    yyerrok;
                     	}
                     ;
 /* period is <symbol_info>, it contains all informations including dimensions */
@@ -1335,14 +1348,14 @@ bool check_id(string name, bool msg, bool check_const) {
     }
 	else if (check_const)
 	{
-		INFO("checking const %s", name.c_str());
+		INFO("checking if %s is const", name.c_str());
 		auto id = get_id(name);
 		if (id->get_type() >= _INTEGER && id->get_type() <= _CHAR)
 		{
 			auto bid = static_cast<BasicTypeId *>(id);
 			if (bid->is_const)
 			{
-				sprintf(error_buffer, "could not modify the const variable %s\n", name.c_str());
+				sprintf(error_buffer, "could not modify the const variable %s", name.c_str());
 				yyerror(error_buffer);
 				return false;
 			}
@@ -1611,7 +1624,6 @@ int main(int argc, char* argv[]){
         }
     }
     yyout = fp2;
-    printf("start parsing %s to %s\n",input_path, output_path);
     yyparse();
     if (success == 1)
         printf("\033[32mParsing doneee.\033[0m\n");
@@ -1625,7 +1637,7 @@ int yyerror(const char *msg)
 {
 
     extern int yylineno;
-    printf("\033[31mError\033[0m  %d in File %s:%d:%d to %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, input_path,  yylloc.last_line, yylloc.last_column, msg);
+    printf("\033[31mError\033[0m  %d in File %s:%d:%d %s\n", ++error_no, input_path, yylloc.first_line, yylloc.first_column, msg);
     success = 0;
     return 0;
 }

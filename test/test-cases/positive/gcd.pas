@@ -1,5 +1,4 @@
-  
-program example(input, output);
+program (input, output);
     var x, y: integer;
     function gcd(a, b:integer):integer;
         begin

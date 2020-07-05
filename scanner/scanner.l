@@ -26,15 +26,20 @@ void SolveMultiLineComment ();
 unsigned int lex_column_index = 1;
 unsigned int lex_row_index = 1;
 
+int newline = 0;
 #define YY_USER_ACTION      \
   yylloc.first_line = yylloc.last_line = yylineno;                   \
   yylloc.first_column = lex_column_index; \
-  yylloc.last_column = yylloc.first_column + yyleng - 1; \
-//  for (int i = 0; i < yyleng; ++yylloc.last_column, i++) { \
-//    if(yytext[i]=='\n'){ \
-//        yylloc.last_line ++ ; \
-//        yylloc.last_column = 0; \
-//    } \
+//  yylloc.last_column = yylloc.first_column + yyleng - 1; \
+  printf("%d : %s",yyleng, yytext);\
+  for (int i = 0; i < yyleng; ++yylloc.last_column, i++) { \
+    if(newline){\
+        yylloc.last_line ++ ; \
+        yylloc.last_column = 1; \
+    }\
+    if(yytext[i]=='\n'){ \
+        newline = 1;\
+    } \
   }\
 
 
@@ -329,7 +334,6 @@ quotation_not_match     (\'|\")
     #ifdef DEBUG_SCANNER
     printf("shift '.' \n");
     #endif
-    lex_column_index += yyleng;
     yylval.letter = *(yytext + 1); lex_column_index += 3; return(QLQ);
 }
 
@@ -373,6 +377,7 @@ quotation_not_match     (\'|\")
     #ifdef DEBUG_SCANNER
     printf("Shift NUM\n"); 
     #endif
+    lex_column_index += yyleng;
     yylval.num = yytext; return(NUM);
 }
 " "|"\t"              {lex_column_index++;}
