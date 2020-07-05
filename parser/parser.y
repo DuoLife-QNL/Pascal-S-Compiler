@@ -338,9 +338,19 @@ L                   :   ':' type
                         {
                             $3.is_const = false;
                             insert_symbol(*$2, $3);
-                            INFO("Insert new id '%s' into id table.", $2->c_str());
+                            INFO("Insert 1 new id '%s' into id table.", $2->c_str());
                             $$ = $3;
-                            if ($3.dim==0)wf(*$2,", ");
+                            cout<<$3.dim<<endl;
+                            if ($3.dim==0)wf(*$2,", "); 
+                            else  {
+                                wf(*$2);
+                                period *nowPrd=$3.prd;
+                                while(nowPrd!=nullptr){
+                                    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
+                                    nowPrd=nowPrd->next;
+                                       }
+                                wf(",");
+                            }
                         }
 
 type                :   basic_type
