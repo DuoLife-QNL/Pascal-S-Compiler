@@ -216,27 +216,15 @@ const_declarations  :   CONST const_declaration ';'
 
 const_declaration   :   const_declaration ';' ID EQUAL const_value
                         {
-                            INFO("c3");
-                    	    if(check_id(*$3, false)){
-                    	        ERR("duplicate id %s", $3->c_str());
-                    	    	yyerror("duplicate id : discard this3");
-                    	    } else {
-                                insert_symbol(*$3, $5);
-                                INFO("Insert const id '%s' into id table.", $3->c_str());
-                                wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
-                            }
+                            insert_symbol(*$3, $5);
+                            INFO("Insert const id '%s' into id table.", $3->c_str());
+                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
    	   	    |   ID EQUAL const_value
                         {
-                            INFO("c1");
-			    if(check_id(*$1, false)){
-			        ERR("duplicate id %s", $1->c_str());
-                    	    	yyerror("duplicate id : discard this1");
-                    	    } else {
-                                insert_symbol(*$1, $3);
-                                INFO("Insert const id '%s' into id table.", $1->c_str());
-                                wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
-                            }
+                            insert_symbol(*$1, $3);
+                            INFO("Insert const id '%s' into id table.", $1->c_str());
+                            wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
                     ;
 const_value         :   PLUS NUM
