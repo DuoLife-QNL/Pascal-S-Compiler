@@ -1183,6 +1183,9 @@ TYPE get_type(const char *s){
     string ss = s;
     string::size_type idx;
     idx = ss.find(".");
+    if ('\'' == *s && '\'' == *(s+2) && !(*(s+3))) {
+        return _CHAR;
+    }
     if (idx == string::npos){
         while (*s) {
             if (!(('0' <= *s) && (*s <= '9'))) {
