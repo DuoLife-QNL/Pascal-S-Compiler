@@ -5,12 +5,14 @@ Var
   x,y : integer;
   bool: boolean;
   c: real;
-Function foo1(var a, 12, c: bean): integer;
+  ch: char;
+  // 块声明时的错误
+Function foo1(Var a, 12, c: bean): integer;
 Begin
   a := 1;
   c := 1.2;
-  c := 2;
-  d := 3;
+  // 类型不匹配
+  c := 'a';
   foo1 := 0;
 End;
 
@@ -23,9 +25,14 @@ Begin
 End;
 
 Begin
+  // 语法错误
   foo1(...);
+  // 过程无法引用返回值
   x := foo3(x);
+  // var类型实参表达式只能为左值
   foo2(x + y);
-  foo3(c);
+  // 参数类型不匹配
+  foo3(ch);
+  // 参数个数不匹配
   foo3(x, y)
 End.
