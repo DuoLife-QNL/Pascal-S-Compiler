@@ -218,27 +218,15 @@ const_declarations  :   CONST const_declaration ';'
 
 const_declaration   :   const_declaration ';' ID EQUAL const_value
                         {
-                            INFO("c3");
-                    	    if(check_id(*$3, false)){
-                    	        ERR("duplicate id %s", $3->c_str());
-                    	    	yyerror("duplicate id : discard this3");
-                    	    } else {
-                                insert_symbol(*$3, $5);
-                                INFO("Insert const id '%s' into id table.", $3->c_str());
-                                wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
-                            }
+                            insert_symbol(*$3, $5);
+                            INFO("Insert const id '%s' into id table.", $3->c_str());
+                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
                         }
    	   	    |   ID EQUAL const_value
                         {
-                            INFO("c1");
-			    if(check_id(*$1, false)){
-			        ERR("duplicate id %s", $1->c_str());
-                    	    	yyerror("duplicate id : discard this1");
-                    	    } else {
-                                insert_symbol(*$1, $3);
-                                INFO("Insert const id '%s' into id table.", $1->c_str());
-                                wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
-                            }
+                            insert_symbol(*$1, $3);
+                            INFO("Insert const id '%s' into id table.", $1->c_str());
+                            wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
                         }
                     ;
 const_value         :   PLUS NUM
@@ -286,9 +274,14 @@ const_value         :   PLUS NUM
                     	}
                     ;
 var_declarations    :   VAR var_declaration ';'
+		    |	var_declarations error ';' var_declaration ';'
+		    	{
+		    	    yyerror("errors after var_declarations: discard and continue");
+		    	    yyerrok;
+		    	}
 		    |	var_declarations error ';'
 		    	{
-		    	    ERR("errors after var_declarations: discard until ';'");
+		    	    yyerror("errors after var_declarations: discard until ';'");
 		    	    yyerrok;
 		    	}
                     |
@@ -547,17 +540,19 @@ compound_statement  :   _BEGIN statement_list END
 			{
 			    INFO("end of compound_statement");
 			}
-		    |	_BEGIN statement_list ';' error END
+		    |	_BEGIN statement_list ';' error ';'
 		    	{
-		    	    ERR("errors in statement_list: discard until 'end'");
+		    	    ERR("errors in statement_list: discard and continue");
                             yyerrok;
 		    	}
+		    	statement_list END
                     ;
 statement_list      :   statement_list ';' statement
                     |   statement
                     ;
 statement           :   variable ASSIGNOP expression
                         {
+                            INFO("start :=");
                             if (check_id($1->name, false, true))
                             {
                                 auto is_func = $1->type == _FUNCTION;
@@ -593,6 +588,8 @@ statement           :   variable ASSIGNOP expression
                                     }
                                 }
                             }
+                            INFO("end :=");
+                            yyerrok;
                         }
                     |   procedure_call
                         {
@@ -906,6 +903,7 @@ simple_expression   :   simple_expression ADDOP term
                                 $$->type = type;
                             }
                             $$->text = $1->text + "+" + $3->text;
+                            INFO("gen plus expr");
                         }
                     |   simple_expression UMINUS term
                         {
@@ -921,6 +919,14 @@ simple_expression   :   simple_expression ADDOP term
                             }
                             $$->text = $1->text + "-" + $3->text;
                         }
+                    |	simple_expression term
+                    	{
+                    	    $$ = new parameter;
+                    	    $$->type = _INTEGER;
+                    	    $$->text = "";
+                    	    yyerror("缺少运算符");
+                    	    yyerrok;
+                    	}
                     |   term
                         {
                             $$ = new parameter;
@@ -929,13 +935,17 @@ simple_expression   :   simple_expression ADDOP term
                             $$->text = $1->text;
                             $$->is_lvalue = $1->is_lvalue;
                         }
-                    |
-                    	{
-                    	    $$ = new parameter;
-                    	    $$->type = _DEFAULT;
-                    	    $$->text = "";
-                    	    yyerror("missing simple_expression");
-                    	}
+
+//                    |
+//                    	{
+//                    	    $$ = new parameter;
+//                    	    $$->type = _INTEGER;
+//                    	    $$->text = "";
+//
+//                    	    yyerror("missing simple_expression");
+//                    	    yyclearin;
+//                    	    yyerrok;
+//                    	}
                     ;
 term                :   term MULOP factor
                         {
@@ -994,9 +1004,9 @@ term                :   term MULOP factor
                     |
                     	{
                     	    $$ = new parameter;
-                    	    $$->type = _DEFAULT;
+                    	    $$->type = _INTEGER;
                     	    $$->text = "";
-                    	    yyerror("missing operator");
+                    	    ERR("missing term");
                     	}
                     ;
 factor              :   NUM
@@ -1097,9 +1107,10 @@ factor              :   NUM
                     |
                     	{
                     	    $$ = new parameter;
-                    	    $$->type = _DEFAULT;
+                    	    $$->type = _INTEGER;
                     	    $$->text = "";
-                    	    yyerror("missing operator");
+                    	    yyerror("missing factor");
+                    	    yyclearin;
                     	}
                     ;
 
