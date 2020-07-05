@@ -1191,6 +1191,7 @@ TYPE get_type(const char *s){
             if (!(('0' <= *s) && (*s <= '9'))) {
                 if (('.' == *s) && (0 == count_dot)) {
                     count_dot ++;
+                    s++;
                     continue;
                 }
                 return _DEFAULT;
