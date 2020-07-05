@@ -3,7 +3,12 @@ Program type_errors(input, output);
 
 Var int: integer;
   bool : boolean;
+  r: real;
 Begin
+  // 类型不一致
+  r := int;
+  // 类型不一致
+  r := 3;
   // 运算表达式类型不匹配
   If bool = int Then
     int := 1

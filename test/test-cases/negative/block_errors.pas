@@ -5,14 +5,17 @@ Var
   x,y : integer;
   bool: boolean;
   c: real;
+  d: real;
   ch: char;
   // 块声明时的错误
 Function foo1(Var a, 12, c: bean): integer;
 Begin
   a := 1;
+  // c foo1参数中 c 未定义，默认类型设为int
+  // 类型不一致
   c := 1.2;
   // 类型不匹配
-  c := 'a';
+  d := ch;
   foo1 := 0;
 End;
 
