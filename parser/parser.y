@@ -760,11 +760,11 @@ id_varpart          :   '[' expression_list ']'
 
                     |	'[' error ']'
 			{
-                    	    ERR("error when cal id_varpart : discard until ']'");
+                    	    yyerror("error when cal id_varpart : discard until ']'");
                     	}
                     |	'[' ']'
                     	{
-                    	    ERR("empty cal id_varpart: ignore'[]'");
+                    	    yyerror("empty cal id_varpart: ignore'[]'");
                     	}
                     | {$$ = nullptr;}
                     ;
@@ -815,11 +815,11 @@ procedure_call      :   ID
                         }
                     |	ID '(' error ')'
                     	{
-                    	    ERR("error when calling %s : discard until ')'", $1->c_str());
+                    	    yyerror("error when calling %s : discard until ')'", $1->c_str());
                     	}
                     |	ID '(' ')'
                     	{
-                    	    ERR("empty expression_list: ignore'()'");
+                    	    yyerror("empty expression_list: ignore'()'");
                     	}
                     ;
 else_part           :   ELSE {wf("else\n");} statement
