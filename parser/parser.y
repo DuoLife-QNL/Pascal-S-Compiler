@@ -218,15 +218,27 @@ const_declarations  :   CONST const_declaration ';'
 
 const_declaration   :   const_declaration ';' ID EQUAL const_value
                         {
-                            insert_symbol(*$3, $5);
-                            INFO("Insert const id '%s' into id table.", $3->c_str());
-                            wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                            INFO("c3");
+                    	    if(check_id(*$3, false)){
+                    	        ERR("duplicate id %s", $3->c_str());
+                    	    	yyerror("duplicate id : discard this3");
+                    	    } else {
+                                insert_symbol(*$3, $5);
+                                INFO("Insert const id '%s' into id table.", $3->c_str());
+                                wf("const ",$5.type," ",*$3," = ",nowConst,";\n");
+                            }
                         }
    	   	    |   ID EQUAL const_value
                         {
-                            insert_symbol(*$1, $3);
-                            INFO("Insert const id '%s' into id table.", $1->c_str());
-                            wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
+                            INFO("c1");
+			    if(check_id(*$1, false)){
+			        ERR("duplicate id %s", $1->c_str());
+                    	    	yyerror("duplicate id : discard this1");
+                    	    } else {
+                                insert_symbol(*$1, $3);
+                                INFO("Insert const id '%s' into id table.", $1->c_str());
+                                wf("const ",$3.type," ",*$1," = ",nowConst,";\n");
+                            }
                         }
                     ;
 const_value         :   PLUS NUM
@@ -565,7 +577,7 @@ statement           :   variable ASSIGNOP expression
                                     auto check_t = $1->type == _ARRAY ? $1->element_type : $1->type;
                                     if (check_t != $3->type)
                                     {
-                                        sprintf(error_buffer, "Assign to variable %s type mismatch: expect %s, got %s\n",
+                                        sprintf(error_buffer, "Assign to variable %s type mismatch: expect %s, got %s",
                                             $1->name.c_str(), convert_type(check_t).c_str(), convert_type($3->type).c_str());
                                         yyerror(error_buffer);
                                     }
@@ -633,7 +645,7 @@ statement           :   variable ASSIGNOP expression
                                     {
                                         t += ", ";
                                     }
-                                    if (get_type(cur->name.c_str()) != _ARRAY)
+                                    if (get_id(cur->name)->get_type() != _ARRAY)
                                     {
                                         s += convert_type_printf(cur->type);
                                         t += "&" + cur->name;
@@ -1106,17 +1118,11 @@ int get_last_digit(const string &s){
  */
 void insert_symbol(string name, info t){
     /* basic type */
-    Id* id;
     if (t.type >= _INTEGER and t.type <= _CHAR){
-        id = new BasicTypeId(name, t.type, t.is_const);
+        BasicTypeId *id = new BasicTypeId(name, t.type, t.is_const);
+        it.enter_id((Id*)id);
     } else if (t.type == _ARRAY){  /* array */
-        id = new ArrayId(name, t.element_type, t.dim, t.prd);
-    }
-    int index = it.find_id(id->get_name());
-    if (it.in_cur_scope(index)) {
-        sprintf(error_buffer,"duplicate identifier '%s'",id->get_name().c_str());
-        yyerror(error_buffer);
-    } else {
+        ArrayId *id = new ArrayId(name, t.element_type, t.dim, t.prd);
         it.enter_id((Id*)id);
     }
 }
@@ -1179,6 +1185,9 @@ TYPE get_type(const char *s){
     string ss = s;
     string::size_type idx;
     idx = ss.find(".");
+    if ('\'' == *s && '\'' == *(s+2) && !(*(s+3))) {
+        return _CHAR;
+    }
     if (idx == string::npos){
         while (*s) {
             if (!(('0' <= *s) && (*s <= '9'))) {
@@ -1193,6 +1202,7 @@ TYPE get_type(const char *s){
             if (!(('0' <= *s) && (*s <= '9'))) {
                 if (('.' == *s) && (0 == count_dot)) {
                     count_dot ++;
+                    s++;
                     continue;
                 }
                 return _DEFAULT;
