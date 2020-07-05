@@ -486,7 +486,7 @@ formal_parameter    :   '(' parameter_list ')'
                     |	'(' ')'
                     	{
                     	    $$ = nullptr;
-                    	    ERR("empty parameter: omit'()'");
+                    	    yyerror("empty parameter: omit'()'");
                     	}
                     |
                         {
@@ -815,7 +815,8 @@ procedure_call      :   ID
                         }
                     |	ID '(' error ')'
                     	{
-                    	    yyerror("error when calling %s : discard until ')'", $1->c_str());
+                    	    sprintf(error_buffer,"error when calling %s : discard until ')'", $1->c_str());
+                    	    yyerror(error_buffer);
                     	}
                     |	ID '(' ')'
                     	{
