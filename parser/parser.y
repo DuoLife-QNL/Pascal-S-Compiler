@@ -267,6 +267,7 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = _CHAR;
                             nowConst=$1;
+                            nowConst = "'" + nowConst + "'"; 
                         }
                     |	error
                     	{
@@ -347,9 +348,18 @@ L                   :   ':' type
                         {
                             $3.is_const = false;
                             insert_symbol(*$2, $3);
-                            INFO("Insert new id '%s' into id table.", $2->c_str());
+                            INFO("Insert 1 new id '%s' into id table.", $2->c_str());
                             $$ = $3;
-                            if ($3.dim==0)wf(*$2,", ");
+                            if ($3.dim==0)wf(*$2,", "); 
+                            else  {
+                                wf(*$2);
+                                period *nowPrd=$3.prd;
+                                while(nowPrd!=nullptr){
+                                    wf("[",to_string(nowPrd->end-nowPrd->start+1),"]");
+                                    nowPrd=nowPrd->next;
+                                       }
+                                wf(",");
+                            }
                         }
 
 type                :   basic_type
@@ -1430,7 +1440,7 @@ void check_function(string func_name, parameter *actual_paras)
     }
     if (formal_paras.size() != actual_count)
     {
-        sprintf(error_buffer, "function %s length mismatch, require %d parmeters, got %d.",
+        sprintf(error_buffer, "Procedure %s length mismatch, require %d parmeters, got %d.",
             func_name.c_str(), (int)formal_paras.size(), actual_count);
         yyerror(error_buffer);
     }
@@ -1439,14 +1449,14 @@ void check_function(string func_name, parameter *actual_paras)
     {
         if (cur->type != formal_paras[argc].get_type())
         {
-            sprintf(error_buffer, "arg %d of function %s require type %s, got %s.",
+            sprintf(error_buffer, "Arg %d of procedure %s require type %s, got %s.",
                 argc + 1, func_name.c_str(),
                 convert_type(formal_paras[argc].get_type()).c_str(), convert_type(cur->type).c_str());
             yyerror(error_buffer);
         }
         if (formal_paras[argc].is_var && !cur->is_lvalue)
         {
-            sprintf(error_buffer, "var arg %d of function %s require lvalue",
+            sprintf(error_buffer, "Var arg %d of procedure %s require lvalue",
                 argc + 1, func_name.c_str());
             yyerror(error_buffer);
         }

@@ -27,7 +27,7 @@ Begin
       If 1 + 2 Then
         int := 3
     End;
-  //  for循环初值和终值必须为整型 
+  // for循环初值和终值必须为整型 
   For int := 1.1 To 2.3 Do
     Begin
       int := 2
