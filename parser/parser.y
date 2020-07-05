@@ -262,6 +262,7 @@ const_value         :   PLUS NUM
                             $$.is_const = true;
                             $$.type = _CHAR;
                             nowConst=$1;
+                            nowConst = "'" + nowConst + "'"; 
                         }
                     |	error
                     	{
