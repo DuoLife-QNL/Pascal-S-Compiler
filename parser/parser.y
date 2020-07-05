@@ -155,6 +155,7 @@ programstruct       :   {wf("#include<stdio.h>\n");}program_head ';' program_bod
 			{
 			    INFO("Reach the end.");
 			}
+
                     ;
 program_head        :   PROGRAM ID
 			{
@@ -209,6 +210,7 @@ const_declarations  :   CONST const_declaration ';'
 		    |	const_declarations error ';'
 		    	{
 		    	    ERR("errors after const declarations: discard until ';'");
+		    	    yyclearin;
 		    	    yyerrok;
 		    	}
                     |
@@ -410,7 +412,7 @@ subprogram_declarations :   subprogram_declarations subprogram ';'
                             {
                                 it.end_block();
                             }
-                        |   error END ';'
+                        |   subprogram_declarations error END ';'
                             {
                             	ERR("subprogram_declarations error: discard until 'end ;'");
                             }
@@ -530,13 +532,13 @@ subprogram_body     :   const_declarations
 			compound_statement {wf("}\n");}
                     ;
 compound_statement  :   _BEGIN statement_list END
-		    |	_BEGIN error ';' statement_list END
+			{
+			    INFO("end of compound_statement");
+			}
+		    |	_BEGIN statement_list ';' error END
 		    	{
-		    	    ERR("statement error: discard and continue");
-		    	}
-		    |	_BEGIN error END
-		    	{
-		    	    ERR("last statement error: discard");
+		    	    ERR("errors in statement_list: discard until 'end'");
+                            yyerrok;
 		    	}
                     ;
 statement_list      :   statement_list ';' statement
